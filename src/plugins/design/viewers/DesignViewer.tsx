@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
+import { MdViewer } from '../../../web/viewers/MdViewer';
 
 type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'code' | 'font' | 'other';
 type VpMode = 0 | 768 | 375 | 'custom';
@@ -132,7 +133,7 @@ function UnsupportedViewer({ path }: { path: string }) {
 }
 
 const VIEWERS: Partial<Record<AssetType, React.ComponentType<{ path: string }>>> = {
-  page: PageViewer, icon: ImageViewer, token: TokenViewer, md: PageViewer,
+  page: PageViewer, icon: ImageViewer, token: TokenViewer, md: MdViewer,
   video: VideoViewer, audio: AudioViewer, pdf: PdfViewer,
   code: CodeViewer, component: CodeViewer, font: FontViewer,
 };

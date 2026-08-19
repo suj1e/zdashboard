@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, X, Circle, Send } from 'lucide-react';
+import { Check, X, Send } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -45,9 +45,13 @@ const FILTERS: { key: ItemState | 'all'; label: string }[] = [
   { key: 'answered', label: '已答复' }, { key: 'accepted', label: '已采纳' }, { key: 'dismissed', label: '已驳回' },
 ];
 const SEV_COLOR: Record<string, string> = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-sky-500' };
+const SEV_TEXT: Record<string, string> = { high: '高', medium: '中', low: '低' };
 const STATE_CLS: Record<ItemState, string> = {
   open: 'border-l-red-500', answered: 'border-l-sky-500',
   accepted: 'border-l-emerald-500', dismissed: 'border-l-zinc-400',
+};
+const STATE_TEXT: Record<ItemState, string> = {
+  open: '待处理', answered: '已答复', accepted: '已采纳', dismissed: '已驳回',
 };
 
 function CodeBlock({ children }: { children?: React.ReactNode }) {
@@ -124,8 +128,8 @@ function ItemCard({ item, token, onUpdated }: { item: ReviewItem; token: string;
       <div className="flex items-center gap-2 px-3 pt-2.5 text-[11px] text-muted-foreground">
         {item.severity && <span className={`h-2 w-2 rounded-full ${SEV_COLOR[item.severity] ?? 'bg-muted-foreground'}`} />}
         <span className="font-medium">{item.category ?? '通用'}</span>
-        <span className="uppercase">{item.severity}</span>
-        <span className="ml-auto">{item.state}</span>
+        {item.severity && <span className="uppercase">{SEV_TEXT[item.severity] ?? item.severity}</span>}
+        <span className="ml-auto">{STATE_TEXT[item.state] ?? item.state}</span>
       </div>
       <p className="px-3 py-2 text-sm leading-relaxed">{item.question}</p>
       <div className="px-3 pb-3 flex flex-col gap-2">
