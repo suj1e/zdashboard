@@ -1,6 +1,6 @@
 {
   "name": "zdashboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "ZCode skill dashboard platform — pluggable viewers for zdesign/zview/zreview/zgoal",
   "type": "module",
   "bin": {
@@ -50,12 +50,14 @@
     "remark-math": "^6.0.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.4",
-    "use-debounce": "^10.0.0"
+    "use-debounce": "^10.0.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

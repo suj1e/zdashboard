@@ -23,7 +23,7 @@ export interface DashboardPlugin {
   mode: string;
   label: string;
   icon?: string;
-  viewer: () => Promise<{ default: React.ComponentType }>;
+  viewer?: () => Promise<{ default: React.ComponentType }>;
   sidebar?: () => Promise<{ default: React.ComponentType }>;
   apiRoutes?: Record<string, (req: http.IncomingMessage, res: http.ServerResponse, root: string) => void>;
 }

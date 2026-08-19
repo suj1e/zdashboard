@@ -6,7 +6,8 @@ import { LogViewer } from './components/LogViewer';
 import { MdViewer } from './viewers/MdViewer';
 import { ImageViewer } from './viewers/ImageViewer';
 import { UnsupportedViewer } from './viewers/UnsupportedViewer';
-import type { DashboardPlugin, CurrentView } from '../../server/plugins.js';
+import type { DashboardPlugin } from '@/server/plugins';
+import type { CurrentView } from './lib/types';
 
 type Current = CurrentView;
 
@@ -39,7 +40,7 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const modes = ['view', 'bugs', 'review'];
+      const modes = ['view', 'bugs', 'review', 'design'];
       const loaded = await Promise.all(modes.map(loadPlugin));
       if (!cancelled) setPlugins(loaded.filter(Boolean) as DashboardPlugin[]);
     })();
@@ -50,9 +51,11 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const plugin = await loadPlugin(mode);
-      if (!cancelled && plugin) {
+      if (!cancelled && plugin?.viewer) {
         const { default: Viewer } = await plugin.viewer();
         setPluginViewer(() => Viewer);
+      } else {
+        setPluginViewer(null);
       }
     })();
     return () => { cancelled = true; };
@@ -98,9 +101,17 @@ export default function App() {
                   <div className="h-full"><LogViewer /></div>
                 ) : current.kind === 'plugin' && ActivePluginViewer ? (
                   <div className="h-full"><ActivePluginViewer /></div>
-                ) : (
+                ) : current.kind === 'file' && Viewer ? (
                   <div className="mx-auto max-w-5xl h-full bg-background border rounded-lg shadow-sm overflow-auto">
-                    {Viewer && <Viewer path={current.path} />}
+                    <Viewer path={current.path} />
+                  </div>
+                ) : (
+                  <div className="flex-1 grid place-items-center text-muted-foreground">
+                    <div className="text-center">
+                      <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
+                      <p>从左侧选择模式或文档</p>
+                      <p className="mt-1 text-xs">plugins: {plugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
+                    </div>
                   </div>
                 )}
               </div>

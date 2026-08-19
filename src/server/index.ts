@@ -8,6 +8,8 @@ import { scanTree } from './spec-scan.js';
 import { JustRunner } from './just-runner.js';
 import { fetchBugs } from './bugs.js';
 import { registerBuiltin, allBuiltins, type DashboardPlugin } from './plugins.js';
+import { ReviewStore, type ItemState, type ReviewStatus } from './review-store.js';
+import { scanAssets } from './design-assets.js';
 import type { DetectResult } from './detect.js';
 import pkg from '../../package.json' with { type: 'json' };
 
@@ -62,7 +64,53 @@ export function createServer(opts: ServerOptions) {
     apiRoutes: { '/__bugs': async (_, res) => { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' }); fetchBugs(ROOT).then((r) => res.end(JSON.stringify(r))); } }
   });
   registerBuiltin({ mode: 'view', label: '项目浏览', icon: '👁️' });
-  registerBuiltin({ mode: 'review', label: '文档评审', icon: '✅' });
+
+  const reviewStore = new ReviewStore(ROOT);
+  registerBuiltin({
+    mode: 'review', label: '文档评审', icon: '✅',
+    apiRoutes: {
+      '/__review': async (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.end(JSON.stringify(reviewStore.read()));
+      },
+      '/__review/item': async (req, res) => {
+        if (req.headers['x-stop-token'] !== STOP_TOKEN) { res.writeHead(403); res.end('forbidden'); return; }
+        (async () => {
+          try {
+            const body = JSON.parse(await readBody(req) || '{}');
+            const data = reviewStore.updateItem(body.id, { answer: body.answer, state: body.state as ItemState | undefined });
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify(data));
+          } catch (e) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: (e as Error).message }));
+          }
+        })();
+        return;
+      },
+      '/__review/status': async (req, res) => {
+        if (req.headers['x-stop-token'] !== STOP_TOKEN) { res.writeHead(403); res.end('forbidden'); return; }
+        (async () => {
+          try {
+            const body = JSON.parse(await readBody(req) || '{}');
+            const data = reviewStore.setStatus(body.status as ReviewStatus);
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify(data));
+          } catch (e) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: (e as Error).message }));
+          }
+        })();
+        return;
+      },
+      '/__docs': async (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.end(JSON.stringify(reviewStore.docs()));
+      },
+    }
+  });
+
+  registerBuiltin({ mode: 'design', label: '设计资产', icon: '🎨' });
 
   const clients = new Set<http.ServerResponse>();
   const broadcast = (ev: string, data: unknown = '') => {
@@ -110,8 +158,12 @@ export function createServer(opts: ServerOptions) {
       return;
     }
 
-    // ── 方案模式:树形文件清单(+探测结果) ──
+    // ── 方案模式:树形文件清单(+探测结果) / 设计模式:资产分类清单 ──
     if (url === '/__files') {
+      if (MODE === 'design') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(JSON.stringify(scanAssets(ROOT)));
+      }
       const tree = scanTree(ROOT, det.hasOpenspec, det.hasDocs);
       const payload: TreeNodePayload = { tree, ...det };
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });

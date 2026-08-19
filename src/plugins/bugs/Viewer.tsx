@@ -133,3 +133,5 @@ export function BugViewer() {
     </div>
   );
 }
+
+export default BugViewer;

@@ -42,4 +42,4 @@ export const en = {
     severity: (s: number | string) => `S${s}`,
     statusBadge: (status: string) => status,
   },
-} as const;
+};

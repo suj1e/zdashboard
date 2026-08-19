@@ -1,11 +1,11 @@
 import type { DashboardPlugin } from '../../server/plugins.js';
 
 const plugin: DashboardPlugin = {
-  mode: 'review',
-  label: '文档评审',
-  icon: '✅',
+  mode: 'design',
+  label: '设计资产',
+  icon: '🎨',
   viewer: async () => {
-    const mod = await import('./viewers/ReviewViewer.js');
+    const mod = await import('./viewers/DesignViewer.js');
     return { default: mod.default };
   },
 };
