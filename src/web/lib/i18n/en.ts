@@ -1,0 +1,45 @@
+export const en = {
+  app: {
+    title: 'zdashboard',
+    subtitle: 'ZCode skill dashboard platform',
+    plugins: 'plugins',
+  },
+  sidebar: {
+    filter: 'Filter…',
+    log: 'Service Logs',
+    logTag: 'just',
+    bugs: 'Bugs',
+    bugsTag: 'ZenTao',
+    review: 'Doc Review',
+    reviewTag: 'zreview',
+    design: 'Design Preview',
+    designTag: 'zdesign',
+  },
+  empty: {
+    title: 'Select a mode or document from the sidebar',
+    hint: 'plugins: {plugins}',
+  },
+  bar: {
+    file: 'Document',
+    log: 'Logs',
+    bugs: 'ZenTao Bugs · read-only',
+    review: 'Document Review',
+    design: 'Design Preview',
+  },
+  errors: {
+    loadPlugin: 'Failed to load plugin',
+    fetchFailed: 'Request failed',
+    unknown: 'Unknown error',
+  },
+  bugs: {
+    title: 'ZenTao Bugs · read-only',
+    empty: 'No bugs assigned to you 🎉',
+    mine: 'Mine',
+    all: 'All',
+    active: 'active',
+    resolved: 'resolved',
+    closed: 'closed',
+    severity: (s: number | string) => `S${s}`,
+    statusBadge: (status: string) => status,
+  },
+} as const;

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fetchJson } from './api/fetch.js';
 
 /** .zgoal/config.yaml(zgoal skill 的禅道凭据配置,扁平 key: value) */
 export interface ZgoalConfig {
@@ -44,24 +45,6 @@ function loadZgoalConfig(root: string): ZgoalConfig | null {
     token: kv.token,
     product,
   };
-}
-
-async function fetchJson(url: string, init?: RequestInit): Promise<Record<string, unknown>> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
-  try {
-    const res = await fetch(url, { ...init, signal: ctrl.signal });
-    const text = await res.text();
-    let json: Record<string, unknown> = {};
-    try { json = JSON.parse(text); } catch { /* 非 JSON 当空 */ }
-    if (!res.ok) {
-      const err = json.error;
-      throw new Error(`HTTP ${res.status}${typeof err === 'string' ? `: ${err}` : ''}`);
-    }
-    return json;
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 let tokenCache: { key: string; token: string; at: number } | null = null;

@@ -6,9 +6,9 @@ import { LogViewer } from './components/LogViewer';
 import { MdViewer } from './viewers/MdViewer';
 import { ImageViewer } from './viewers/ImageViewer';
 import { UnsupportedViewer } from './viewers/UnsupportedViewer';
-import type { DashboardPlugin } from '../../server/plugins.js';
+import type { DashboardPlugin, CurrentView } from '../../server/plugins.js';
 
-type Current = { kind: 'file'; path: string } | { kind: 'log' } | { kind: 'plugin'; mode: string; label: string; icon: string } | null;
+type Current = CurrentView;
 
 async function loadPlugin(mode: string): Promise<DashboardPlugin | null> {
   try {

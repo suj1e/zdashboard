@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Toaster } from 'sonner';
 import App from './App';
 import './globals.css';
 
@@ -10,6 +12,9 @@ rootEl.classList.toggle('dark', theme === 'dark');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+    <Toaster position="bottom-right" richColors />
   </React.StrictMode>
 );
