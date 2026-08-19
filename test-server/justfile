@@ -1,0 +1,22 @@
+# test-server · zview-dashboard 端到端测试夹具
+# 全命中三种探测:openspec/ + docs/ + justfile
+
+# 模拟服务:持续输出彩色日志(Ctrl+C 退出)
+serve:
+    node scripts/serve.js
+
+# 构建模拟:输出几行后正常退出
+build:
+    @echo "[build] compiling..." && sleep 1 && echo "[build] done in 1.2s"
+
+# 失败模拟:exit 1
+fail:
+    @echo "[task] about to fail" && exit 1
+
+# 参数示例
+hello msg="world":
+    @echo "hello {{msg}}"
+
+# 多行输出模拟(空行/缩进/CRLF,复现用户截图模式)
+lines:
+    @printf 'start\r\n  下一步,停止所有服务:\r\n\r\n      just stop\r\nend\n'
