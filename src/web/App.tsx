@@ -101,6 +101,14 @@ export default function App() {
                   <div className="h-full"><LogViewer /></div>
                 ) : current.kind === 'plugin' && ActivePluginViewer ? (
                   <div className="h-full"><ActivePluginViewer /></div>
+                ) : current.kind === 'plugin' ? (
+                  <div className="flex-1 grid place-items-center text-muted-foreground">
+                    <div className="text-center">
+                      <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
+                      <p>{current.icon} {current.label} · 暂无可视化</p>
+                      <p className="mt-1 text-xs">该模式当前没有图形界面，请使用 API 或切换到其他模式</p>
+                    </div>
+                  </div>
                 ) : current.kind === 'file' && Viewer ? (
                   <div className="mx-auto max-w-5xl h-full bg-background border rounded-lg shadow-sm overflow-auto">
                     <Viewer path={current.path} />

@@ -6,7 +6,7 @@ import App from './App';
 import './globals.css';
 
 const rootEl = document.documentElement;
-let theme = localStorage.getItem('zview-theme');
+let theme = localStorage.getItem('zdashboard-theme');
 if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 rootEl.classList.toggle('dark', theme === 'dark');
 

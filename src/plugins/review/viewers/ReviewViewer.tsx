@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, X, Circle, Send } from 'lucide-react';
+import { useSSE } from '../../../web/hooks/useSSE';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -158,6 +159,7 @@ export default function ReviewViewer() {
   const [token, setToken] = useState('');
   const [filter, setFilter] = useState<ItemState | 'all'>('all');
   const [err, setErr] = useState('');
+  const stopped = useRef(false);
 
   const reload = () => {
     fetch('/__review', { cache: 'no-store' }).then(r => r.json()).then(setData);
@@ -168,6 +170,7 @@ export default function ReviewViewer() {
   };
 
   useEffect(() => { reload(); fetch('/__config').then(r => r.json()).then(c => setToken(c.stopToken ?? '')); }, []);
+  useSSE(() => {}, reload, stopped);
 
   const counts = { all: 0, open: 0, answered: 0, accepted: 0, dismissed: 0 } as Record<ItemState | 'all', number>;
   for (const i of data?.items ?? []) { counts.all++; counts[i.state]++; }

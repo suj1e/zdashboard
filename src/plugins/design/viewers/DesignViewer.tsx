@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff } from 'lucide-react';
+import { useSSE } from '../../../web/hooks/useSSE';
 
 type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'code' | 'font' | 'other';
 type VpMode = 0 | 768 | 375 | 'custom';
@@ -200,6 +201,9 @@ export default function DesignViewer() {
   const [w, setW] = useState(1024);
   const [h, setH] = useState(768);
   const [treeOpen, setTreeOpen] = useState(true);
+  const stopped = useRef(false);
+
+  useSSE(() => {}, () => setRefreshKey(k => k + 1), stopped);
 
   const Viewer = current ? selectViewer(current.type) : null;
   const vpLabel = mode === 0 ? '桌面' : mode === 'custom' ? `${w} × ${h}` : `${mode}px`;

@@ -31,11 +31,12 @@ export function scanAssets(root: string): ScanResult {
   const out: ScanResult = {} as ScanResult;
   const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','code','font','other'];
   for (const k of keys) out[k] = [];
+  const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
   function walk(dir: string, rel: string) {
     let ents: fs.Dirent[];
     try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const ent of ents) {
-      if (ent.name.charAt(0) === '.') continue;
+      if (ent.name.startsWith('.') || SKIP.has(ent.name)) continue;
       const r = rel ? `${rel}/${ent.name}` : ent.name;
       if (ent.isDirectory()) { walk(path.join(dir, ent.name), r); continue; }
       const ext = path.extname(ent.name).toLowerCase();

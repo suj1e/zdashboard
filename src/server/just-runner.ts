@@ -92,7 +92,7 @@ export class JustRunner {
     };
     child.stdout?.on('data', push);
     child.stderr?.on('data', push);
-    child.on('error', (err) => { this.pushLine(`[zview] spawn error: ${err.message}\n`); });
+    child.on('error', (err) => { this.pushLine(`[zdashboard] spawn error: ${err.message}\n`); });
     child.on('exit', (code) => {
       if (this.pending) { this.pushLine(this.pending + '\n'); this.pending = ''; } // flush 末尾无换行的残留
       this.child = null;
