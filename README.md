@@ -17,7 +17,8 @@ zdashboard/                    ← 一个核心包，永远不写业务逻辑
 ├── src/plugins/                ← 内置 plugins（随核心发版）
 │   ├── bugs/
 │   ├── view/
-│   └── review/
+│   ├── review/
+│   └── design/
 └── package.json
 ```
 
@@ -58,6 +59,7 @@ export default {
 npx zdashboard@latest --mode bugs --dir <项目根> --open
 npx zdashboard@latest --mode view --dir <项目根> --open
 npx zdashboard@latest --mode review --dir .zreview --open
+npx zdashboard@latest --mode design --dir <产出根> --open
 
 # 人类直接访问
 npx zdashboard --mode bugs --dir /path/to/project --port 4190
@@ -66,6 +68,6 @@ npx zdashboard --mode bugs --dir /path/to/project --port 4190
 ## 迁移状态
 
 - [x] zview-dashboard → zdashboard（v1.0.0）
-- [ ] zreview-dashboard → zdashboard plugin
-- [ ] zdesign-dashboard → zdashboard plugin
-- [ ] zskills skill SKILL.md 统一调用 zdashboard
+- [x] zreview-dashboard → zdashboard plugin（v1.2.0）
+- [x] zdesign-dashboard → zdashboard plugin（v1.2.0）
+- [x] zskills skill SKILL.md 统一调用 zdashboard
