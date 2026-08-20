@@ -1,0 +1,29 @@
+status: reviewing
+items:
+  - id: r1
+    doc: architecture.md
+    category: 架构
+    severity: high
+    state: open
+    question: 网关鉴权方案是否有降级路径?
+  - id: r2
+    doc: architecture.md
+    category: 架构
+    severity: medium
+    state: answered
+    question: 缓存失效策略是否需要最终一致性保证?
+    answer: 采用 TTL + 主动失效双通道,可接受秒级不一致
+  - id: r3
+    doc: spec.md
+    category: 产品
+    severity: low
+    state: accepted
+    question: 首版是否覆盖移动端?
+    answer: 首版仅桌面端,移动端列入 v2
+  - id: r4
+    doc: design.md
+    category: 技术
+    severity: high
+    state: dismissed
+    question: 是否引入消息队列解耦?
+    answer: 单机部署阶段不引入,MQ 留待扩容时评估

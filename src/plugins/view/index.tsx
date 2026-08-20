@@ -97,7 +97,7 @@ function ViewViewer() {
           <StatCard icon={<BookOpen className="h-5 w-5" />} label="文档" value={stats.docs} />
         </div>
 
-        {readme ? (
+        {readme && (
           <section>
             <h3 className="text-sm font-medium mb-3 text-muted-foreground flex items-center gap-2">
               <BookOpen className="h-3.5 w-3.5" /> README
@@ -106,11 +106,6 @@ function ViewViewer() {
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{readme}</ReactMarkdown>
             </div>
           </section>
-        ) : (
-          <div className="text-center text-muted-foreground py-8">
-            <p className="text-sm">未找到 README.md</p>
-            <p className="text-xs mt-1">使用左侧文件树浏览项目文件</p>
-          </div>
         )}
       </div>
     </div>

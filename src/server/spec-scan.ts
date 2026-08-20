@@ -53,7 +53,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
     const specsDir = path.join(root, 'openspec', 'specs');
     if (fs.existsSync(specsDir)) {
       const specs = walkFiles(specsDir, 'openspec/specs');
-      if (specs.length) tree.push({ name: '能力 Specs', kind: 'dir', children: specs });
+      if (specs.length) tree.push({ name: 'specs', kind: 'dir', children: specs });
     }
   }
   if (hasDocs && fs.existsSync(path.join(root, 'docs'))) {
