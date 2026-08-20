@@ -1,6 +1,6 @@
 {
   "name": "zdashboard",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "ZCode skill dashboard platform — pluggable viewers for zdesign/zview/zreview/zgoal",
   "type": "module",
   "bin": {
