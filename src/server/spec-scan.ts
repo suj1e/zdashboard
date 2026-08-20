@@ -49,7 +49,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
       archived.sort((a, b) => b.name.localeCompare(a.name)); // 日期前缀倒序
     }
     if (active.length) tree.push({ name: `进行中 (${active.length})`, kind: 'dir', children: active });
-    if (archived.length) tree.push({ name: `归档 (${archived.length})`, kind: 'dir', defaultCollapsed: true, children: archived });
+    if (archived.length) tree.push({ name: 'archive', kind: 'dir', defaultCollapsed: true, children: archived });
     const specsDir = path.join(root, 'openspec', 'specs');
     if (fs.existsSync(specsDir)) {
       const specs = walkFiles(specsDir, 'openspec/specs');
