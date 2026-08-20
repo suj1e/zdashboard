@@ -121,7 +121,6 @@ export function createServer(opts: ServerOptions) {
         res.end(JSON.stringify(scanApplyChanges(ROOT)));
       },
       '/__apply/change': async (req, res) => {
-        if (req.headers['x-stop-token'] !== STOP_TOKEN) { res.writeHead(403); res.end('forbidden'); return; }
         (async () => {
           try {
             const url = new URL(req.url || '', 'http://x');

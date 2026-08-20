@@ -107,7 +107,6 @@ export function ApplyViewer() {
     setSelectedName(name);
     fetch(`/__apply/change?name=${encodeURIComponent(name)}`, {
       cache: 'no-store',
-      headers: { 'x-stop-token': 'skip' },
     })
       .then((r) => r.json())
       .then(setSelected)
