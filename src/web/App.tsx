@@ -19,6 +19,7 @@ async function loadPlugin(mode: string): Promise<DashboardPlugin | null> {
       case 'bugs':   return (await import('../plugins/bugs/index')).default ?? null;
       case 'review': return (await import('../plugins/review/index')).default ?? null;
       case 'design': return (await import('../plugins/design/index')).default ?? null;
+      case 'apply':  return (await import('../plugins/apply/index')).default ?? null;
       default:       return null;
     }
   } catch (e) {
@@ -49,7 +50,7 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const modes = ['view', 'bugs', 'review', 'design'];
+      const modes = ['view', 'bugs', 'review', 'design', 'apply'];
       const loaded = await Promise.all(modes.map(loadPlugin));
       if (!cancelled) setPlugins(loaded.filter(Boolean) as DashboardPlugin[]);
     })();
