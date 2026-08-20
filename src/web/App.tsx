@@ -5,6 +5,7 @@ import { FileTree } from './components/FileTree';
 import { LogViewer } from './components/LogViewer';
 import { MdViewer } from './viewers/MdViewer';
 import { ImageViewer } from './viewers/ImageViewer';
+import { CodeViewer } from './viewers/CodeViewer';
 import { UnsupportedViewer } from './viewers/UnsupportedViewer';
 import { showError } from './components/Toast';
 import type { DashboardPlugin } from '@/server/plugins';
@@ -33,6 +34,7 @@ function viewerFor(path: string) {
   const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
   if (ext === '.md' || ext === '.markdown') return MdViewer;
   if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;
+  if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
   return UnsupportedViewer;
 }
 
