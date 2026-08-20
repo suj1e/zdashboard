@@ -20,7 +20,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch (e) { console.error('[zdashboard] clipboard copy failed:', e); }
   };
   return (
     <div className="not-prose relative my-4 group">

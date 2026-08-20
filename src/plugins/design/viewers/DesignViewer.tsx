@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
 import { MdViewer } from '../../../web/viewers/MdViewer';

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, X, Send } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
 import ReactMarkdown from 'react-markdown';
@@ -59,7 +59,8 @@ function CodeBlock({ children }: { children?: React.ReactNode }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const text = ref.current?.innerText ?? '';
-    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
+    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+    catch (e) { console.error('[zdashboard] clipboard copy failed:', e); }
   };
   return (
     <div className="not-prose relative my-4 group">

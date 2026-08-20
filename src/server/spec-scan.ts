@@ -69,7 +69,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
       const ext = path.extname(ent.name).toLowerCase();
       if (ent.isFile() && (ext === '.md' || ext === '.markdown')) etc.push({ name: ent.name, kind: 'file', path: ent.name });
     }
-  } catch {}
+  } catch (e) { console.error('[zdashboard] scan root etc failed:', e); }
   etc.sort((a, b) => a.name.localeCompare(b.name));
   if (etc.length) tree.push({ name: `其他 (${etc.length})`, kind: 'dir', children: etc });
   return tree;

@@ -153,7 +153,7 @@ export function createServer(opts: ServerOptions) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end('{"ok":true}');
         runner.stop();
-        setTimeout(() => { try { server.close(); } catch {} process.exit(0); }, 50);
+        setTimeout(() => { try { server.close(); } catch (e) { console.error('[zdashboard] server close failed:', e); } process.exit(0); }, 50);
       } else { res.writeHead(403); res.end('forbidden'); }
       return;
     }
@@ -189,7 +189,7 @@ export function createServer(opts: ServerOptions) {
         if (req.headers['x-stop-token'] !== STOP_TOKEN) { res.writeHead(403); res.end('forbidden'); return; }
         const body = await readBody(req);
         let recipe: string | undefined;
-        try { recipe = JSON.parse(body || '{}').recipe; } catch { /* ignore */ }
+        try { recipe = JSON.parse(body || '{}').recipe; } catch (e) { console.error('[zdashboard] invalid just action body:', e); }
         const act = justAction[1];
         if (act === 'start' || act === 'restart') {
           const target = recipe ?? runner.info().recipe;

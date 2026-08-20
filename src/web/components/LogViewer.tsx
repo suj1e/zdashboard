@@ -59,7 +59,7 @@ export function LogViewer() {
     fetch(`/__just/${action}`, { method: 'POST', headers: { 'x-stop-token': tokenRef.current }, body })
       .then(r => r.json())
       .then((i: JustInfo) => setInfo(i))
-      .catch(() => {});
+      .catch((e) => console.error('[zdashboard] just action failed:', e));
     if (action !== 'stop') setFollow(true);
   };
 

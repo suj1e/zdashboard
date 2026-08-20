@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, type ComponentType } from 'react';
 import { useSSE } from './hooks/useSSE';
 import { Topbar } from './components/Topbar';
 import { FileTree } from './components/FileTree';
@@ -14,8 +14,13 @@ type Current = CurrentView;
 
 async function loadPlugin(mode: string): Promise<DashboardPlugin | null> {
   try {
-    const mod = await import(`../../plugins/${mode}/index.js`);
-    return mod.default ?? null;
+    switch (mode) {
+      case 'view':   return (await import('../plugins/view/index')).default ?? null;
+      case 'bugs':   return (await import('../plugins/bugs/index')).default ?? null;
+      case 'review': return (await import('../plugins/review/index')).default ?? null;
+      case 'design': return (await import('../plugins/design/index')).default ?? null;
+      default:       return null;
+    }
   } catch (e) {
     console.error(`[zdashboard] failed to load plugin ${mode}:`, e);
     showError(`加载插件 ${mode} 失败`);
@@ -37,7 +42,7 @@ export default function App() {
   const [treeOpen, setTreeOpen] = useState(true);
   const [mode, setMode] = useState<string>('view');
   const [plugins, setPlugins] = useState<DashboardPlugin[]>([]);
-  const [pluginViewer, setPluginViewer] = useState<React.ComponentType | null>(null);
+  const [pluginViewer, setPluginViewer] = useState<ComponentType | null>(null);
   const [pluginLoading, setPluginLoading] = useState(false);
   const status = useSSE(() => {}, () => setRefreshKey(k => k + 1), stopped);
 
