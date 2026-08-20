@@ -70,4 +70,5 @@ npx zdashboard --mode bugs --dir /path/to/project --port 4190
 - [x] zview-dashboard → zdashboard（v1.0.0）
 - [x] zreview-dashboard → zdashboard plugin（v1.2.0）
 - [x] zdesign-dashboard → zdashboard plugin（v1.2.0）
+- [x] zapply execution progress → zdashboard plugin（v1.3.3）
 - [x] zskills skill SKILL.md 统一调用 zdashboard
