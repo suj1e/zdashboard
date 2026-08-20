@@ -47,7 +47,23 @@ export default function App() {
   const [plugins, setPlugins] = useState<DashboardPlugin[]>([]);
   const [pluginViewer, setPluginViewer] = useState<ComponentType | null>(null);
   const [pluginLoading, setPluginLoading] = useState(false);
+  const [startupMode, setStartupMode] = useState<string | null | undefined>(undefined);
   const status = useSSE(() => {}, () => setRefreshKey(k => k + 1), stopped);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/__config', { cache: 'no-store' });
+        const cfg = await r.json();
+        if (!cancelled) setStartupMode(typeof cfg.mode === 'string' ? cfg.mode : null);
+      } catch (e) {
+        console.error('[zdashboard] failed to load config:', e);
+        if (!cancelled) setStartupMode(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +74,16 @@ export default function App() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // 启动模式自动选中(严格隔离:--mode X 启动即进入 X,侧边栏只显示 X)
+  useEffect(() => {
+    if (startupMode === undefined) return;
+    const target = startupMode ? plugins.find(p => p.mode === startupMode) : null;
+    if (target) {
+      setMode(target.mode);
+      setCurrent({ kind: 'plugin', mode: target.mode, label: target.label, icon: target.icon ?? '' });
+    }
+  }, [startupMode, plugins]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +106,7 @@ export default function App() {
 
   const Viewer = current?.kind === 'file' ? viewerFor(current.path) : null;
   const ActivePluginViewer = pluginViewer;
-  const activePlugin = plugins.find(p => p.mode === mode);
+  const visiblePlugins = startupMode === undefined ? plugins : plugins.filter(p => startupMode === null || p.mode === startupMode);
   const barTitle = current?.kind === 'log' ? '服务日志 · just' : current?.kind === 'plugin' ? `${current.icon} ${current.label}` : current?.kind === 'file' ? current.path : '';
   const dotBg = { backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)', backgroundSize: '20px 20px' };
 
@@ -101,6 +127,7 @@ export default function App() {
           onSelectPlugin={onSelectPlugin}
           plugins={plugins}
           activeMode={mode}
+          startupMode={startupMode}
           refreshKey={refreshKey}
         />
         {treeOpen && <div className="absolute inset-0 z-10 bg-black/40 sm:hidden" onClick={() => setTreeOpen(false)} />}
@@ -142,7 +169,7 @@ export default function App() {
                     <div className="text-center">
                       <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
                       <p>从左侧选择模式或文档</p>
-                      <p className="mt-1 text-xs">plugins: {plugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
+                      <p className="mt-1 text-xs">plugins: {visiblePlugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
                     </div>
                   </div>
                 )}
@@ -153,7 +180,7 @@ export default function App() {
               <div className="text-center">
                 <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
                 <p>从左侧选择模式或文档</p>
-                <p className="mt-1 text-xs">plugins: {plugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
+                <p className="mt-1 text-xs">plugins: {visiblePlugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
               </div>
             </div>
           )}

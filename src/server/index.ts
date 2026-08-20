@@ -183,7 +183,7 @@ export function createServer(opts: ServerOptions) {
     }
     if (url === '/__config') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-      return res.end(JSON.stringify({ stopToken: STOP_TOKEN }));
+      return res.end(JSON.stringify({ stopToken: STOP_TOKEN, mode: MODE ?? null }));
     }
     if (url === '/__stop' && req.method === 'POST') {
       if (req.headers['x-stop-token'] === STOP_TOKEN) {
