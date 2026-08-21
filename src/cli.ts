@@ -5,14 +5,15 @@ import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
 import { Context, Service } from 'cordis';
 import { ServerService } from './core/server.js';
-import { apply as reloadApply } from './core/reload.js';
+import { ReloadService } from './core/reload.js';
 import { apply as treeApply } from './core/tree.js';
-import { apply as dashboardApply } from './core/manifest.js';
+import { DashboardService } from './core/manifest.js';
 import { apply as justApply } from './plugins/just/index.js';
 import { apply as bugsApply } from './plugins/bugs/index.js';
 import { apply as reviewApply } from './plugins/review/index.js';
 import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
+import { apply as viewApply } from './plugins/view/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -91,9 +92,9 @@ async function main() {
 
   // core services
   ctx.plugin(ServerService, { root, appDir, port: args.port, open: args.open, detect: det, page: args.page });
-  ctx.plugin(reloadApply, { root });
+  ctx.plugin(ReloadService, { root });
   ctx.plugin(treeApply, { root });
-  ctx.plugin(dashboardApply);
+  ctx.plugin(DashboardService);
 
   // built-in plugins
   const plugins = [
@@ -102,6 +103,7 @@ async function main() {
     { name: 'review', apply: reviewApply },
     { name: 'apply', apply: applyApply },
     { name: 'design', apply: designApply },
+    { name: 'view', apply: viewApply },
   ];
   for (const p of plugins) {
     try {

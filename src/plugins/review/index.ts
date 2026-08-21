@@ -3,15 +3,17 @@ import http from 'node:http';
 import { ReviewStore, type ItemState, type ReviewStatus } from '../../server/review-store.js';
 
 export const apply = {
-  inject: ['server'] as const,
+  inject: ['server', 'dashboard', 'reload'] as const,
   apply(ctx: Context, config: { root: string }) {
     const root = config.root;
 
     ctx.inject(['server'], () => {
       if (!ctx.server?.route) return;
 
+      ctx.dashboard.register({ mode: 'review', label: '文档评审', icon: '✅', description: 'review.yaml 逐项对齐' });
+
       const reviewStore = new ReviewStore(root, () => {
-        if (ctx.server?.broadcast) ctx.server.broadcast('files');
+        ctx.reload.broadcast('files');
       });
 
       ctx.server.route('/__review', async (_req, res) => {

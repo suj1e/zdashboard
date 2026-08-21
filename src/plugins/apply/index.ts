@@ -2,12 +2,14 @@ import type { Context } from 'cordis';
 import { scanApplyChanges, readApplyChange } from './scan.js';
 
 export const apply = {
-  inject: ['server'] as const,
+  inject: ['server', 'dashboard'] as const,
   apply(ctx: Context, config: { root: string }) {
     const root = config.root;
 
     ctx.inject(['server'], () => {
       if (!ctx.server?.route) return;
+
+      ctx.dashboard.register({ mode: 'apply', label: '执行进度', icon: '⚙️', description: 'OpenSpec change 任务进度' });
 
       ctx.server.route('/__apply', async (_req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });

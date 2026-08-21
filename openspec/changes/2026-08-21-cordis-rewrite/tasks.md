@@ -29,5 +29,5 @@
 
 - [x] 4.1 `src/cli.ts` 重写：parse args（--dir/--port/--open/--page/--plugins）→ detect → new Context() → 挂 core + 六插件 → 外部插件（tsx 加载 index.{ts,js,mjs}，失败不崩溃）→ banner。删除旧 `src/server/index.ts`、`src/server/plugins.ts`
 - [x] 4.2 构建：package.json version 2.0.0、cordis 锁 `4.0.0-rc.8` 无前缀、dependencies 加 tsx；vite proxy 补 `/__design` `/__plugins`；`pnpm build` 全绿
-- [ ] 4.3 验证：vitest 全绿；冒烟（/__config /__plugins /__files /__apply /__design/assets；SSE /__reload 变更广播；POST /__stop 清理退出）；浏览器过首页→切换→#design 直达→文件预览
-- [ ] 4.4 README 更新：新架构图、新 CLI 用法（--page 替代 --mode 的迁移说明）、插件契约（web.tsx + apply(ctx)）
+- [x] 4.3 验证：vitest 全绿；冒烟（/__config /__plugins /__files /__apply /__design/assets；SSE /__reload 变更广播；POST /__stop 清理退出）；浏览器过首页→切换→#design 直达→文件预览
+- [x] 4.4 README 更新：新架构图、新 CLI 用法（--page 迁移说明）、插件契约（web.tsx + apply(ctx)）

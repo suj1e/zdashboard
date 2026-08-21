@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Topbar } from './components/Topbar';
 import { IconRail } from './layout/IconRail';
 import { StatusBar } from './layout/StatusBar';
 import { HomeGrid } from './home/HomeGrid';
 import { usePlugins, type WebPlugin } from './lib/plugins';
 import { useSSE } from './hooks/useSSE';
-import type { ConnStatus } from './hooks/useSSE';
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 
@@ -14,12 +13,11 @@ export default function App() {
   const [mode, setMode] = useState<string | null>(null);
   const [projectPath, setProjectPath] = useState('');
   const stoppedRef = useRef(false);
-  const [status, setStatus] = useState<ConnStatus>('connecting');
   const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false });
 
-  useSSE(
-    () => {}, // reload: no-op at app level
-    () => {}, // files: no-op at app level
+  const status = useSSE(
+    () => { window.location.reload(); },
+    () => {},
     stoppedRef
   );
 
@@ -84,10 +82,14 @@ export default function App() {
         <IconRail active={mode} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
         <section className="flex-1 min-h-0 flex flex-col">
           {mode && ActiveWorkspace ? (
-            <ActiveWorkspace />
+            <Suspense fallback={
+              <div className="flex-1 grid place-items-center text-muted-foreground text-xs">加载工作区…</div>
+            }>
+              <ActiveWorkspace />
+            </Suspense>
           ) : (
             <div className="flex-1 min-h-0 overflow-auto p-6">
-              <HomeGrid plugins={plugins} detect={{ hasOpenspec: true, hasDocs: true, hasJust: false, hasBugs: false }} onSelect={handleSelect} />
+              <HomeGrid plugins={plugins} detect={detect} onSelect={handleSelect} />
             </div>
           )}
         </section>

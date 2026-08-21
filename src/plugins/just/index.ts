@@ -3,7 +3,7 @@ import http from 'node:http';
 import { JustRunner } from '../../server/just-runner.js';
 
 export const apply = {
-  inject: ['server'] as const,
+  inject: ['server', 'dashboard'] as const,
   apply(ctx: Context, config: { root: string }) {
     const root = config.root;
 
@@ -65,7 +65,7 @@ export const apply = {
         res.end(JSON.stringify(runner.info()));
       });
 
-      (ctx as any).dashboard?.register({ mode: 'just', label: 'Just Runner', icon: '📜', description: 'Just 任务日志与执行' });
+      ctx.dashboard.register({ mode: 'just', label: 'Just Runner', icon: '📜', description: 'Just 任务日志与执行' });
     });
   },
 };
