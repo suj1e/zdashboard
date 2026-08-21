@@ -1,6 +1,4 @@
 import React from 'react';
-
-import React from 'react';
 import { ExternalWorkspace } from '../components/ExternalWorkspace';
 import { PlaceholderWorkspace } from '../components/PlaceholderWorkspace';
 

@@ -100,7 +100,7 @@ my-skill/
 ```ts
 import type { Context } from 'cordis';
 
-export const apply = {
+export default {
   inject: ['server', 'dashboard'] as const,
   apply(ctx: Context, config: { root: string }) {
     const server = (ctx as any).server;
@@ -123,6 +123,8 @@ export const apply = {
   },
 };
 ```
+
+> 外部插件必须 `export default`（cordis `ctx.plugin()` 只接受函数或带 `apply` 的 default 对象）。
 
 **web/ 约定**
 
@@ -159,7 +161,7 @@ dashboard.register({
 allow-scripts allow-same-origin allow-forms allow-popups
 ```
 
-保留同源能力（可访问 dashboard 的 `/__*` API），同时禁止弹出窗口等潜在风险行为。
+保留同源能力（可访问 dashboard 的 `/__*` API）；允许表单与弹窗（viewer 内 `window.open` 外链场景）。
 
 **无 web 目录的插件**
 

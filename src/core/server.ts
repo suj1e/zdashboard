@@ -53,7 +53,7 @@ const MIME: Record<string, string> = {
 
 const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('reload',function(){location.reload();});es.onerror=function(){es.close();};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
 
-const PREFIX_STATIC_PREFIX = '/__plugin/';
+export const PLUGIN_STATIC_PREFIX = '/__plugin/';
 
 export class ServerService extends Service {
   stopToken: string;

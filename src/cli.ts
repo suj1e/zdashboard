@@ -4,7 +4,7 @@ import { access, readdir } from 'node:fs/promises';
 import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
 import { Context, Service } from 'cordis';
-import { ServerService } from './core/server.js';
+import { ServerService, PLUGIN_STATIC_PREFIX } from './core/server.js';
 import { ReloadService } from './core/reload.js';
 import { apply as treeApply } from './core/tree.js';
 import { DashboardService } from './core/manifest.js';
@@ -81,8 +81,8 @@ async function loadExternal(ctx: Context, dir: string, root: string) {
                 const patch: Record<string, unknown> = { external: true };
                 const webDir = path.join(dir, ent.name, 'web');
                 if (await pathExists(path.join(webDir, 'index.html'))) {
-                  ctx.server.static(`/__plugin/${ent.name}/`, webDir);
-                  if (!m.viewerUrl) patch.viewerUrl = `/__plugin/${ent.name}/`;
+                  ctx.server.static(`${PLUGIN_STATIC_PREFIX}${ent.name}/`, webDir);
+                  if (!m.viewerUrl) patch.viewerUrl = `${PLUGIN_STATIC_PREFIX}${ent.name}/`;
                 }
                 ctx.dashboard.register({ ...m, ...patch });
               }
