@@ -3,7 +3,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import typography from '@tailwindcss/typography';
 
 export default {
-  content: ['./index.html', './src/web/**/*.{ts,tsx}'],
+  content: ['./index.html', './src/web/**/*.{ts,tsx}', './src/plugins/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
