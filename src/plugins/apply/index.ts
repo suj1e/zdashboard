@@ -1,13 +1,29 @@
-import type { DashboardPlugin } from '../../server/plugins.js';
+import type { Context } from 'cordis';
+import { scanApplyChanges, readApplyChange } from './scan.js';
 
-const plugin: DashboardPlugin = {
-  mode: 'apply',
-  label: '执行进度',
-  icon: '⚙️',
-  viewer: async () => {
-    const mod = await import('./Viewer.js');
-    return { default: mod.default };
-  },
-};
+export function apply(ctx: Context) {
+  const root = (ctx as any).root as string;
 
-export default plugin;
+  ctx.server.route('/__apply', async (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+    res.end(JSON.stringify(scanApplyChanges(root)));
+  });
+
+  ctx.server.route('/__apply/change', async (req, res) => {
+    const url = new URL(req.url || '', 'http://x');
+    const name = url.searchParams.get('name');
+    if (!name) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'missing name' }));
+      return;
+    }
+    try {
+      const data = readApplyChange(root, name);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify(data));
+    } catch (e) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'unknown error' }));
+    }
+  });
+}

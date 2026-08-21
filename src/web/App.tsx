@@ -1,54 +1,17 @@
-import { useRef, useState, useEffect, useCallback, type ComponentType } from 'react';
-import { useSSE } from './hooks/useSSE';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Topbar } from './components/Topbar';
-import { FileTree } from './components/FileTree';
-import { LogViewer } from './components/LogViewer';
-import { MdViewer } from './viewers/MdViewer';
-import { ImageViewer } from './viewers/ImageViewer';
-import { CodeViewer } from './viewers/CodeViewer';
-import { UnsupportedViewer } from './viewers/UnsupportedViewer';
-import { showError } from './components/Toast';
-import type { DashboardPlugin } from '@/server/plugins';
-import type { CurrentView } from './lib/types';
-
-type Current = CurrentView;
-
-async function loadPlugin(mode: string): Promise<DashboardPlugin | null> {
-  try {
-    switch (mode) {
-      case 'view':   return (await import('../plugins/view/index')).default ?? null;
-      case 'bugs':   return (await import('../plugins/bugs/index')).default ?? null;
-      case 'review': return (await import('../plugins/review/index')).default ?? null;
-      case 'design': return (await import('../plugins/design/index')).default ?? null;
-      case 'apply':  return (await import('../plugins/apply/index')).default ?? null;
-      default:       return null;
-    }
-  } catch (e) {
-    console.error(`[zdashboard] failed to load plugin ${mode}:`, e);
-    showError(`加载插件 ${mode} 失败`);
-    return null;
-  }
-}
-
-function viewerFor(path: string) {
-  const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
-  if (ext === '.md' || ext === '.markdown') return MdViewer;
-  if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;
-  if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
-  return UnsupportedViewer;
-}
+import { IconRail } from './layout/IconRail';
+import { StatusBar } from './layout/StatusBar';
+import { HomeGrid } from './home/HomeGrid';
+import { usePlugins, type WebPlugin } from './lib/plugins';
+import type { ConnStatus } from './hooks/useSSE';
 
 export default function App() {
-  const stopped = useRef(false);
-  const [current, setCurrent] = useState<Current>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [treeOpen, setTreeOpen] = useState(true);
-  const [mode, setMode] = useState<string>('view');
-  const [plugins, setPlugins] = useState<DashboardPlugin[]>([]);
-  const [pluginViewer, setPluginViewer] = useState<ComponentType | null>(null);
-  const [pluginLoading, setPluginLoading] = useState(false);
-  const [startupMode, setStartupMode] = useState<string | null | undefined>(undefined);
-  const status = useSSE(() => {}, () => setRefreshKey(k => k + 1), stopped);
+  const plugins = usePlugins();
+  const [mode, setMode] = useState<string | null>(null);
+  const [projectPath, setProjectPath] = useState('');
+  const stoppedRef = useRef(false);
+  const [status, setStatus] = useState<ConnStatus>('connecting');
 
   useEffect(() => {
     let cancelled = false;
@@ -56,136 +19,66 @@ export default function App() {
       try {
         const r = await fetch('/__config', { cache: 'no-store' });
         const cfg = await r.json();
-        if (!cancelled) setStartupMode(typeof cfg.mode === 'string' ? cfg.mode : null);
-      } catch (e) {
-        console.error('[zdashboard] failed to load config:', e);
-        if (!cancelled) setStartupMode(null);
+        if (cancelled) return;
+        setProjectPath(cfg.root ?? '');
+      } catch {
+        // ignore
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
+  // SSE status for Topbar (hook via custom event from useSSE in StatusBar)
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const modes = ['view', 'bugs', 'review', 'design', 'apply'];
-      const loaded = await Promise.all(modes.map(loadPlugin));
-      if (!cancelled) setPlugins(loaded.filter(Boolean) as DashboardPlugin[]);
-    })();
-    return () => { cancelled = true; };
+    const onStatus = (e: Event) => {
+      const detail = (e as CustomEvent<{ status: ConnStatus }>).detail;
+      if (detail?.status) setStatus(detail.status);
+    };
+    window.addEventListener('zdashboard-sse-status', onStatus as EventListener);
+    return () => window.removeEventListener('zdashboard-sse-status', onStatus as EventListener);
   }, []);
 
-  // 启动模式自动选中(严格隔离:--mode X 启动即进入 X,侧边栏只显示 X)
-  useEffect(() => {
-    if (startupMode === undefined) return;
-    const target = startupMode ? plugins.find(p => p.mode === startupMode) : null;
-    if (target) {
-      setMode(target.mode);
-      setCurrent({ kind: 'plugin', mode: target.mode, label: target.label, icon: target.icon ?? '' });
-    }
-  }, [startupMode, plugins]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setPluginLoading(true);
-      try {
-        const plugin = await loadPlugin(mode);
-        if (!cancelled && plugin?.viewer) {
-          const { default: Viewer } = await plugin.viewer();
-          setPluginViewer(() => Viewer);
-        } else {
-          setPluginViewer(null);
-        }
-      } finally {
-        if (!cancelled) setPluginLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [mode]);
-
-  const Viewer = current?.kind === 'file' ? viewerFor(current.path) : null;
-  const ActivePluginViewer = pluginViewer;
-  const visiblePlugins = startupMode === undefined ? plugins : plugins.filter(p => startupMode === null || p.mode === startupMode);
-  const barTitle = current?.kind === 'log' ? '服务日志 · just' : current?.kind === 'plugin' ? `${current.icon} ${current.label}` : current?.kind === 'file' ? current.path : '';
-  const dotBg = { backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)', backgroundSize: '20px 20px' };
-
-  const onSelectPlugin = useCallback((m: string, label: string, icon: string) => {
+  const handleSelect = useCallback((m: string | null) => {
     setMode(m);
-    setCurrent({ kind: 'plugin', mode: m, label, icon });
+    if (m === null) {
+      window.location.hash = '';
+    } else {
+      window.location.hash = m;
+    }
   }, []);
+
+  useEffect(() => {
+    const onHash = () => {
+      const h = window.location.hash.slice(1);
+      if (!h || h === 'home') {
+        setMode(null);
+      } else if (plugins.some((p) => p.mode === h)) {
+        setMode(h);
+      }
+    };
+    onHash();
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [plugins]);
+
+  const ActiveWorkspace = mode ? plugins.find((p) => p.mode === mode)?.Workspace : null;
 
   return (
     <div className="flex h-screen flex-col">
-      <Topbar status={status} stoppedRef={stopped} treeOpen={treeOpen} onTreeToggle={() => setTreeOpen(o => !o)} />
-      <main className="flex-1 min-h-0 flex relative">
-        <FileTree
-          open={treeOpen}
-          currentPath={current?.kind === 'file' ? current.path : null}
-          onSelectFile={path => setCurrent({ kind: 'file', path })}
-          onSelectLog={() => setCurrent({ kind: 'log' })}
-          onSelectPlugin={onSelectPlugin}
-          plugins={plugins}
-          activeMode={mode}
-          startupMode={startupMode}
-          refreshKey={refreshKey}
-        />
-        {treeOpen && <div className="absolute inset-0 z-10 bg-black/40" onClick={() => setTreeOpen(false)} />}
+      <Topbar status={status} stoppedRef={stoppedRef} />
+      <div className="flex-1 min-h-0 flex">
+        <IconRail active={mode} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
         <section className="flex-1 min-h-0 flex flex-col">
-          {current ? (
-            <>
-              <div className="h-[38px] flex-none flex items-center justify-between px-3.5 border-b bg-background text-xs">
-                <span className="font-mono truncate">{barTitle}</span>
-                <span className="text-muted-foreground ml-3 flex-none">
-                  {current.kind === 'log' ? '日志' : current.kind === 'plugin' ? current.label : '文档'}
-                </span>
-              </div>
-              <div className="flex-1 min-h-0 overflow-auto p-6 relative" style={dotBg}>
-                {current.kind === 'log' ? (
-                  <div className="h-full"><LogViewer /></div>
-                ) : current.kind === 'plugin' && pluginLoading ? (
-                  <div className="flex-1 grid place-items-center text-muted-foreground">
-                    <div className="text-center">
-                      <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold animate-pulse">z</div>
-                      <p>加载 {current.label} 中…</p>
-                    </div>
-                  </div>
-                ) : current.kind === 'plugin' && ActivePluginViewer ? (
-                  <div className="h-full"><ActivePluginViewer /></div>
-                ) : current.kind === 'plugin' ? (
-                  <div className="flex-1 grid place-items-center text-muted-foreground">
-                    <div className="text-center">
-                      <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
-                      <p>{current.icon} {current.label} · 暂无可视化</p>
-                      <p className="mt-1 text-xs">该模式当前没有图形界面，请使用 API 或切换到其他模式</p>
-                    </div>
-                  </div>
-                ) : current.kind === 'file' && Viewer ? (
-                  <div className="mx-auto max-w-5xl h-full bg-background border rounded-lg shadow-sm overflow-auto">
-                    <Viewer path={current.path} />
-                  </div>
-                ) : (
-                  <div className="flex-1 grid place-items-center text-muted-foreground">
-                    <div className="text-center">
-                      <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
-                      <p>从左侧选择模式或文档</p>
-                      <p className="mt-1 text-xs">plugins: {visiblePlugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
+          {mode && ActiveWorkspace ? (
+            <ActiveWorkspace />
           ) : (
-            <div className="flex-1 grid place-items-center text-muted-foreground">
-              <div className="text-center">
-                <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
-                <p>从左侧选择模式或文档</p>
-                <p className="mt-1 text-xs">plugins: {visiblePlugins.map(p => `${p.icon}${p.label}`).join(' ') || 'loading...'}</p>
-              </div>
+            <div className="flex-1 min-h-0 overflow-auto p-6">
+              <HomeGrid plugins={plugins} detect={{ hasOpenspec: true, hasDocs: true, hasJust: false, hasBugs: false }} onSelect={handleSelect} />
             </div>
           )}
         </section>
-      </main>
+      </div>
+      <StatusBar projectPath={projectPath} stoppedRef={stoppedRef} />
     </div>
   );
 }

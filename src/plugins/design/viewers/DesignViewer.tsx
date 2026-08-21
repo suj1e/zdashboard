@@ -173,7 +173,7 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
 
 function FileTree({ open, current, onSelect, refreshKey }: { open: boolean; current: string | null; onSelect: (path: string, type: AssetType) => void; refreshKey: number }) {
   const [data, setData] = useState<ScanResult | null>(null);
-  useEffect(() => { fetch('/__files', { cache: 'no-store' }).then(r => r.json()).then(setData); }, [refreshKey]);
+  useEffect(() => { fetch('/__design/assets', { cache: 'no-store' }).then(r => r.json()).then(setData); }, [refreshKey]);
   if (!data) return open ? <p className="p-3 text-xs text-muted-foreground">加载中…</p> : null;
   let total = 0; for (const k in data) total += data[k as AssetType].length;
   return (

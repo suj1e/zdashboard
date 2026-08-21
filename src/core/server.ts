@@ -1,0 +1,187 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { exec } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import pkg from '../../package.json' with { type: 'json' };
+import { detect } from '../server/detect.js';
+import type { DetectResult } from '../server/detect.js';
+import { scanTree } from '../server/spec-scan.js';
+import { JustRunner } from '../server/just-runner.js';
+import { fetchBugs } from '../server/bugs.js';
+import { ReviewStore, type ItemState, type ReviewStatus } from '../server/review-store.js';
+import { scanAssets } from '../server/design-assets.js';
+import { Service } from 'cordis';
+import type { Context } from 'cordis';
+
+const VERSION = pkg.version;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export interface ServerOptions {
+  root: string;
+  appDir: string;
+  port: number;
+  open: boolean;
+  detect: DetectResult;
+}
+
+declare module 'cordis' {
+  interface Context {
+    server: ServerService;
+  }
+}
+
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp',
+  '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
+  '.sql': 'text/plain; charset=utf-8', '.csv': 'text/plain; charset=utf-8',
+  '.tsv': 'text/plain; charset=utf-8', '.yaml': 'text/yaml; charset=utf-8',
+  '.yml': 'text/yaml; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
+  '.py': 'text/plain; charset=utf-8', '.ts': 'text/plain; charset=utf-8',
+  '.java': 'text/plain; charset=utf-8', '.go': 'text/plain; charset=utf-8',
+  '.rs': 'text/plain; charset=utf-8', '.rb': 'text/plain; charset=utf-8',
+  '.php': 'text/plain; charset=utf-8', '.c': 'text/plain; charset=utf-8',
+  '.cpp': 'text/plain; charset=utf-8', '.h': 'text/plain; charset=utf-8',
+  '.cs': 'text/plain; charset=utf-8', '.swift': 'text/plain; charset=utf-8',
+  '.kt': 'text/plain; charset=utf-8', '.scala': 'text/plain; charset=utf-8',
+  '.sh': 'text/plain; charset=utf-8', '.bash': 'text/plain; charset=utf-8',
+  '.zsh': 'text/plain; charset=utf-8', '.fish': 'text/plain; charset=utf-8',
+  '.env': 'text/plain; charset=utf-8', '.gitignore': 'text/plain; charset=utf-8',
+  '.dockerfile': 'text/plain; charset=utf-8',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/woff',
+  '.map': 'application/json; charset=utf-8',
+};
+
+const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('reload',function(){location.reload();});es.onerror=function(){es.close();};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
+
+export class ServerService extends Service {
+  stopToken: string;
+  private root: string;
+  private appDir: string;
+  private open: boolean;
+  private det: DetectResult;
+  private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
+  private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
+  private server?: http.Server;
+  private justRunner?: JustRunner;
+  private reviewStore?: ReviewStore;
+
+  constructor(ctx: Context, config: ServerOptions) {
+    super(ctx, 'server');
+    this.stopToken = crypto.randomBytes(12).toString('hex');
+    this.root = config.root;
+    this.appDir = config.appDir;
+    this.open = config.open;
+    this.det = config.detect;
+    this.ctx.effect(() => this.dispose());
+
+    this.ctx.server.route('/__config', (_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION }));
+    });
+
+    this.ctx.server.route('/__stop', async (req, res) => {
+      if (req.headers['x-stop-token'] !== this.stopToken) {
+        res.writeHead(403);
+        res.end('forbidden');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end('{"ok":true}');
+      this.stop();
+    });
+
+    this.start(config.port);
+  }
+
+  route(path: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void) {
+    this.routes.set(path, handler);
+    this.ctx.effect(() => () => this.routes.delete(path));
+  }
+
+  sse(path: string, onConnect: (res: http.ServerResponse) => (() => void) | void) {
+    this.sses.set(path, onConnect);
+    this.ctx.effect(() => () => this.sses.delete(path));
+  }
+
+  private serveFile(filePath: string, res: http.ServerResponse, injectHtml: boolean) {
+    fs.readFile(filePath, (err, data) => {
+      if (err) { res.writeHead(404); return res.end('Not found'); }
+      const ext = path.extname(filePath).toLowerCase();
+      const ct = MIME[ext] ?? 'application/octet-stream';
+      let body = data;
+      if (injectHtml && ext === '.html') {
+        const s = data.toString('utf8');
+        body = Buffer.from(s.indexOf('</body>') >= 0 ? s.replace('</body>', INJECT + '</body>') : s + INJECT);
+      }
+      res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
+      res.end(body);
+    });
+  }
+
+  private handler = (req: http.IncomingMessage, res: http.ServerResponse) => {
+    const url = req.url!.split('?')[0];
+
+    const rh = this.routes.get(url);
+    if (rh) { rh(req, res); return; }
+    const sh = this.sses.get(url);
+    if (sh) {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+      res.write(': connected\n\n');
+      const cleanup = sh(res);
+      req.on('close', () => { cleanup?.(); });
+      return;
+    }
+
+    if (url === '/' || url.indexOf('/__app/') === 0 || url.indexOf('/assets/') === 0) {
+      let fp = this.appDir;
+      if (url !== '/') fp = path.join(this.appDir, decodeURIComponent(url));
+      if (url.indexOf('/__app/') === 0) fp = path.join(this.appDir, url.slice(7));
+      if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+      return this.serveFile(fp, res, false);
+    }
+
+    const fp = path.join(this.root, decodeURIComponent(url));
+    if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+    return this.serveFile(fp, res, true);
+  };
+
+  start(port: number) {
+    this.server = http.createServer(this.handler);
+    this.server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`[zdashboard] port ${port} busy, trying ${port + 1}`);
+        this.start(port + 1);
+      } else throw err;
+    });
+    this.server.listen(port, () => {
+      const u = `http://localhost:${port}`;
+      console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
+      console.log(`[zdashboard] project   -> ${this.root}`);
+      console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
+      if (this.open) exec(process.platform === 'darwin' ? `open ${u}` : `start ${u}`);
+    });
+  }
+
+  stop() {
+    if (this.server) { try { this.server.close(); } catch {} }
+    if (this.justRunner) { try { this.justRunner.stop(); } catch {} }
+    setTimeout(() => {
+      try { this.ctx.root.fiber.dispose(); } catch {}
+      process.exit(0);
+    }, 50);
+  }
+
+  dispose() {
+    if (this.server) { try { this.server.close(); } catch {} }
+    if (this.justRunner) { try { this.justRunner.stop(); } catch {} }
+  }
+
+  setRunner(runner: JustRunner) { this.justRunner = runner; }
+  setReviewStore(store: ReviewStore) { this.reviewStore = store; }
+}

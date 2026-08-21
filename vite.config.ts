@@ -18,6 +18,8 @@ export default defineConfig({
       '/__bugs': 'http://localhost:4191',
       '/__review': 'http://localhost:4191',
       '/__docs': 'http://localhost:4191',
+      '/__design': 'http://localhost:4191',
+      '/__plugins': 'http://localhost:4191',
     },
   },
   build: { outDir: 'dist/web' },
