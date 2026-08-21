@@ -25,6 +25,7 @@ export function HomeGrid({ plugins, detect, onSelect }: {
                 <div className="flex items-center gap-2">
                   <span className="text-lg leading-none">{p.icon}</span>
                   <CardTitle className="text-sm">{p.label}</CardTitle>
+                  {p.external && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">外部</span>}
                 </div>
                 {p.description && <CardDescription>{p.description}</CardDescription>}
               </CardHeader>

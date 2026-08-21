@@ -12,6 +12,7 @@ export interface PluginManifest {
   label: string;
   icon: string;
   description?: string;
+  viewerUrl?: string;      // 同源 URL，前端 iframe 渲染
   external?: boolean;
 }
 
@@ -36,5 +37,9 @@ export class DashboardService extends Service {
 
   list() {
     return Array.from(this.plugins.values());
+  }
+
+  get(mode: string): PluginManifest | undefined {
+    return this.plugins.get(mode);
   }
 }

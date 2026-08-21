@@ -30,6 +30,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cordis": "4.0.0-rc.8",
+    "cosmokit": "^1.8.1",
     "date-fns": "^3.6.0",
     "filesize": "^11.0.0",
     "highlight.js": "^11.11.1",

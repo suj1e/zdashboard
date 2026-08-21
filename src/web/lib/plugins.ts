@@ -1,11 +1,16 @@
 import React from 'react';
 
+import React from 'react';
+import { ExternalWorkspace } from '../components/ExternalWorkspace';
+import { PlaceholderWorkspace } from '../components/PlaceholderWorkspace';
+
 export interface WebPlugin {
   mode: string;
   label: string;
   icon: string;
   description?: string;
-  Workspace: React.LazyExoticComponent<React.ComponentType<unknown>>;
+  external?: boolean;
+  Workspace: React.ComponentType<unknown> | React.LazyExoticComponent<React.ComponentType<unknown>>;
 }
 
 const ORDER = ['view', 'bugs', 'review', 'design', 'apply', 'just'];
@@ -47,7 +52,17 @@ export function usePlugins() {
       try {
         const r = await fetch('/__plugins', { cache: 'no-store' });
         const data = await r.json();
-        if (!cancelled) setExternal((data.plugins ?? []).filter((p: WebPlugin) => !plugins.some(b => b.mode === p.mode)));
+        if (!cancelled) {
+          const mapped = (data.plugins ?? []).map((p: any) => {
+            if (p.viewerUrl) {
+              const Wrapper = () => React.createElement(ExternalWorkspace, { viewerUrl: p.viewerUrl, label: p.label });
+              return { ...p, Workspace: Wrapper } as WebPlugin;
+            }
+            const Placeholder = () => React.createElement(PlaceholderWorkspace, { label: p.label });
+            return { ...p, Workspace: Placeholder } as WebPlugin;
+          });
+          setExternal(mapped.filter((p: WebPlugin) => !plugins.some((b) => b.mode === p.mode)));
+        }
       } catch {}
     })();
     return () => { cancelled = true; };

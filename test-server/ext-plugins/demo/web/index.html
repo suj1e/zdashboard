@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>External Demo</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; }
+    .box { padding: 16px; border-radius: 8px; background: #f6f8fa; }
+    code { background: #eaeef2; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>External Demo</h1>
+  <div class="box">
+    <p>调用 <code>/__demo/api</code> 的结果：</p>
+    <pre id="result">加载中...</pre>
+  </div>
+  <script>
+    fetch('/__demo/api')
+      .then((r) => r.json())
+      .then((data) => { document.getElementById('result').textContent = JSON.stringify(data); })
+      .catch((e) => { document.getElementById('result').textContent = '错误: ' + e; });
+  </script>
+</body>
+</html>

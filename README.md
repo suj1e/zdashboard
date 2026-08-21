@@ -65,7 +65,7 @@ export default {
 
 ```ts
 // src/plugins/<mode>/index.ts
-export const apply = {
+export default {
   inject: ['server'] as const,
   apply(ctx: Context, config: { root: string }) {
     const server = (ctx as any).server;
@@ -80,6 +80,90 @@ export const apply = {
 ```
 
 外部 plugin 放在 `--plugins <dir>` 下，结构同上，核心启动时自动扫描 `index.{ts,js,mjs}` 加载。
+
+### 外部插件编写指南
+
+外部插件允许自带静态 viewer 页面，通过 iframe 嵌入 dashboard。
+
+**目录结构**
+
+```
+my-skill/
+├── index.ts          ← 必填：cordis 插件定义
+└── web/              ← 可选：静态 viewer 目录
+    ├── index.html
+    └── assets/...
+```
+
+**index.ts 约定**
+
+```ts
+import type { Context } from 'cordis';
+
+export const apply = {
+  inject: ['server', 'dashboard'] as const,
+  apply(ctx: Context, config: { root: string }) {
+    const server = (ctx as any).server;
+    const dashboard = (ctx as any).dashboard;
+    if (!server?.route || !dashboard?.register) return;
+
+    // 注册后端 API
+    server.route('/__my-api', (req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+
+    // 注册 manifest（mode === 目录名时，若有 web/index.html 会自动填充 viewerUrl）
+    dashboard.register({
+      mode: 'my-skill',   // 必须与目录名一致才能自动填充 viewerUrl
+      label: 'My Skill',
+      icon: '🧩',
+      description: '描述',
+    });
+  },
+};
+```
+
+**web/ 约定**
+
+- `web/index.html` 必须存在才会被自动服务
+- 自动挂载在 `/__plugin/<目录名>/`，例如目录 `my-skill` 对应 `/__plugin/my-skill/`
+- 页面内可通过相对路径引用同目录资源（js/css/图片）
+- 页面内可调用插件注册的 API（如 `/__my-api`），与 dashboard 同源
+
+**viewerUrl 覆盖**
+
+如果需要在 manifest 中显式指定 viewerUrl，可直接写：
+
+```ts
+dashboard.register({
+  mode: 'my-skill',
+  label: 'My Skill',
+  icon: '🧩',
+  description: '描述',
+  viewerUrl: '/custom-path/',
+});
+```
+
+显式声明的 `viewerUrl` 优先于自动填充值。
+
+**热刷新**
+
+外部 viewer 的 HTML 文件会自动注入 reload 脚本（与 dashboard SPA 一致），修改 `web/index.html` 后浏览器会自动刷新。
+
+**沙箱说明**
+
+前端以 iframe 渲染 viewer，sandbox 属性设置为：
+
+```
+allow-scripts allow-same-origin allow-forms allow-popups
+```
+
+保留同源能力（可访问 dashboard 的 `/__*` API），同时禁止弹出窗口等潜在风险行为。
+
+**无 web 目录的插件**
+
+若插件目录没有 `web/index.html`，前端仍会显示插件卡片，但进入时展示占位页（不报错）。
 
 ## CLI 用法
 

@@ -35,6 +35,9 @@ importers:
       cordis:
         specifier: 4.0.0-rc.8
         version: 4.0.0-rc.8
+      cosmokit:
+        specifier: ^1.8.1
+        version: 1.8.1
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0

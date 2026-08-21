@@ -53,6 +53,8 @@ const MIME: Record<string, string> = {
 
 const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('reload',function(){location.reload();});es.onerror=function(){es.close();};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
 
+const PREFIX_STATIC_PREFIX = '/__plugin/';
+
 export class ServerService extends Service {
   stopToken: string;
   private root: string;
@@ -62,6 +64,7 @@ export class ServerService extends Service {
   private det: DetectResult;
   private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
+  private prefixStatic = new Map<string, string>();
   private server?: http.Server;
 
   constructor(ctx: Context, config: ServerOptions) {
@@ -104,6 +107,11 @@ export class ServerService extends Service {
     this.ctx.effect(() => () => this.sses.delete(path));
   }
 
+  static(prefix: string, dir: string) {
+    this.prefixStatic.set(prefix, dir);
+    this.ctx.effect(() => () => this.prefixStatic.delete(prefix));
+  }
+
   private serveFile(filePath: string, res: http.ServerResponse, injectHtml: boolean) {
     fs.readFile(filePath, (err, data) => {
       if (err) { res.writeHead(404); return res.end('Not found'); }
@@ -117,6 +125,20 @@ export class ServerService extends Service {
       res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
       res.end(body);
     });
+  }
+
+  private servePrefix(url: string, res: http.ServerResponse): boolean {
+    for (const [prefix, dir] of this.prefixStatic) {
+      if (url.indexOf(prefix) === 0) {
+        let rel = this.safeDecode(url.slice(prefix.length));
+        if (!rel || rel === '/' || !path.extname(rel)) rel = path.join(rel || '', 'index.html');
+        const fp = path.join(dir, rel);
+        if (fp.indexOf(dir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+        this.serveFile(fp, res, true);
+        return true;
+      }
+    }
+    return false;
   }
 
   private safeDecode(raw: string): string {
@@ -138,6 +160,8 @@ export class ServerService extends Service {
         req.on('close', () => { cleanup?.(); });
         return;
       }
+
+      if (this.servePrefix(url, res)) return;
 
       if (url === '/' || url.indexOf('/__app/') === 0 || url.indexOf('/assets/') === 0) {
         let fp = this.appDir;

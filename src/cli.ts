@@ -46,7 +46,7 @@ async function pathExists(p: string): Promise<boolean> {
   try { await access(p); return true; } catch { return false; }
 }
 
-async function loadExternal(ctx: Context, dir: string) {
+async function loadExternal(ctx: Context, dir: string, root: string) {
   if (!dir) return;
   let tsxLoaded = false;
   try {
@@ -67,8 +67,26 @@ async function loadExternal(ctx: Context, dir: string) {
         if (await pathExists(p)) {
           try {
             const mod = await import(p);
-            const plugin = mod.default;
-            if (plugin?.apply) ctx.plugin(plugin, { root });
+            const plugin = mod.default ?? mod;
+            if (plugin?.apply) {
+              try {
+                await ctx.plugin(plugin, { root });
+              } catch (e) {
+                console.error(`[zdashboard] failed to apply plugin ${ent.name}:`, e);
+                break;
+              }
+              // 自动接线约定：mode === 目录名时补 external 标记与 viewerUrl
+              const m = ctx.dashboard.get(ent.name);
+              if (m && m.mode === ent.name) {
+                const patch: Record<string, unknown> = { external: true };
+                const webDir = path.join(dir, ent.name, 'web');
+                if (await pathExists(path.join(webDir, 'index.html'))) {
+                  ctx.server.static(`/__plugin/${ent.name}/`, webDir);
+                  if (!m.viewerUrl) patch.viewerUrl = `/__plugin/${ent.name}/`;
+                }
+                ctx.dashboard.register({ ...m, ...patch });
+              }
+            }
           } catch (e) {
             console.error(`[zdashboard] failed to load plugin ${ent.name}:`, e);
           }
@@ -115,7 +133,7 @@ async function main() {
 
   // external plugins
   if (args.plugins) {
-    await loadExternal(ctx, path.resolve(args.plugins));
+    await loadExternal(ctx, path.resolve(args.plugins), root);
   }
   return ctx;
 }
