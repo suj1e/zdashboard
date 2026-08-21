@@ -3,12 +3,6 @@ import { scanTree } from '../server/spec-scan.js';
 import { detect } from '../server/detect.js';
 import type { DetectResult } from '../server/detect.js';
 
-declare module 'cordis' {
-  interface Context {
-    tree: { root: string };
-  }
-}
-
 export const apply = {
   inject: ['server'] as const,
   apply(ctx: Context, config: { root: string }) {
@@ -21,7 +15,7 @@ export const apply = {
       return d;
     };
 
-    const server = (ctx as any).server;
+    const server = ctx.server;
     if (server?.route) {
       server.route('/__files', async (_req, res) => {
         try {

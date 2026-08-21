@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import type { Context, DetectResult } from 'cordis';
 import { Service } from 'cordis';
-import { ReloadService } from './reload.js';
 
 const VERSION = pkg.version;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,7 +63,6 @@ export class ServerService extends Service {
   private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
   private server?: http.Server;
-  private reloadService?: ReloadService;
 
   constructor(ctx: Context, config: ServerOptions) {
     super(ctx, 'server');
@@ -95,10 +93,6 @@ export class ServerService extends Service {
     this.start(config.port);
   }
 
-  setReloadService(service: ReloadService) {
-    this.reloadService = service;
-    service.setServer(this);
-  }
 
   route(path: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void) {
     this.routes.set(path, handler);

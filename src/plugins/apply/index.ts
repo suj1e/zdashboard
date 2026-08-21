@@ -24,7 +24,7 @@ export const apply = {
           res.end(JSON.stringify({ error: 'missing name' }));
           return;
         }
-        if (name.includes('..') || name.includes('/')) {
+        if (name.includes('..') || name.includes('/') || name.includes('\\')) {
           res.writeHead(400);
           res.end(JSON.stringify({ error: 'invalid name' }));
           return;

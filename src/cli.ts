@@ -68,7 +68,7 @@ async function loadExternal(ctx: Context, dir: string) {
           try {
             const mod = await import(p);
             const plugin = mod.default;
-            if (plugin?.apply) ctx.plugin(plugin);
+            if (plugin?.apply) ctx.plugin(plugin, { root });
           } catch (e) {
             console.error(`[zdashboard] failed to load plugin ${ent.name}:`, e);
           }
@@ -120,13 +120,7 @@ async function main() {
   return ctx;
 }
 
-let gCtx: Context | null = null;
-main().then((ctx) => {
-  gCtx = ctx;
-  setTimeout(() => {
-    console.error('[zdashboard] keepalive tick');
-  }, 1000);
-}).catch((e) => {
+await main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
