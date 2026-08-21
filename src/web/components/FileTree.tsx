@@ -136,7 +136,7 @@ export function FileTree({ open: sidebarOpen, currentPath, onSelectFile, onSelec
   };
 
   return (
-    <aside className={`border-r bg-background overflow-auto fixed sm:static z-20 h-full sm:h-auto w-[78%] max-w-[280px] sm:max-w-none sm:w-[280px] transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:hidden'}`}>
+    <aside className={`border-r bg-background overflow-auto fixed z-20 h-full w-[78%] max-w-[280px] transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-2 sticky top-0 bg-background z-10 border-b">
         <input
           value={filter}

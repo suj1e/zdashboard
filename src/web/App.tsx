@@ -130,7 +130,7 @@ export default function App() {
           startupMode={startupMode}
           refreshKey={refreshKey}
         />
-        {treeOpen && <div className="absolute inset-0 z-10 bg-black/40 sm:hidden" onClick={() => setTreeOpen(false)} />}
+        {treeOpen && <div className="absolute inset-0 z-10 bg-black/40" onClick={() => setTreeOpen(false)} />}
         <section className="flex-1 min-h-0 flex flex-col">
           {current ? (
             <>
