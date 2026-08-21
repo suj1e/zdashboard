@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSSE } from '../../../web/hooks/useSSE.js';
-import { MdViewer } from '../../../web/viewers/MdViewer.js';
-import { ImageViewer } from '../../../web/viewers/ImageViewer.js';
-import { CodeViewer } from '../../../web/viewers/CodeViewer.js';
-import { UnsupportedViewer } from '../../../web/viewers/UnsupportedViewer.js';
+import { useSSE } from '../../web/hooks/useSSE.js';
+import { MdViewer } from '../../web/viewers/MdViewer.js';
+import { ImageViewer } from '../../web/viewers/ImageViewer.js';
+import { CodeViewer } from '../../web/viewers/CodeViewer.js';
+import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import { FileTree } from './FileTree.js';
 
 function viewerFor(path: string) {

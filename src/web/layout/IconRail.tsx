@@ -1,5 +1,5 @@
 import { Home } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 
 export function IconRail({ active, onSelect, plugins }: {
   active: string | null; onSelect: (mode: string | null) => void; plugins: Array<{ mode: string; label: string; icon: string }>;

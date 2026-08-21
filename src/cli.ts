@@ -1,20 +1,18 @@
-#!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { access } from 'node:fs/promises';
+import { access, readdir } from 'node:fs/promises';
 import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
 import { Context, Service } from 'cordis';
 import { ServerService } from './core/server.js';
-import { ReloadService } from './core/reload.js';
+import { apply as reloadApply } from './core/reload.js';
 import { apply as treeApply } from './core/tree.js';
-import { DashboardService } from './core/manifest.js';
+import { apply as dashboardApply } from './core/manifest.js';
 import { apply as justApply } from './plugins/just/index.js';
 import { apply as bugsApply } from './plugins/bugs/index.js';
 import { apply as reviewApply } from './plugins/review/index.js';
 import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
-import { apply as viewApply } from './plugins/view/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,7 +47,6 @@ async function pathExists(p: string): Promise<boolean> {
 
 async function loadExternal(ctx: Context, dir: string) {
   if (!dir) return;
-  // try tsx loader first
   let tsxLoaded = false;
   try {
     const { register } = await import('tsx/esm/api');
@@ -60,7 +57,7 @@ async function loadExternal(ctx: Context, dir: string) {
   }
 
   try {
-    const entries = await pathExists(dir) ? await fs.readdir(dir, { withFileTypes: true }) : [];
+    const entries = await pathExists(dir) ? await readdir(dir, { withFileTypes: true }) : [];
     for (const ent of entries) {
       if (!ent.isDirectory()) continue;
       const candidates = tsxLoaded ? ['index.ts', 'index.js', 'index.mjs'] : ['index.js', 'index.mjs'];
@@ -83,9 +80,6 @@ async function loadExternal(ctx: Context, dir: string) {
   }
 }
 
-import { readdir as fsReaddir } from 'node:fs/promises';
-const fs = { readdir: fsReaddir };
-
 async function main() {
   const args = parseArgs();
   const root = path.resolve(args.dir);
@@ -96,34 +90,41 @@ async function main() {
   const ctx = new Context();
 
   // core services
-  ctx.plugin(ServerService, { root, appDir, port: args.port, open: args.open, detect: det });
-  ctx.plugin(ReloadService, { root });
+  ctx.plugin(ServerService, { root, appDir, port: args.port, open: args.open, detect: det, page: args.page });
+  ctx.plugin(reloadApply, { root });
   ctx.plugin(treeApply, { root });
-  ctx.plugin(DashboardService);
+  ctx.plugin(dashboardApply);
 
   // built-in plugins
-  ctx.plugin(justApply);
-  ctx.plugin(bugsApply);
-  ctx.plugin(reviewApply);
-  ctx.plugin(applyApply);
-  ctx.plugin(designApply);
-  ctx.plugin(viewApply);
+  const plugins = [
+    { name: 'just', apply: justApply },
+    { name: 'bugs', apply: bugsApply },
+    { name: 'review', apply: reviewApply },
+    { name: 'apply', apply: applyApply },
+    { name: 'design', apply: designApply },
+  ];
+  for (const p of plugins) {
+    try {
+      ctx.plugin(p.apply, { root });
+    } catch (e) {
+      console.error(`[zdashboard] plugin ${p.name} failed:`, e);
+    }
+  }
 
   // external plugins
   if (args.plugins) {
     await loadExternal(ctx, path.resolve(args.plugins));
   }
-
-  console.log(`[zdashboard] ready`);
-  console.log(`[zdashboard] project   -> ${root}`);
-  console.log(`[zdashboard] detect    -> openspec:${det.hasOpenspec} docs:${det.hasDocs} just:${det.hasJust} bugs:${det.hasBugs}`);
-  if (args.page) {
-    console.log(`[zdashboard] page      -> ${args.page}`);
-  }
+  return ctx;
 }
 
-main().catch((e) => {
+let gCtx: Context | null = null;
+main().then((ctx) => {
+  gCtx = ctx;
+  setTimeout(() => {
+    console.error('[zdashboard] keepalive tick');
+  }, 1000);
+}).catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

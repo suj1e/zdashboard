@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import http from 'node:http';
-import { Service } from 'cordis';
 import type { Context } from 'cordis';
 
 declare module 'cordis' {
@@ -9,33 +8,35 @@ declare module 'cordis' {
   }
 }
 
-export class ReloadService extends Service {
+export class ReloadService {
   private clients = new Set<http.ServerResponse>();
   private watcher?: fs.FSWatcher;
   private timer?: NodeJS.Timeout;
   private root: string;
 
-  constructor(ctx: Context, config: { root: string }) {
-    super(ctx, 'reload');
-    this.root = config.root;
-    this.ctx.effect(() => this.dispose());
+  constructor(ctx: Context, root: string) {
+    this.root = root;
+  }
 
-    this.ctx.server.sse('/__reload', (res) => {
+  setServer(server: { sse: (path: string, onConnect: (res: http.ServerResponse) => (() => void) | void) => void }) {
+    server.sse('/__reload', (res) => {
       this.clients.add(res);
       return () => this.clients.delete(res);
     });
+    this.startWatch();
+  }
 
+  private startWatch() {
     try {
       this.watcher = fs.watch(this.root, { recursive: true }, () => {
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
           this.broadcast('reload');
           this.broadcast('files');
-          console.log(`[zdashboard] change -> reload + refresh tree (${this.clients.size} client${this.clients.size === 1 ? '' : 's'})`);
         }, 150);
       });
     } catch {
-      console.log('[zdashboard] watch unavailable - static only.');
+      // ignore - static environment without fs.watch support
     }
   }
 
@@ -53,3 +54,14 @@ export class ReloadService extends Service {
     this.clients.clear();
   }
 }
+
+export const apply = {
+  inject: ['server'] as const,
+  apply(ctx: Context, config: { root: string }) {
+    const service = new ReloadService(ctx, config.root);
+    const server = (ctx as any).server;
+    if (server && typeof server.sse === 'function') {
+      service.setServer(server);
+    }
+  }
+};

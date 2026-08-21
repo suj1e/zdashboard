@@ -1,11 +1,4 @@
-import { Service } from 'cordis';
 import type { Context } from 'cordis';
-
-declare module 'cordis' {
-  interface Context {
-    dashboard: DashboardService;
-  }
-}
 
 export interface PluginManifest {
   mode: string;
@@ -15,28 +8,29 @@ export interface PluginManifest {
   external?: boolean;
 }
 
-export class DashboardService extends Service {
-  private plugins = new Map<string, PluginManifest>();
+export const apply = {
+  inject: ['server'] as const,
+  apply(ctx: Context) {
+    const plugins = new Map<string, PluginManifest>();
+    ctx.effect(() => () => plugins.clear());
 
-  constructor(ctx: Context) {
-    super(ctx, 'dashboard');
-    this.ctx.effect(() => this.dispose());
-    this.ctx.server.route('/__plugins', (_req, res) => {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(JSON.stringify({ plugins: Array.from(this.plugins.values()) }));
+    ctx.inject(['server'], () => {
+      const server = (ctx as any).server;
+      if (!server?.route) return;
+
+      server.route('/__plugins', (_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.end(JSON.stringify({ plugins: Array.from(plugins.values()) }));
+      });
     });
-  }
 
-  register(manifest: PluginManifest) {
-    this.plugins.set(manifest.mode, manifest);
-    this.ctx.effect(() => () => this.plugins.delete(manifest.mode));
-  }
-
-  list() {
-    return Array.from(this.plugins.values());
-  }
-
-  dispose() {
-    this.plugins.clear();
-  }
-}
+    return {
+      register(manifest: PluginManifest) {
+        plugins.set(manifest.mode, manifest);
+      },
+      list() {
+        return Array.from(plugins.values());
+      },
+    };
+  },
+};

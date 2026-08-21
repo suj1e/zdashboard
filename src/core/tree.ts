@@ -9,8 +9,9 @@ declare module 'cordis' {
   }
 }
 
-export function apply(ctx: Context, config: { root: string }) {
-  ctx.inject(['server'], () => {
+export const apply = {
+  inject: ['server'] as const,
+  apply(ctx: Context, config: { root: string }) {
     let cached: { p: Promise<DetectResult>; v?: DetectResult } | null = null;
     const getDet = async (): Promise<DetectResult> => {
       if (cached?.v) return cached.v;
@@ -19,16 +20,20 @@ export function apply(ctx: Context, config: { root: string }) {
       cached.v = d;
       return d;
     };
-    ctx.server.route('/__files', async (_req, res) => {
-      try {
-        const d = await getDet();
-        const tree = scanTree(config.root, d.hasOpenspec, d.hasDocs);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-        res.end(JSON.stringify({ tree, ...d }));
-      } catch {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-        res.end(JSON.stringify({ tree: [], hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false }));
-      }
-    });
-  });
-}
+
+    const server = (ctx as any).server;
+    if (server?.route) {
+      server.route('/__files', async (_req, res) => {
+        try {
+          const d = await getDet();
+          const tree = scanTree(config.root, d.hasOpenspec, d.hasDocs);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(JSON.stringify({ tree, ...d }));
+        } catch {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(JSON.stringify({ tree: [], hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false }));
+        }
+      });
+    }
+  },
+};

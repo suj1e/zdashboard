@@ -5,15 +5,9 @@ import crypto from 'node:crypto';
 import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
-import { detect } from '../server/detect.js';
-import type { DetectResult } from '../server/detect.js';
-import { scanTree } from '../server/spec-scan.js';
-import { JustRunner } from '../server/just-runner.js';
-import { fetchBugs } from '../server/bugs.js';
-import { ReviewStore, type ItemState, type ReviewStatus } from '../server/review-store.js';
-import { scanAssets } from '../server/design-assets.js';
+import type { Context, DetectResult } from 'cordis';
 import { Service } from 'cordis';
-import type { Context } from 'cordis';
+import { ReloadService } from './reload.js';
 
 const VERSION = pkg.version;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,6 +17,7 @@ export interface ServerOptions {
   appDir: string;
   port: number;
   open: boolean;
+  page: string | null;
   detect: DetectResult;
 }
 
@@ -64,12 +59,12 @@ export class ServerService extends Service {
   private root: string;
   private appDir: string;
   private open: boolean;
+  private page: string | null;
   private det: DetectResult;
   private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
   private server?: http.Server;
-  private justRunner?: JustRunner;
-  private reviewStore?: ReviewStore;
+  private reloadService?: ReloadService;
 
   constructor(ctx: Context, config: ServerOptions) {
     super(ctx, 'server');
@@ -77,15 +72,16 @@ export class ServerService extends Service {
     this.root = config.root;
     this.appDir = config.appDir;
     this.open = config.open;
+    this.page = config.page;
     this.det = config.detect;
-    this.ctx.effect(() => this.dispose());
+    ctx.effect(() => () => this.dispose());
 
-    this.ctx.server.route('/__config', (_req, res) => {
+    this.route('/__config', (_req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION }));
+      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root }));
     });
 
-    this.ctx.server.route('/__stop', async (req, res) => {
+    this.route('/__stop', async (req, res) => {
       if (req.headers['x-stop-token'] !== this.stopToken) {
         res.writeHead(403);
         res.end('forbidden');
@@ -97,6 +93,11 @@ export class ServerService extends Service {
     });
 
     this.start(config.port);
+  }
+
+  setReloadService(service: ReloadService) {
+    this.reloadService = service;
+    service.setServer(this);
   }
 
   route(path: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void) {
@@ -124,31 +125,42 @@ export class ServerService extends Service {
     });
   }
 
+  private safeDecode(raw: string): string {
+    try { return decodeURIComponent(raw); } catch { return raw; }
+  }
+
   private handler = (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const url = req.url!.split('?')[0];
+    try {
+      const rawUrl = req.url || '/';
+      const url = rawUrl.split('?')[0];
 
-    const rh = this.routes.get(url);
-    if (rh) { rh(req, res); return; }
-    const sh = this.sses.get(url);
-    if (sh) {
-      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-      res.write(': connected\n\n');
-      const cleanup = sh(res);
-      req.on('close', () => { cleanup?.(); });
-      return;
+      const rh = this.routes.get(url);
+      if (rh) { rh(req, res); return; }
+      const sh = this.sses.get(url);
+      if (sh) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+        res.write(': connected\n\n');
+        const cleanup = sh(res);
+        req.on('close', () => { cleanup?.(); });
+        return;
+      }
+
+      if (url === '/' || url.indexOf('/__app/') === 0 || url.indexOf('/assets/') === 0) {
+        let fp = this.appDir;
+        if (url !== '/') fp = path.join(this.appDir, this.safeDecode(url));
+        if (url.indexOf('/__app/') === 0) fp = path.join(this.appDir, url.slice(7));
+        if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+        if (url === '/') fp = path.join(this.appDir, 'index.html');
+        return this.serveFile(fp, res, false);
+      }
+
+      const fp = path.join(this.root, this.safeDecode(url));
+      if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+      return this.serveFile(fp, res, true);
+    } catch (e) {
+      try { res.writeHead(400); res.end('bad request'); } catch {}
+      console.error('[zdashboard] handler error', e);
     }
-
-    if (url === '/' || url.indexOf('/__app/') === 0 || url.indexOf('/assets/') === 0) {
-      let fp = this.appDir;
-      if (url !== '/') fp = path.join(this.appDir, decodeURIComponent(url));
-      if (url.indexOf('/__app/') === 0) fp = path.join(this.appDir, url.slice(7));
-      if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
-      return this.serveFile(fp, res, false);
-    }
-
-    const fp = path.join(this.root, decodeURIComponent(url));
-    if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
-    return this.serveFile(fp, res, true);
   };
 
   start(port: number) {
@@ -159,18 +171,18 @@ export class ServerService extends Service {
         this.start(port + 1);
       } else throw err;
     });
-    this.server.listen(port, () => {
+    this.server.listen(port, '127.0.0.1', () => {
       const u = `http://localhost:${port}`;
+      const target = this.page ? `${u}#${this.page}` : u;
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
-      if (this.open) exec(process.platform === 'darwin' ? `open ${u}` : `start ${u}`);
+      if (this.open) exec(process.platform === 'darwin' ? `open ${target}` : `start ${target}`);
     });
   }
 
   stop() {
     if (this.server) { try { this.server.close(); } catch {} }
-    if (this.justRunner) { try { this.justRunner.stop(); } catch {} }
     setTimeout(() => {
       try { this.ctx.root.fiber.dispose(); } catch {}
       process.exit(0);
@@ -179,9 +191,5 @@ export class ServerService extends Service {
 
   dispose() {
     if (this.server) { try { this.server.close(); } catch {} }
-    if (this.justRunner) { try { this.justRunner.stop(); } catch {} }
   }
-
-  setRunner(runner: JustRunner) { this.justRunner = runner; }
-  setReviewStore(store: ReviewStore) { this.reviewStore = store; }
 }

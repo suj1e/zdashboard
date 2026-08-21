@@ -4,7 +4,10 @@ import { IconRail } from './layout/IconRail';
 import { StatusBar } from './layout/StatusBar';
 import { HomeGrid } from './home/HomeGrid';
 import { usePlugins, type WebPlugin } from './lib/plugins';
+import { useSSE } from './hooks/useSSE';
 import type { ConnStatus } from './hooks/useSSE';
+
+interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 
 export default function App() {
   const plugins = usePlugins();
@@ -12,6 +15,13 @@ export default function App() {
   const [projectPath, setProjectPath] = useState('');
   const stoppedRef = useRef(false);
   const [status, setStatus] = useState<ConnStatus>('connecting');
+  const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false });
+
+  useSSE(
+    () => {}, // reload: no-op at app level
+    () => {}, // files: no-op at app level
+    stoppedRef
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -28,14 +38,18 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
 
-  // SSE status for Topbar (hook via custom event from useSSE in StatusBar)
   useEffect(() => {
-    const onStatus = (e: Event) => {
-      const detail = (e as CustomEvent<{ status: ConnStatus }>).detail;
-      if (detail?.status) setStatus(detail.status);
-    };
-    window.addEventListener('zdashboard-sse-status', onStatus as EventListener);
-    return () => window.removeEventListener('zdashboard-sse-status', onStatus as EventListener);
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/__files', { cache: 'no-store' });
+        const data = await r.json();
+        if (!cancelled) setDetect({ hasOpenspec: data.hasOpenspec, hasDocs: data.hasDocs, hasJust: data.hasJust, hasBugs: data.hasBugs });
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleSelect = useCallback((m: string | null) => {

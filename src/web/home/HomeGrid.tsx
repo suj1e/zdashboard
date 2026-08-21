@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { FolderOpen, FileText, BookOpen, Terminal } from 'lucide-react';
 import type { WebPlugin } from '../lib/plugins';
 
