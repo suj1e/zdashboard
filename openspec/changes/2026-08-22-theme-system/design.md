@@ -31,28 +31,31 @@ globals.css `:root` 增加：
 
 半透明 `bg-primary/10` 17 处保留（pixel 下实色板配低饱和底色变量即可不发灰，不改组件）；动效词汇 13 处保留（动效主题化超出本期）。
 
-## Phase 2 data-theme 机制
+## Phase 2 双维度机制（明暗 × 风格正交）
 
-### 2.1 主题注册表 `src/web/lib/themes.ts`
+**模型**：dark/light 是模式（每个风格都有），default/pixel 是风格——两个独立 data 属性组合。
+
+### 2.1 风格注册表 `src/web/lib/themes.ts`
 
 ```ts
-export interface ThemeDef { id: 'dark' | 'light' | 'pixel'; label: string; swatch: string[] /* 4色预览 */ }
-export const THEMES: ThemeDef[] = [
-  { id: 'dark',  label: 'Dark',  swatch: ['#09090b', '#18181b', '#6366f1', '#fafafa'] },
-  { id: 'light', label: 'Light', swatch: ['#ffffff', '#f4f4f5', '#4f46e5', '#18181b'] },
-  { id: 'pixel', label: 'Pixel', swatch: ['#1a1c2c', '#5d275d', '#ef7d57', '#38b764'] },
+export interface StyleDef { id: 'default' | 'pixel'; label: string; swatch: string[] /* 4色预览(暗色版) */ }
+export const STYLES: StyleDef[] = [
+  { id: 'default', label: 'Default', swatch: ['#09090b', '#18181b', '#6366f1', '#fafafa'] },
+  { id: 'pixel',   label: 'Pixel',   swatch: ['#1a1c2c', '#5d275d', '#ef7d57', '#38b764'] },
 ];
 ```
 
 ### 2.2 globals.css 结构
 
-- `:root` = light 值；`[data-theme="dark"]`（从 `.dark` 迁移，`.dark` 保留 alias 一个版本防外部引用）；`[data-theme="pixel"]` 覆盖块
-- pixel 覆盖：Sweetie-16 风格 4-8 色实色（背景 #1a1c2c、surface #29366f→实色、primary #ef7d57、success #38b764、warning #b86f50、info #41a6f6、border 亮实色）、`--radius-*: 0`、shadow 全 none、`--font-mono` 可换（本期不引像素字体文件，用系统等宽，字体文件留待后续按需）
+- `:root` = default/light 值；`[data-mode="dark"]`（从 `.dark` 迁移，`.dark` 保留 alias 一个版本）控制明暗中性板
+- `[data-theme="pixel"]` 风格覆盖：radius 全 0、shadow none、点阵加强、语义色换 Sweetie-16 风格实色（success #38b764、warning #b86f50、info #41a6f6、primary #ef7d57）
+- pixel 明暗两态：`[data-theme="pixel"][data-mode="dark"]`（深底 #1a1c2c 系）与默认组合（浅底 #f4f4f0 系像素板）
 
 ### 2.3 应用层
 
-- main.tsx：启动读 `zd-theme`（迁移：旧 `zdashboard-theme` 的 'dark'/'light' 直接映射），`document.documentElement.dataset.theme = id`
-- ThemeToggle 重写：DropdownMenu（shadcn，需 copy 该组件——@radix-ui/react-dropdown-menu 依赖）+ 每项 swatch 四色块 + 选中 check；切换写 `zd-theme` + dataset
+- main.tsx：读 `zd-mode`（迁移旧 `zdashboard-theme` 的 dark/light）+ `zd-theme`（风格，默认 default），分别设 `dataset.mode` / `dataset.theme`
+- 现有 ThemeToggle 保留为**模式切换**（太阳/月亮，写 zd-mode + dataset.mode）
+- 新增 `StyleSwitcher.tsx`：Palette 图标按钮 + DropdownMenu（每风格 4 色 swatch + Check 选中），写 zd-theme + dataset.theme
 
 ## Phase 3 验收
 

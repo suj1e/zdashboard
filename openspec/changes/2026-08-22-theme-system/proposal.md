@@ -11,16 +11,18 @@
 - 阴影令牌：`--shadow-sm/md`；点阵背景收成一个 CSS 类 `dot-grid`（替换 App/design 两处内联 style）
 - 半透明混色（17 处）与动效词汇（13 处）：保留现状但在 pixel 主题下用 CSS 覆盖验证不发灰（超出范围的记入设计说明）
 
-### Phase 2 主题机制
+### Phase 2 双维度主题机制
 
-- `html[data-theme]` 驱动（替代现 `dark` class 特例，dark/light 各为一个 data-theme 值，向后兼容读旧 `zdashboard-theme` 迁移）
-- `src/web/lib/themes.ts` 主题注册表：`{ id, label, swatch: string[] }[]`，加主题只改此表+一个 CSS 块
-- globals.css 内 `[data-theme="pixel"]` 覆盖层：4-8 色实色调板、radius 全 0、阴影清除、点阵加强
+**明暗（mode）与风格（style）为正交维度**——dark/light 不是主题，是每个风格都有的两态：
+- `html[data-mode]`（dark/light）控制明暗中性色板（现有太阳/月亮按钮保留为模式切换入口，迁移旧 `zdashboard-theme`）
+- `html[data-theme]`（default/pixel/…）控制风格：独立一个 Topbar 按钮（Palette 图标下拉，swatch 预览）供用户选择
+- `src/web/lib/themes.ts` 风格注册表：`{ id, label, swatch: string[] }[]`（仅风格，明暗不在表内），加风格只改此表+一个 CSS 块
+- globals.css：`[data-theme="pixel"]` 风格覆盖（实色调色板/radius 0/shadow none/点阵加强）× `[data-mode]` 明暗组合选择器（pixel 亦有亮色版）
 
 ### Phase 3 入口与验收
 
-- ThemeToggle 升级为主题选择器：shadcn DropdownMenu + 每主题色板 swatch 预览，localStorage `zd-theme` 持久化
-- **验收标准：pixel 主题仅由 CSS 变量块实现，零组件改动**；暗/亮/像素三主题全工作区走查无漏色
+- Topbar：保留明暗切换按钮 + 新增独立风格选择按钮（DropdownMenu + swatch + Check）；存储 `zd-mode` + `zd-theme` 两个 key
+- **验收标准：pixel 风格仅由 CSS 变量块+注册表实现，零组件改动**；{dark,light}×{default,pixel} 四组合全工作区走查无漏色
 
 ## Capabilities
 
