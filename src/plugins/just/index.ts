@@ -57,7 +57,7 @@ export const apply = {
         res.end(JSON.stringify(runner.list()));
       };
 
-      const routeAction = (name: 'start' | 'stop' | 'restart') => {
+      const routeAction = (name: 'start' | 'stop' | 'restart' | 'clear') => {
         ctx.server.route(`/__just/${name}`, (req, res) => {
           handleAction(req, res, name).catch(() => {
             if (!res.headersSent) { res.writeHead(500); res.end('{"error":"internal"}'); }

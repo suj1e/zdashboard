@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ExternalLink, RefreshCw } from 'lucide-react';
+import { Bug, ExternalLink, RefreshCw } from 'lucide-react';
+import { EmptyState } from '../../web/components/EmptyState.js';
 import { Button } from '../../web/components/ui/button';
 import { Badge } from '../../web/components/ui/badge';
 import { FilterPills } from '../../web/components/FilterPills.js';
@@ -84,7 +85,7 @@ export function BugViewer() {
         ) : !data.ok ? (
           <p className="p-4 text-xs text-destructive">{data.error}</p>
         ) : !bugs.length ? (
-          <EmptyState icon={BugIcon} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
+          <EmptyState icon={Bug} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
         ) : (
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-background border-b">

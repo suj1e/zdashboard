@@ -3,7 +3,7 @@ import {
   Monitor, Blocks, Shapes, Palette, BookOpen, Video, AudioLines,
   FileText, Type, Package, type LucideIcon,
 } from 'lucide-react';
-import type { AssetType } from '../../../server/design-assets.js';
+import type { AssetType } from '../../server/design-assets.js';
 import { designState } from './state.js';
 import { FileIcon } from '../../web/components/FileIcon.js';
 

@@ -8,7 +8,7 @@ export interface FilterItem {
   className?: string
 }
 
-export interface FilterPillsProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface FilterPillsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   items: FilterItem[]
   value: string
   onChange: (value: string) => void

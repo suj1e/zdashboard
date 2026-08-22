@@ -40,11 +40,12 @@ function loadConfig(root: string): ZgoalConfig | null {
       const record = kv as Record<string, unknown>;
       const product = Number(record.product);
       if (!record.url || !product) return null;
+      const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? undefined : String(v));
       return {
         url: String(record.url).replace(/\/+$/, ''),
-        account: record.account ?? '',
-        password: record.password,
-        token: record.token,
+        account: str(record.account) ?? '',
+        password: str(record.password),
+        token: str(record.token),
         product,
       };
     } catch {

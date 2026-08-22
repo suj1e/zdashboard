@@ -1,4 +1,4 @@
-import type { AssetType } from '../../../server/design-assets.js';
+import type { AssetType } from '../../server/design-assets.js';
 
 let current: { path: string; type: AssetType } | null = null;
 const subs = new Set<(p: { path: string; type: AssetType } | null) => void>();

@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React from 'react';
 import { ExternalWorkspace } from '../components/ExternalWorkspace';
 import { PlaceholderWorkspace } from '../components/PlaceholderWorkspace';
@@ -8,8 +9,8 @@ export interface WebPlugin {
   icon: string;
   description?: string;
   external?: boolean;
-  Workspace: React.ComponentType<unknown> | React.LazyExoticComponent<React.ComponentType<unknown>>;
-  Sidebar?: React.LazyExoticComponent<React.ComponentType<unknown>>;
+  Workspace: React.ComponentType<{ navTarget?: unknown }> | React.LazyExoticComponent<React.ComponentType<{ navTarget?: unknown }>>;
+  Sidebar?: React.LazyExoticComponent<React.ComponentType<{ navTarget?: unknown }>>;
 }
 
 const ORDER = ['stats', 'view', 'bugs', 'review', 'design', 'apply', 'just'];
@@ -22,7 +23,7 @@ export function usePlugins() {
     let cancelled = false;
     (async () => {
       const modules = import.meta.glob('../../plugins/*/web.tsx');
-      const entries = Object.entries(modules);
+      const entries = Object.entries(modules) as [string, () => Promise<{ default: WebPlugin }>][];
       const loaded: WebPlugin[] = [];
       for (const [, loader] of entries) {
         try {

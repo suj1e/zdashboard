@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, FileText, FolderTree, HardDrive, BookOpen, GitPullRequest } from 'lucide-react';
+import { BarChart3, FileText, FolderTree, BookOpen, GitPullRequest } from 'lucide-react';
 import { formatBytes } from '../../web/lib/utils.js';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
 

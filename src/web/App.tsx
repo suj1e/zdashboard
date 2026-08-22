@@ -12,7 +12,7 @@ const dotBg: React.CSSProperties = {
   backgroundSize: '20px 20px',
 };
 
-interface NavTarget { mode: string; filter?: string; wt?: string }
+interface NavTarget { mode?: string; filter?: string; wt?: string; navToken?: number; }
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 

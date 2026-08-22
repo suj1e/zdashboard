@@ -19,13 +19,13 @@ interface TokenSection {
 }
 
 function TokenViewer({ path }: { path: string }) {
-  const [sections, setSections] = useState<TokenSection[] | null>(null);
+  const [sections, setSections] = useState<TokenSection[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setSections(null);
+    setSections([]);
     fetch('/' + encodeURI(path), { cache: 'no-store' })
       .then(r => r.text())
       .then(text => {
@@ -125,14 +125,14 @@ function FontViewer({ path }: { path: string }) {
         objectUrl = URL.createObjectURL(blob);
         face = new FontFace('zd-font-preview', `url(${objectUrl})`);
         await face.load();
-        if (cancelled) { (face as FontFace).dispose?.(); return; }
+        if (cancelled) { (face as FontFace & { dispose?: () => void }).dispose?.(); return; }
         document.fonts.add(face);
         setName(path.split('/').pop() ?? path);
       })
       .catch(() => { if (!cancelled) setName(path.split('/').pop() ?? path); });
     return () => {
       cancelled = true;
-      if (face) { try { document.fonts.delete(face); (face as FontFace).dispose?.(); } catch { /* ignore */ } }
+      if (face) { try { document.fonts.delete(face); (face as FontFace & { dispose?: () => void }).dispose?.(); } catch { /* ignore */ } }
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [path]);
@@ -176,7 +176,7 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
         <FilterPills
           items={btns.map(b => ({ key: String(b.v), label: b.label, renderLabel: () => <>{b.icon}<span className="hidden sm:inline">{b.label}</span></> }))}
           value={String(mode)}
-          onChange={(v) => onMode(v === '0' ? 0 : v === 'custom' ? 'custom' : Number(v))}
+          onChange={(v) => onMode(v === '0' ? 0 : v === 'custom' ? 'custom' : (Number(v) as 768 | 375))}
           ariaLabel="视口模式"
         />
       </div>
@@ -213,7 +213,7 @@ export default function Workspace() {
           <div className="flex-1 min-h-0 overflow-auto">
             {current.type === 'page' ? (
               <div className="mx-auto bg-background overflow-hidden"
-                style={{ maxWidth: mode === 0 ? undefined : mode === 'custom' ? w : mode, height: mode === 'custom' ? h : '100%' }}>
+                style={{ maxWidth: mode === 0 ? undefined : mode === 'custom' ? w : (mode as number), height: mode === 'custom' ? h : '100%' }}>
                 <Viewer path={current.path} />
               </div>
             ) : (

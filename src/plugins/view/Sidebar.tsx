@@ -37,7 +37,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
   return (
     <div>
       {(() => {
-        const groupMatch = node.name.match(/^([a-z]+) \((\d+)\)$/);
+        const groupMatch = node.name.match(/^([a-z]+)(?: \((\d+)\))?$/);
         const GroupIcon = groupMatch ? GROUP_ICON[groupMatch[1]] : undefined;
         const DirIcon = expanded ? FolderOpen : Folder;
         return (
@@ -51,7 +51,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
               ? <GroupIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               : <DirIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors" />}
             <span className="font-medium truncate">{groupMatch ? groupMatch[1] : node.name}</span>
-            {groupMatch && (
+            {groupMatch?.[2] && (
               <span className="ml-auto mr-1 shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-mono text-muted-foreground">{groupMatch[2]}</span>
             )}
           </button>
@@ -77,7 +77,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
 }
 
 interface SidebarProps {
-  navTarget?: { mode?: string; filter?: string; wt?: string };
+  navTarget?: { mode?: string; filter?: string; wt?: string; navToken?: number };
 }
 
 function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {

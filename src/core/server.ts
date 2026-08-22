@@ -184,7 +184,7 @@ export class ServerService extends Service {
         let rel = this.safeDecode(url.slice(prefix.length));
         if (!rel || rel === '/' || !path.extname(rel)) rel = path.join(rel || '', 'index.html');
         const fp = path.join(dir, rel);
-        if (fp.indexOf(dir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+        if (fp.indexOf(dir + path.sep) !== 0) { res.writeHead(403); res.end('Forbidden'); return false; }
         this.serveFile(fp, req, res, true);
         return true;
       }
