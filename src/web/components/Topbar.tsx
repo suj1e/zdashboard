@@ -9,11 +9,11 @@ export function Topbar({ status, stoppedRef, children }: {
 }) {
   const dotClass = status === 'live' ? 'bg-success' : status === 'lost' ? 'bg-destructive' : 'bg-muted-foreground';
   return (
-    <header className="h-[52px] border-b bg-background flex items-center px-3.5 gap-2">
+    <header className="h-[var(--topbar-h)] border-b bg-background flex items-center px-3.5 gap-2">
       <strong className="text-sm font-bold tracking-tight">zdashboard</strong>
       <div className="ml-auto flex items-center gap-2">{children}</div>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+        <span className={`h-2 w-2 rounded-[var(--radius-full)] ${dotClass}`} />
         <span className="hidden sm:inline">{status === 'live' ? '实时' : status === 'lost' ? '已断开' : '连接中'}</span>
       </div>
       <StyleSelect />

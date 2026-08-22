@@ -26,11 +26,11 @@ function CodeBlock({ children }: { children?: ReactNode }) {
     <div className="not-prose relative my-4 group">
       <button
         onClick={copy}
-        className="absolute right-2 top-2 z-10 px-2 py-0.5 rounded border border-border bg-background/80 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-2 top-2 z-10 px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-11 opacity-0 group-hover:opacity-100 transition-opacity"
       >
         {copied ? '已复制' : '复制'}
       </button>
-      <pre ref={ref} className="overflow-auto rounded-md border bg-terminal-bg p-3 text-xs leading-relaxed">
+      <pre ref={ref} className="overflow-auto rounded-[var(--radius-md)] border bg-terminal-bg p-3 text-xs leading-relaxed">
         {children}
       </pre>
     </div>
@@ -57,7 +57,7 @@ export function MdViewer({ path }: { path: string }) {
   return (
     <div className="prose dark:prose-invert mx-auto max-w-3xl p-8 prose-headings:scroll-mt-4 prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0">
       {frontmatter && (
-        <details className="not-prose mb-4 rounded border p-3 text-sm">
+        <details className="not-prose mb-4 rounded-[var(--radius-md)] border p-3 text-sm">
           <summary className="cursor-pointer font-medium">YAML frontmatter</summary>
           <pre className="mt-2 whitespace-pre-wrap text-xs">{frontmatter}</pre>
         </details>

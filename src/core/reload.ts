@@ -27,7 +27,8 @@ export class ReloadService extends Service {
     });
 
     try {
-      this.watcher = fs.watch(config.root, { recursive: true }, () => {
+      this.watcher = fs.watch(config.root, { recursive: true }, (eventType, filename) => {
+        if (filename && /^(?:\.git|node_modules|dist|\.pnpm)(?:[/\\]|$)/.test(filename)) return;
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
           this.ctx.server.refreshGitInfo(); // 分支/脏数可能已变,先行刷新再广播

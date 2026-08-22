@@ -17,10 +17,10 @@ export function ImageViewer({ path }: { path: string }) {
         <span className="font-mono text-foreground">{name}</span>
         <span className="text-muted-foreground">{dim}</span>
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={() => setZoom(z => Math.max(0.25, +(z - 0.25).toFixed(2)))} className="w-6 h-6 rounded bg-muted hover:bg-muted/70" aria-label="缩小">−</button>
+          <button onClick={() => setZoom(z => Math.max(0.25, +(z - 0.25).toFixed(2)))} className="w-6 h-6 rounded-[var(--radius-md)] bg-muted hover:bg-muted/70" aria-label="缩小">−</button>
           <span className="w-10 text-center text-muted-foreground">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.min(8, +(z + 0.25).toFixed(2)))} className="w-6 h-6 rounded bg-muted hover:bg-muted/70" aria-label="放大">+</button>
-          <button onClick={() => setZoom(1)} className="ml-1 px-2 h-6 rounded bg-muted hover:bg-muted/70">复位</button>
+          <button onClick={() => setZoom(z => Math.min(8, +(z + 0.25).toFixed(2)))} className="w-6 h-6 rounded-[var(--radius-md)] bg-muted hover:bg-muted/70" aria-label="放大">+</button>
+          <button onClick={() => setZoom(1)} className="ml-1 px-2 h-6 rounded-[var(--radius-md)] bg-muted hover:bg-muted/70">复位</button>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto grid place-items-center p-6" style={chess}>

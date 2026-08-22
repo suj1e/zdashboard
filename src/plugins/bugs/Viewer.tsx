@@ -85,7 +85,7 @@ export function BugViewer() {
         ) : !data.ok ? (
           <p className="p-4 text-xs text-destructive">{data.error}</p>
         ) : !bugs.length ? (
-          <EmptyState icon={Bug} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
+          <EmptyState icon={<Bug className="h-6 w-6" />} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
         ) : (
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-background border-b">

@@ -56,7 +56,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
         aria-expanded={open}
         className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-40
           h-10 w-5 items-center justify-center
-          rounded-l-md border border-r-0 border-border bg-background
+          rounded-l-[var(--radius-md)] border border-r-0 border-border bg-background
           text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         aria-label={open ? '折叠侧栏' : '展开侧栏'}
       >
@@ -69,7 +69,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
         <button
           onClick={toggle}
           aria-label="展开侧栏"
-          className="sm:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 h-12 w-6 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-muted-foreground shadow"
+          className="sm:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 h-12 w-6 flex items-center justify-center rounded-r-[var(--radius-md)] border border-l-0 border-border bg-background text-muted-foreground shadow"
         >
           <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
         </button>

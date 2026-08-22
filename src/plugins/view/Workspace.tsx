@@ -57,7 +57,7 @@ export default function Workspace(_props: WorkspaceProps) {
           {showOutline && <OutlineNav containerRef={contentRef} />}
         </div>
       ) : (
-        <EmptyState icon={Eye} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
+        <EmptyState icon={<Eye className="h-6 w-6" />} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
       )}
     </div>
   );

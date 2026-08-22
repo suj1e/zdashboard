@@ -24,6 +24,14 @@ export default {
         popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' },
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
       },
+      fontSize: {
+        '10': ['var(--text-10)', { lineHeight: '1.5' }],
+        '11': ['var(--text-11)', { lineHeight: '1.5' }],
+        xs: ['var(--text-xs)', { lineHeight: '1.5' }],
+        sm: ['var(--text-sm)', { lineHeight: '1.5' }],
+        base: ['var(--text-base)', { lineHeight: '1.5' }],
+        lg: ['var(--text-lg)', { lineHeight: '1.5' }],
+      },
       fontFamily: {
         sans: ['var(--font-sans)'],
         mono: ['var(--font-mono)'],

@@ -6,6 +6,8 @@ export interface FilterItem {
   label: string
   badge?: React.ReactNode
   className?: string
+  renderLabel?: (item: FilterItem) => React.ReactNode
+  renderExtra?: (item: FilterItem) => React.ReactNode
 }
 
 export interface FilterPillsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
@@ -29,14 +31,14 @@ export function FilterPills({ items, value, onChange, ariaLabel, renderExtra, re
             aria-pressed={active}
             onClick={() => onChange(item.key)}
             className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-xs transition-colors",
+              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[var(--radius-full)] border text-xs transition-colors",
               active ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40",
               item.className
             )}
           >
-            {renderLabel ? renderLabel(item) : <span>{item.label}</span>}
+            {item.renderLabel ? item.renderLabel(item) : renderLabel ? renderLabel(item) : <span>{item.label}</span>}
             {item.badge && <span className="opacity-80">{item.badge}</span>}
-            {renderExtra?.(item)}
+            {item.renderExtra ? item.renderExtra(item) : renderExtra?.(item)}
           </button>
         )
       })}

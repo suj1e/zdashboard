@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { GitBranch, FolderOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { useSSE } from '../hooks/useSSE';
+import { useIcons } from '../lib/icons.js';
 
 interface GitInfo { branch?: string; dirty?: number }
 
-const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[19px] font-mono text-[10px] leading-none text-muted-foreground';
+const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[var(--chip-h)] font-mono text-10 leading-none text-muted-foreground';
 
 /** 底部状态条:胶囊 chip 呈现项目身份(左)与系统状态(右),与全站药丸/badge 视觉语言一致 */
 export function StatusBar({ projectPath, stoppedRef }: {
@@ -15,6 +15,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
   const [version, setVersion] = useState('');
   const [bump, setBump] = useState(0);
   const status = useSSE(() => {}, () => setBump(k => k + 1), stoppedRef);
+  const { icon } = useIcons();
 
   useEffect(() => {
     fetch('/__config', { cache: 'no-store' }).then(r => r.json())
@@ -25,31 +26,31 @@ export function StatusBar({ projectPath, stoppedRef }: {
   const dot = status === 'live' ? 'bg-success animate-pulse' : status === 'lost' ? 'bg-destructive' : 'bg-muted-foreground';
 
   return (
-    <footer className="h-7 border-t bg-background flex items-center justify-between px-3 gap-2 text-[11px]">
+    <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-11">
       <div className="flex items-center gap-1.5 min-w-0">
         {projectPath && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className={`${CHIP} shrink-0 cursor-default`}>
-                <FolderOpen className="h-3 w-3" />
+                {icon('folder-open', 'h-3 w-3')}
                 {projectPath.split('/').pop() || projectPath}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-mono text-[10px]">{projectPath}</TooltipContent>
+            <TooltipContent side="top" className="font-mono text-10">{projectPath}</TooltipContent>
           </Tooltip>
         )}
         {git.branch && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className={`${CHIP} shrink-0 cursor-default`}>
-                <GitBranch className="h-3 w-3" />
+                {icon('git-branch', 'h-3 w-3')}
                 {git.branch}
                 {git.dirty
                   ? <span className="text-warning">● {git.dirty}</span>
                   : <span className="text-success">clean</span>}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-mono text-[10px]">
+            <TooltipContent side="top" className="font-mono text-10">
               {git.dirty ? `${git.dirty} 个未提交变更` : '工作区干净'}
             </TooltipContent>
           </Tooltip>

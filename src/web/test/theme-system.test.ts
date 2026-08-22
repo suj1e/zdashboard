@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { STYLES } from '../lib/themes';
 
 describe('theme system v2', () => {
-  it('themes.ts has default, pixel, nord entries', () => {
+  it('themes.ts has default, pixel, slate entries', () => {
     const ids = STYLES.map(s => s.id);
     expect(ids).toContain('default');
     expect(ids).toContain('pixel');
-    expect(ids).toContain('nord');
+    expect(ids).toContain('slate');
   });
 
   it('StyleDef id is string (not union)', () => {
@@ -14,9 +14,9 @@ describe('theme system v2', () => {
     expect(typeof id).toBe('string');
   });
 
-  it('nord swatch has 4 colors', () => {
-    const nord = STYLES.find(s => s.id === 'nord');
-    expect(nord).toBeDefined();
-    expect(nord!.swatch).toHaveLength(4);
+  it('slate swatch has 4 colors', () => {
+    const slate = STYLES.find(s => s.id === 'slate');
+    expect(slate).toBeDefined();
+    expect(slate!.swatch).toHaveLength(4);
   });
 });

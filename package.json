@@ -1,6 +1,6 @@
 {
   "name": "zdashboard",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "ZCode skill dashboard platform — pluggable viewers for zdesign/zview/zreview/zgoal",
   "type": "module",
   "bin": {
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@fontsource/vt323": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dropdown-menu": "^2.1.24",
     "@radix-ui/react-scroll-area": "^1.2.0",
     "@radix-ui/react-separator": "^1.1.0",

@@ -213,7 +213,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
         <WorktreeOverview refreshKey={refreshKey} />
 
         {!changes.length ? (
-          <EmptyState icon={FolderGit2} title="没有进行中的 change" hint="在 openspec/changes/ 下创建 change 后会显示在这里" />
+          <EmptyState icon={<FolderGit2 className="h-6 w-6" />} title="没有进行中的 change" hint="在 openspec/changes/ 下创建 change 后会显示在这里" />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {changes.map((c) => (

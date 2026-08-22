@@ -34,7 +34,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
     <div>
       {(() => {
         const groupMatch = node.name.match(/^([a-z]+)(?: \((\d+)\))?$/);
-        const GroupIcon = groupMatch ? (icon(groupMatch[1] as any) as LucideIcon | undefined) : undefined;
+        const groupIconNode = groupMatch ? icon(groupMatch[1] as any) : undefined;
         const DirIcon = expanded ? FolderOpen : Folder;
         return (
           <button
@@ -43,8 +43,8 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
             style={{ paddingLeft: 8 + depth * 14, width: 'calc(100% - 8px)' }}
           >
             <ChevronRight className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
-            {GroupIcon
-              ? <GroupIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            {groupIconNode
+              ? <span className="h-3.5 w-3.5 shrink-0 inline-flex items-center justify-center text-muted-foreground">{groupIconNode}</span>
               : <DirIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors" />}
             <span className="font-medium truncate">{groupMatch ? groupMatch[1] : node.name}</span>
             {groupMatch?.[2] && (

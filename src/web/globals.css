@@ -29,6 +29,20 @@
     /* border token */
     --border-width: 1px;
 
+    /* text tokens */
+    --text-10: 10px;
+    --text-11: 11px;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+
+    /* layout tokens */
+    --topbar-h: 52px;
+    --statusbar-h: 28px;
+    --chip-h: 19px;
+    --icon-rail-w: 48px;
+
     /* base light neutrals */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;

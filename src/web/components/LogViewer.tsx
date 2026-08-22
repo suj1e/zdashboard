@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { Play, Square, RotateCw, Eraser } from 'lucide-react';
 import { Button } from './ui/button';
 import { FilterPills, type FilterItem } from './FilterPills.js';
 import { toast } from 'sonner';
 import { intervalToDuration } from 'date-fns';
+import { useIcons } from '../lib/icons.js';
 
 interface Recipe { name: string; description: string; }
 type TaskStatus = 'running' | 'exited';
@@ -42,6 +42,7 @@ export function LogViewer() {
   const [, forceTick] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const selLines = selected ? logs[selected] ?? [] : [];
+  const { icon } = useIcons();
 
   useEffect(() => {
     fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()).then(setRecipes).catch(() => setRecipes([]));
@@ -103,9 +104,15 @@ export function LogViewer() {
 
   const consoleItem: FilterItem = {
     key: '__console__',
-    label: '',
+    label: '总控台',
     badge: <span className="font-mono opacity-80">{runningCount > 0 ? runningCount : ''}</span>,
-    className: selected === null ? '' : 'border-border text-muted-foreground hover:text-foreground',
+    className: selected === null ? '' : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40',
+    renderLabel: () => (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-3 w-3">{icon('monitor', 'h-3 w-3')}</span>
+        <span>总控台</span>
+      </span>
+    ),
   };
 
   const recipeItems: FilterItem[] = recipes.map(r => {
@@ -119,12 +126,12 @@ export function LogViewer() {
       className: isSel ? '' : running ? 'border-success/40 bg-success/10 text-success hover:bg-success/20' : '',
       renderLabel: () => (
         <>
-          <span className={`h-1.5 w-1.5 rounded-full ${pill(running, exited, t)}`} />
+          <span className={`h-1.5 w-1.5 rounded-[var(--radius-full)] ${pill(running, exited, t)}`} />
           <span>{r.name}</span>
         </>
       ),
       renderExtra: () => exited && !isSel ? (
-        <span className={`text-[10px] ${t?.signal ? 'opacity-60' : t?.code ? 'text-destructive' : 'text-success'}`}>
+        <span className={`text-10 ${t?.signal ? 'opacity-60' : t?.code ? 'text-destructive' : 'text-success'}`}>
           {t?.signal ? '停' : t?.code}
         </span>
       ) : undefined,
@@ -155,25 +162,25 @@ export function LogViewer() {
             const tail = (logs[r.name] ?? []).slice(-3).map(l => l.replace(/\r?\n$/, '').replace(/\x1b\[[0-9;]*m/g, ''));
             return (
               <div key={r.name} onClick={() => setSelected(r.name)}
-                className="group rounded-lg border bg-card p-3 cursor-pointer hover:border-muted-foreground/40 transition-colors">
+                className="group rounded-[var(--radius-lg)] border bg-card p-3 cursor-pointer hover:border-muted-foreground/40 transition-colors">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className={`h-2 w-2 rounded-full flex-none ${pill(running, exited, t)}`} />
+                  <span className={`h-2 w-2 rounded-[var(--radius-full)] flex-none ${pill(running, exited, t)}`} />
                   <span className="font-mono font-medium">{r.name}</span>
                   {running && <span className="text-success font-mono">{fmtElapsed(Date.now() - t.startedAt)}</span>}
                   {exited && <span className={`font-mono ${t.signal ? 'text-muted-foreground' : t.code ? 'text-destructive' : 'text-success'}`}>{t.signal ? '已停止' : `exit ${t.code}`}</span>}
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {running ? (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', r.name)}><Square className="h-2.5 w-2.5" />停止</Button>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
                     ) : (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', r.name)}>
-                        {exited ? <RotateCw className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}{exited ? '重跑' : '启动'}
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('start', r.name)}>
+                        {exited ? icon('rotate-cw', 'h-2.5 w-2.5') : icon('play', 'h-2.5 w-2.5')}{exited ? '重跑' : '启动'}
                       </Button>
                     )}
                   </span>
                 </div>
-                {r.description && <p className="mt-1 text-[11px] text-muted-foreground/70 truncate">{r.description}</p>}
-                <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-[10px] leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
+                {r.description && <p className="mt-1 text-11 text-muted-foreground/70 truncate">{r.description}</p>}
+                <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-10 leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
                   {tail.length ? tail.map((l, i) => <div key={i} className="truncate">{l}</div>) : <span className="text-terminal-fg/40">$ just {r.name} …</span>}
                 </div>
               </div>
@@ -183,17 +190,17 @@ export function LogViewer() {
       ) : (
         /* 单任务视图:状态头 + 完整日志流 */
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-[11px]">
-            <span className={`h-1.5 w-1.5 rounded-full ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+          <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-11">
+            <span className={`h-1.5 w-1.5 rounded-[var(--radius-full)] ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
             <span className="font-mono font-medium">{selected}</span>
             <span className="text-muted-foreground font-mono">
               {selRunning ? `running · ${fmtElapsed(Date.now() - selTask.startedAt)}` : selTask?.signal ? '已停止' : selTask ? `exit ${selTask.code}` : '未运行'}
             </span>
             <span className="ml-auto flex items-center gap-1">
               {selRunning
-                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', selected)}><Square className="h-2.5 w-2.5" />停止</Button>
-                : <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', selected)}><RotateCw className="h-2.5 w-2.5" />{selTask ? '重跑' : '启动'}</Button>}
-              <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('clear', selected)} disabled={!selLines.length}><Eraser className="h-2.5 w-2.5" />清屏</Button>
+                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
+                : <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
+              <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('clear', selected)} disabled={!selLines.length}>{icon('eraser', 'h-2.5 w-2.5')}清屏</Button>
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>

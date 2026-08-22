@@ -1,0 +1,115 @@
+/* Slate palette — 冷灰蓝色调 */
+
+/* Slate light mode */
+[data-theme="slate"] {
+  --terminal-bg: 15 23 42;
+  --terminal-fg: 241 245 249;
+
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+  --warning: 32 95% 44%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 89% 48%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+  --card: 248 250 252;
+  --card-foreground: 15 23 42;
+  --popover: 248 250 252;
+  --popover-foreground: 15 23 42;
+  --primary: 59 130 246;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 241 245 249;
+  --secondary-foreground: 15 23 42;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --accent: 241 245 249;
+  --accent-foreground: 15 23 42;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 226 232 240;
+  --input: 226 232 240;
+  --ring: 59 130 246;
+
+  /* text overrides */
+  --text-10: 11px;
+  --text-11: 12px;
+  --text-xs: 0.8rem;
+  --text-sm: 0.95rem;
+  --text-base: 1.1rem;
+  --text-lg: 1.25rem;
+
+  /* radius overrides */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* border width */
+  --border-width: 1px;
+
+  /* radius shorthand (for components still using rounded-[var(--radius)]) */
+  --radius: 8px;
+
+  /* shadow tokens */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Slate dark mode */
+[data-theme="slate"][data-mode="dark"] {
+  --terminal-bg: 2 6 23;
+  --terminal-fg: 248 250 252;
+
+  --success: 134 61% 64%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 89% 48%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 15 23 42;
+  --foreground: 248 250 252;
+  --card: 15 23 42;
+  --card-foreground: 248 250 252;
+  --popover: 15 23 42;
+  --popover-foreground: 248 250 252;
+  --primary: 96 165 250;
+  --primary-foreground: 15 23 42;
+  --secondary: 30 41 59;
+  --secondary-foreground: 248 250 252;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --accent: 30 41 59;
+  --accent-foreground: 248 250 252;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 30 41 59;
+  --input: 30 41 59;
+  --ring: 96 165 250;
+
+  /* text overrides */
+  --text-10: 11px;
+  --text-11: 12px;
+  --text-xs: 0.8rem;
+  --text-sm: 0.95rem;
+  --text-base: 1.1rem;
+  --text-lg: 1.25rem;
+
+  /* radius overrides */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* border width */
+  --border-width: 1px;
+
+  /* radius shorthand (for components still using rounded-[var(--radius)]) */
+  --radius: 8px;
+
+  /* shadow tokens */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}

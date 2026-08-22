@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Power } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
+import { useIcons } from '../lib/icons.js';
 
 export function StopButton({ stoppedRef }: { stoppedRef: React.MutableRefObject<boolean> }) {
   const [stopped, setStopped] = useState(false);
+  const { icon } = useIcons();
   const stop = async () => {
     if (!confirm('停止预览服务?停止后需重新启动才能继续预览。')) return;
     stoppedRef.current = true;
@@ -15,6 +16,6 @@ export function StopButton({ stoppedRef }: { stoppedRef: React.MutableRefObject<
     } catch (e) { toast.error('停止预览服务失败'); return; }
     setStopped(true);
   };
-  if (stopped) return <div className="fixed inset-0 z-50 grid place-items-center bg-muted"><div className="text-center text-muted-foreground"><div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">v</div><p>预览服务已停止</p><p className="mt-1 text-xs">关闭此页,或在终端重新启动</p></div></div>;
-  return <Button variant="ghost" size="icon" onClick={stop} aria-label="停止预览服务" title="停止预览服务"><Power className="h-4 w-4" /></Button>;
+  if (stopped) return <div className="fixed inset-0 z-50 grid place-items-center bg-muted"><div className="text-center text-muted-foreground"><div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[var(--radius-md)] bg-primary text-primary-foreground text-2xl font-bold">v</div><p>预览服务已停止</p><p className="mt-1 text-xs">关闭此页,或在终端重新启动</p></div></div>;
+  return <Button variant="ghost" size="icon" onClick={stop} aria-label="停止预览服务" title="停止预览服务">{icon('power', 'h-4 w-4')}</Button>;
 }

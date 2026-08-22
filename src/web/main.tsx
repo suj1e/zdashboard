@@ -6,8 +6,7 @@ import { TooltipProvider } from './components/ui/tooltip';
 import App from './App';
 import './globals.css';
 import './themes/pixel.css';
-import './themes/nord.css';
-import '@fontsource/vt323/latin.css';
+import './themes/slate.css';
 
 const rootEl = document.documentElement;
 

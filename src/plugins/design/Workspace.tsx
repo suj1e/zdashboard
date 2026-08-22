@@ -224,7 +224,7 @@ export default function Workspace() {
           </div>
         </>
       ) : (
-        <EmptyState icon={Palette} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" tone="primary" />
+        <EmptyState icon={<Palette className="h-6 w-6" />} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" tone="primary" />
       )}
     </div>
   );
