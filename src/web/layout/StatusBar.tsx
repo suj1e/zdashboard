@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GitBranch, FolderOpen } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { useSSE } from '../hooks/useSSE';
 
 interface GitInfo { branch?: string; dirty?: number }
@@ -27,19 +28,31 @@ export function StatusBar({ projectPath, stoppedRef }: {
     <footer className="h-7 border-t bg-background flex items-center justify-between px-3 gap-2 text-[11px]">
       <div className="flex items-center gap-1.5 min-w-0">
         {projectPath && (
-          <span className={`${CHIP} shrink-0`} title={projectPath}>
-            <FolderOpen className="h-3 w-3" />
-            {projectPath ? projectPath.split('/').pop() || projectPath : ''}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={`${CHIP} shrink-0 cursor-default`}>
+                <FolderOpen className="h-3 w-3" />
+                {projectPath.split('/').pop() || projectPath}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-mono text-[10px]">{projectPath}</TooltipContent>
+          </Tooltip>
         )}
         {git.branch && (
-          <span className={`${CHIP} shrink-0`} title={git.dirty ? `${git.dirty} 个未提交变更` : '工作区干净'}>
-            <GitBranch className="h-3 w-3" />
-            {git.branch}
-            {git.dirty
-              ? <span className="text-amber-600 dark:text-amber-400" title="未提交变更">● {git.dirty}</span>
-              : <span className="text-emerald-600 dark:text-emerald-400">clean</span>}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={`${CHIP} shrink-0 cursor-default`}>
+                <GitBranch className="h-3 w-3" />
+                {git.branch}
+                {git.dirty
+                  ? <span className="text-amber-600 dark:text-amber-400">● {git.dirty}</span>
+                  : <span className="text-emerald-600 dark:text-emerald-400">clean</span>}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-mono text-[10px]">
+              {git.dirty ? `${git.dirty} 个未提交变更` : '工作区干净'}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
