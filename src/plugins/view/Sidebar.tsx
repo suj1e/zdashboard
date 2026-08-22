@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
-  ChevronRight, Folder, FolderOpen, GitBranch, ListTodo, Archive,
+  ChevronRight, Folder, FolderOpen, GitBranch, ListTodo, Boxes,
   ShieldCheck, BookOpen, Package, type LucideIcon,
 } from 'lucide-react';
 import { FileIcon } from '../../web/components/FileIcon.js';
@@ -24,7 +24,7 @@ function matches(node: TreeNode, q: string): boolean {
 
 /** 树顶层分组名 → 图标(changes/archive/specs/docs/other 与 change 子目录区分) */
 const GROUP_ICON: Record<string, LucideIcon> = {
-  changes: ListTodo, archive: Archive, specs: ShieldCheck, docs: BookOpen, other: Package,
+  changes: ListTodo, archive: Boxes, specs: ShieldCheck, docs: BookOpen, other: Package,
 };
 
 function TreeDir({ node, depth, filter, current, onSelectFile }: {
