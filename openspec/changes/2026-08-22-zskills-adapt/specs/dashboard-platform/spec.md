@@ -4,6 +4,21 @@
 
 系统 SHALL 以 `<root>/.zdev/dashboard.json` 记录运行实例（pid/port/root/startedAt），启动时经双重校验（pid 探活 + `GET /__config` root 比对）判定存活：活实例且未指定 `--restart` 时复用（打开其 URL 并携带 `--page` hash，退出码 0）；任一校验失败视为记录过期，覆盖写新记录。记录须在 listen 成功后以**实际端口**回写。`--restart` 停止旧实例后，新实例 SHALL 优先尝试旧记录端口（用户显式 `--port` 优先），避免端口漂移使已开标签失效。
 
+#### Scenario: 同目录复用
+
+- **WHEN** 项目目录已有活实例，再次执行 `zdashboard --dir <root> --open`
+- **THEN** 不启动新进程，打开活实例 URL（含 --page hash），进程以 0 退出并提示已复用
+
+#### Scenario: 陈旧记录自愈
+
+- **WHEN** 记录文件存在但 pid 已死、端口无响应、root 不匹配或文件损坏
+- **THEN** 视为过期，正常起新实例并覆盖记录，不报错
+
+#### Scenario: 强制重启
+
+- **WHEN** 指定 `--restart` 且存在活实例
+- **THEN** 旧实例收到 SIGTERM（轮询探活、超时 SIGKILL），新实例启动并更新记录
+
 #### Scenario: restart 端口继承
 
 - **WHEN** 4190 端口实例被 `--restart` 替换且端口成功释放
