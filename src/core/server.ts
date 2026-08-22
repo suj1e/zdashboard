@@ -37,6 +37,7 @@ const MIME: Record<string, string> = {
   '.mjs': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
   '.sql': 'text/plain; charset=utf-8', '.csv': 'text/plain; charset=utf-8',
   '.tsv': 'text/plain; charset=utf-8', '.yaml': 'text/yaml; charset=utf-8',
@@ -52,6 +53,8 @@ const MIME: Record<string, string> = {
   '.zsh': 'text/plain; charset=utf-8', '.fish': 'text/plain; charset=utf-8',
   '.env': 'text/plain; charset=utf-8', '.gitignore': 'text/plain; charset=utf-8',
   '.dockerfile': 'text/plain; charset=utf-8',
+  '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+  '.m4a': 'audio/mp4', '.aac': 'audio/aac',
   '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/woff',
   '.map': 'application/json; charset=utf-8',
 };
@@ -122,29 +125,64 @@ export class ServerService extends Service {
     this.ctx.effect(() => () => this.prefixStatic.delete(prefix));
   }
 
-  private serveFile(filePath: string, res: http.ServerResponse, injectHtml: boolean) {
-    fs.readFile(filePath, (err, data) => {
+  private serveFile(filePath: string, req: http.IncomingMessage, res: http.ServerResponse, injectHtml: boolean) {
+    fs.stat(filePath, (err, stat) => {
       if (err) { res.writeHead(404); return res.end('Not found'); }
       const ext = path.extname(filePath).toLowerCase();
       const ct = MIME[ext] ?? 'application/octet-stream';
-      let body = data;
-      if (injectHtml && ext === '.html') {
-        const s = data.toString('utf8');
-        body = Buffer.from(s.indexOf('</body>') >= 0 ? s.replace('</body>', INJECT + '</body>') : s + INJECT);
+
+      // ---- HTTP Range support ----
+      const rangeHeader = (req.headers['range'] as string | undefined);
+      let range: { start: number; end: number } | null = null;
+      if (rangeHeader) {
+        const m = rangeHeader.match(/^bytes=(\d+)-(\d*)$/);
+        if (m) {
+          const start = Number(m[1]);
+          const end   = m[2] !== '' ? Number(m[2]) : stat.size - 1;
+          if (!Number.isNaN(start) && !Number.isNaN(end) && start <= end && start < stat.size) {
+            range = { start, end: Math.min(end, stat.size - 1) };
+          }
+          // malformed range → fall through to 200 full response
+        }
+        // unparseable range header → fall through to 200 full response
       }
-      res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
-      res.end(body);
+
+      if (range) {
+        const { start, end } = range;
+        const chunkSize = end - start + 1;
+        res.writeHead(206, {
+          'Content-Type': ct,
+          'Content-Length': String(chunkSize),
+          'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'no-cache',
+        });
+        fs.createReadStream(filePath, { start, end }).pipe(res);
+        return;
+      }
+
+      // Full response
+      fs.readFile(filePath, (err, data) => {
+        if (err) { res.writeHead(404); return res.end('Not found'); }
+        let body: string | Buffer = data;
+        if (injectHtml && ext === '.html') {
+          const s = data.toString('utf8');
+          body = Buffer.from(s.indexOf('</body>') >= 0 ? s.replace('</body>', INJECT + '</body>') : s + INJECT);
+        }
+        res.writeHead(200, { 'Content-Type': ct, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' });
+        res.end(body);
+      });
     });
   }
 
-  private servePrefix(url: string, res: http.ServerResponse): boolean {
+  private servePrefix(url: string, req: http.IncomingMessage, res: http.ServerResponse): boolean {
     for (const [prefix, dir] of this.prefixStatic) {
       if (url.indexOf(prefix) === 0) {
         let rel = this.safeDecode(url.slice(prefix.length));
         if (!rel || rel === '/' || !path.extname(rel)) rel = path.join(rel || '', 'index.html');
         const fp = path.join(dir, rel);
         if (fp.indexOf(dir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
-        this.serveFile(fp, res, true);
+        this.serveFile(fp, req, res, true);
         return true;
       }
     }
@@ -171,7 +209,7 @@ export class ServerService extends Service {
         return;
       }
 
-      if (this.servePrefix(url, res)) return;
+      if (this.servePrefix(url, req, res)) return;
 
       if (url === '/' || url.indexOf('/__app/') === 0 || url.indexOf('/assets/') === 0) {
         let fp = this.appDir;
@@ -179,12 +217,12 @@ export class ServerService extends Service {
         if (url.indexOf('/__app/') === 0) fp = path.join(this.appDir, url.slice(7));
         if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
         if (url === '/') fp = path.join(this.appDir, 'index.html');
-        return this.serveFile(fp, res, false);
+        return this.serveFile(fp, req, res, false);
       }
 
       const fp = path.join(this.root, this.safeDecode(url));
       if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
-      return this.serveFile(fp, res, true);
+      return this.serveFile(fp, req, res, true);
     } catch (e) {
       try { res.writeHead(400); res.end('bad request'); } catch {}
       console.error('[zdashboard] handler error', e);

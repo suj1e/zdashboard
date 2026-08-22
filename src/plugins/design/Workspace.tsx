@@ -12,24 +12,91 @@ function PageViewer({ path }: { path: string }) {
   return <iframe src={'/' + encodeURI(path)} title="预览" className="w-full h-full border-0 bg-white" />;
 }
 
+interface TokenSection {
+  label: string;
+  items: { name: string; value: string }[];
+}
+
 function TokenViewer({ path }: { path: string }) {
-  const [html, setHtml] = useState('<p class="p-3 text-xs text-muted-foreground">解析中…</p>');
+  const [sections, setSections] = useState<TokenSection[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetch('/' + encodeURI(path), { cache: 'no-store' }).then(r => r.text()).then(text => {
-      const vars = text.match(/--[A-Za-z0-9_-]+\s*:\s*[^;}\n]+/g) ?? [];
-      if (!vars.length) { setHtml('<p class="p-3 text-xs">未发现 CSS 变量</p>'); return; }
-      const isColor = (v: string) => /^(#([0-9a-fA-F]{3,8})\b|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(v.trim());
-      const colors = vars.filter(v => isColor(v));
-      const fonts = vars.filter(v => /font|family|type/.test(v.toLowerCase()) && !isColor(v));
-      const rest = vars.filter(v => !colors.includes(v) && !fonts.includes(v));
-      let h = '';
-      if (colors.length) { h += `<div class="mb-7"><div class="mb-3 text-[11px] font-semibold uppercase text-muted-foreground">配色 · ${colors.length}</div><div class="grid gap-3" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">`; for (const c of colors) h += `<div class="overflow-hidden rounded-lg border bg-background"><div class="h-[72px] border-b" style="background:${c}"></div><div class="px-2.5 pt-2 font-mono text-[11px] break-all">${c.split(':')[0].trim()}</div><div class="px-2.5 pb-2 text-xs text-muted-foreground">${c.split(':').slice(1).join(':').trim()}</div></div>`; h += '</div></div>'; }
-      if (fonts.length) { h += `<div class="mb-7"><div class="mb-3 text-[11px] font-semibold uppercase text-muted-foreground">字体 · ${fonts.length}</div><div class="grid gap-3" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">`; for (const f of fonts) h += `<div class="overflow-hidden rounded-lg border bg-background"><div class="grid h-[72px] place-items-center text-2xl" style="font-family:${f.split(':').slice(1).join(':').trim()}">Aa</div><div class="px-2.5 font-mono text-[11px]">${f.split(':')[0].trim()}</div></div>`; h += '</div></div>'; }
-      if (rest.length) { h += `<div class="mb-7"><div class="mb-3 text-[11px] font-semibold uppercase text-muted-foreground">其他 · ${rest.length}</div><div class="flex flex-col gap-1">`; for (const r of rest) h += `<div class="flex justify-between gap-3 px-2.5 py-1.5 rounded border bg-background text-xs"><span class="font-mono">${r.split(':')[0].trim()}</span><span class="text-muted-foreground">${r.split(':').slice(1).join(':').trim()}</span></div>`; h += '</div></div>'; }
-      setHtml(h || '<p class="p-3 text-xs">无</p>');
-    });
+    let cancelled = false;
+    setLoading(true);
+    setSections(null);
+    fetch('/' + encodeURI(path), { cache: 'no-store' })
+      .then(r => r.text())
+      .then(text => {
+        if (cancelled) return;
+        const vars = text.match(/--[A-Za-z0-9_-]+\s*:\s*[^;}\n]+/g) ?? [];
+        if (!vars.length) { setSections([]); setLoading(false); return; }
+        const isColor = (v: string) => /^(#([0-9a-fA-F]{3,8})\b|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(v.trim());
+        const colors = vars.filter(v => isColor(v));
+        const fonts  = vars.filter(v => /font|family|type/.test(v.toLowerCase()) && !isColor(v));
+        const rest   = vars.filter(v => !colors.includes(v) && !fonts.includes(v));
+        const parseVal = (raw: string) => {
+          const idx = raw.indexOf(':');
+          const name = raw.slice(0, idx).trim();
+          const value = raw.slice(idx + 1).trim();
+          return { name, value };
+        };
+        const result: TokenSection[] = [];
+        if (colors.length) result.push({ label: `配色 · ${colors.length}`, items: colors.map(parseVal) });
+        if (fonts.length)  result.push({ label: `字体 · ${fonts.length}`,  items: fonts.map(parseVal) });
+        if (rest.length)   result.push({ label: `其他 · ${rest.length}`,   items: rest.map(parseVal) });
+        setSections(result);
+        setLoading(false);
+      })
+      .catch(() => { if (!cancelled) { setSections([]); setLoading(false); } });
+    return () => { cancelled = true; };
   }, [path]);
-  return <div className="p-8" dangerouslySetInnerHTML={{ __html: html }} />;
+
+  if (loading) return <p className="p-3 text-xs text-muted-foreground">解析中…</p>;
+  if (!sections.length) return <p className="p-3 text-xs">未发现 CSS 变量</p>;
+
+  return (
+    <div className="p-8 flex flex-col gap-7">
+      {sections.map(sec => {
+        const hasColorItems = sec.items.some(it => /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(it.value));
+        const hasFontItems  = sec.items.some(it => /font|family|type/i.test(it.name));
+        return (
+          <section key={sec.label}>
+            <div className="mb-3 text-[11px] font-semibold uppercase text-muted-foreground">{sec.label}</div>
+            {hasColorItems ? (
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+                {sec.items.filter(it => /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(it.value)).map(({ name, value }) => (
+                  <div key={name} className="overflow-hidden rounded-lg border bg-background">
+                    <div className="h-[72px] border-b" style={{ background: value }} />
+                    <div className="px-2.5 pt-2 font-mono text-[11px] break-all">{name}</div>
+                    <div className="px-2.5 pb-2 text-xs text-muted-foreground">{value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : hasFontItems ? (
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+                {sec.items.map(({ name, value }) => (
+                  <div key={name} className="overflow-hidden rounded-lg border bg-background">
+                    <div className="grid h-[72px] place-items-center text-2xl" style={{ fontFamily: value }}>Aa</div>
+                    <div className="px-2.5 font-mono text-[11px]">{name}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {sec.items.map(({ name, value }) => (
+                  <div key={name} className="flex justify-between gap-3 px-2.5 py-1.5 rounded border bg-background text-xs">
+                    <span className="font-mono">{name}</span>
+                    <span className="text-muted-foreground">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
 }
 
 function VideoViewer({ path }: { path: string }) {

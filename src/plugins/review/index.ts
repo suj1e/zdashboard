@@ -1,6 +1,7 @@
 import type { Context } from 'cordis';
 import http from 'node:http';
 import { ReviewStore, type ItemState, type ReviewStatus } from '../../server/review-store.js';
+import { readBody } from '../../core/read-body.js';
 
 export const apply = {
   inject: ['server', 'dashboard', 'reload'] as const,
@@ -55,10 +56,3 @@ export const apply = {
   },
 };
 
-async function readBody(req: http.IncomingMessage): Promise<string> {
-  return new Promise((resolve) => {
-    let data = '';
-    req.on('data', (c: string | Buffer) => { data += c; });
-    req.on('end', () => resolve(data));
-  });
-}
