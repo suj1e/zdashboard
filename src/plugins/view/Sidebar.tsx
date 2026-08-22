@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { ChevronRight, FileText, Image as ImageIcon, GitBranch } from 'lucide-react';
+import {
+  ChevronRight, Folder, FolderOpen, GitBranch, ListTodo, Archive,
+  ShieldCheck, BookOpen, Package, type LucideIcon,
+} from 'lucide-react';
+import { FileIcon } from '../../web/components/FileIcon.js';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
 import { useDebounce } from 'use-debounce';
@@ -18,11 +22,10 @@ function matches(node: TreeNode, q: string): boolean {
   return (node.children ?? []).some((c) => matches(c, q));
 }
 
-function FileIcon({ name }: { name: string }) {
-  const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
-  if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return <ImageIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
-  return <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
-}
+/** 树顶层分组名 → 图标(changes/archive/specs/docs/other 与 change 子目录区分) */
+const GROUP_ICON: Record<string, LucideIcon> = {
+  changes: ListTodo, archive: Archive, specs: ShieldCheck, docs: BookOpen, other: Package,
+};
 
 function TreeDir({ node, depth, filter, current, onSelectFile }: {
   node: TreeNode; depth: number; filter: string; current: string | null; onSelectFile: (p: string) => void;
@@ -33,14 +36,27 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
   if (!children.length && filter) return null;
   return (
     <div>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1 px-2 py-1 text-xs text-foreground hover:bg-muted"
-        style={{ paddingLeft: 8 + depth * 14 }}
-      >
-        <ChevronRight className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
-        <span className="font-medium truncate">{node.name}</span>
-      </button>
+      {(() => {
+        const groupMatch = node.name.match(/^([a-z]+) \((\d+)\)$/);
+        const GroupIcon = groupMatch ? GROUP_ICON[groupMatch[1]] : undefined;
+        const DirIcon = expanded ? FolderOpen : Folder;
+        return (
+          <button
+            onClick={() => setOpen(o => !o)}
+            className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-foreground hover:bg-muted rounded-md mx-1"
+            style={{ paddingLeft: 8 + depth * 14, width: 'calc(100% - 8px)' }}
+          >
+            <ChevronRight className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            {GroupIcon
+              ? <GroupIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              : <DirIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors" />}
+            <span className="font-medium truncate">{groupMatch ? groupMatch[1] : node.name}</span>
+            {groupMatch && (
+              <span className="ml-auto mr-1 shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-mono text-muted-foreground">{groupMatch[2]}</span>
+            )}
+          </button>
+        );
+      })()}
       {expanded && children.map((c) =>
         c.kind === 'dir' ? (
           <TreeDir key={c.name + depth} node={c} depth={depth + 1} filter={filter} current={current} onSelectFile={onSelectFile} />
@@ -48,10 +64,10 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
           <button
             key={c.path}
             onClick={() => c.path && onSelectFile(c.path)}
-            className={`w-full flex items-center gap-1.5 pr-2 py-1 text-xs border-l-2 border-transparent hover:bg-muted ${current === c.path ? 'bg-muted font-medium border-primary' : 'text-muted-foreground'}`}
-            style={{ paddingLeft: 20 + depth * 14 }}
+            className={`w-full flex items-center gap-1.5 pr-2 py-1 text-xs hover:bg-muted rounded-md mx-1 ${current === c.path ? 'bg-primary/10 text-foreground font-medium' : 'text-muted-foreground'}`}
+            style={{ paddingLeft: 20 + depth * 14, width: 'calc(100% - 8px)' }}
           >
-            <FileIcon name={c.name} />
+            <FileIcon name={c.name} active={current === c.path} />
             <span className="truncate">{c.name}</span>
           </button>
         )
