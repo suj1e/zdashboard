@@ -222,7 +222,7 @@ stats 工作区的统计卡片 SHALL 可点击：点击文件/目录/Markdown �
 
 ### Requirement: 主题系统
 
-系统 SHALL 以令牌驱动风格：语义色（success/warning/info/destructive）、圆角、阴影、点阵背景全部经 CSS 变量定义。**明暗（data-mode: dark/light）与风格（data-theme: default/pixel/…）为正交维度**：明暗是每个风格都有的两态（太阳/月亮按钮切换），风格由独立选择器（Palette 下拉 + 色板预览 + 持久化）选择、清单由注册表声明。**新增一套风格 SHALL 仅需一个 CSS 变量覆盖块与注册表条目，不修改任何组件**。
+系统 SHALL 以令牌驱动风格并支持多主题扩展：语义色、圆角、阴影、**字体（--font-sans/--font-mono）、边框宽度（--border-width）** 全部经 CSS 变量定义；**明暗（data-mode: dark/light）与主题（data-theme）正交**；主题清单由注册表声明且 **id 为非联合字符串**（新增主题不改类型定义）。添加主题 SHALL 遵循 SOP：一个主题 CSS 文件（含该主题在 dark/light 两 mode 的取值）+ 一条注册表条目，零组件代码改动（图标类主题额外提供一张图标映射表）。Topbar 风格选择器 SHALL 用 lucide 图标并与状态同步（切换后选中态即时刷新）。
 
 #### Scenario: 零组件改动换风格
 
@@ -243,3 +243,18 @@ stats 工作区的统计卡片 SHALL 可点击：点击文件/目录/Markdown �
 
 - **WHEN** 用户在 Topbar 主题选择器切换主题
 - **THEN** 全站即时生效并持久化；重启后保持；旧版暗色用户升级后无感迁移
+
+#### Scenario: 新增主题零 tsx
+
+- **WHEN** 新增 Nord 主题（调色板式）
+- **THEN** 仅新增 src/web/themes/nord.css 与一条注册表条目，git diff 无任何 .tsx 变更
+
+#### Scenario: 字体与边框随主题
+
+- **WHEN** 主题覆盖 --font-mono 或 --border-width
+- **THEN** 使用 font-mono 类的组件（14 处）与 border 类（全站）自动跟随，无组件改类名
+
+#### Scenario: 主题切换即时反馈
+
+- **WHEN** 用户在主题下拉选择 Nord
+- **THEN** 菜单选中 Check 立即可见地更新至 Nord（React state 驱动），全站即时换肤并持久化
