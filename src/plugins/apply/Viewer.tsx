@@ -2,6 +2,9 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useSSE } from '../../web/hooks/useSSE.js';
+import { Badge } from '../../web/components/ui/badge';
+import { ProgressBar } from '../../web/components/ProgressBar.js';
+import { countTasks, parseTasks } from './parse-tasks.js';
 import remarkGfm from 'remark-gfm';
 
 interface ChangeSummary {
@@ -28,64 +31,43 @@ function pct(done: number, total: number) {
 
 function StatusPill({ done, total }: { done: number; total: number }) {
   const p = pct(done, total);
-  const cls =
-    p === 100
-      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
-      : p > 0
-        ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
-        : 'bg-muted text-muted-foreground border-border';
+  const variant = p === 100 ? 'success' : p > 0 ? 'warning' : 'neutral';
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono ${cls}`}>
+    <Badge variant={variant}>
       {done}/{total} · {p}%
-    </span>
+    </Badge>
   );
 }
 
 function InWorktreeBadge() {
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-sky-500/10 text-sky-600 border-sky-500/30">
-      worktree 执行中
-    </span>
-  );
+  return <Badge variant="info">worktree 执行中</Badge>;
 }
 
 function TestStrategyBadge() {
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-purple-500/10 text-purple-600 border-purple-500/30">
-      含测试策略
-    </span>
-  );
+  return <Badge variant="info">含测试策略</Badge>;
 }
 
 function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
-  const cls = pending
-    ? 'bg-muted text-muted-foreground border-border'
-    : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
-  return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono ${cls}`}>
-      {pending ? `${name} · 等待前置` : name}
-    </span>
-  );
+  const variant = pending ? 'neutral' : 'success';
+  return <Badge variant={variant}>{pending ? `${name} · 等待前置` : name}</Badge>;
 }
 
 function TaskList({ tasks }: { tasks: string }) {
-  const lines = tasks.split('\n').filter((l) => l.trim().startsWith('- ['));
-  if (!lines.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
-  const firstUnchecked = lines.findIndex((l) => !/- \[[xX]\]/.test(l));
+  const items = parseTasks(tasks);
+  if (!items.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
+  const firstUnchecked = items.findIndex((t) => !t.checked);
   return (
     <ul className="space-y-1 text-xs">
-      {lines.map((l, i) => {
-        const checked = /- \[[xX]\]/.test(l);
+      {items.map((t, i) => {
         const isNext = i === firstUnchecked;
-        const text = l.replace(/^-\s*\[[ xX]\]\s*/, '');
         return (
-          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''} ${checked ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {checked ? (
+          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''} ${t.checked ? 'text-foreground' : 'text-muted-foreground'}`}>
+            {t.checked ? (
               <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px]">✓</span>
             ) : (
               <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border ${isNext ? 'border-amber-500' : 'border-muted-foreground/50'}`} />
             )}
-            <span>{text}</span>
+            <span>{t.text}</span>
             {isNext && <span className="ml-auto flex-none text-[10px] font-medium text-amber-600 dark:text-amber-400">← 下一步</span>}
           </li>
         );
@@ -107,9 +89,7 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
         <StatusPill done={item.done} total={item.total} />
         {item.inWorktree && <InWorktreeBadge />}
       </div>
-      <div className="h-1 rounded-full bg-muted mb-2 overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${pct(item.done, item.total) === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${pct(item.done, item.total)}%` }} />
-      </div>
+        <ProgressBar value={pct(item.done, item.total)} className="h-1 mb-2" />
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
         <span className={item.hasProposal ? 'text-foreground' : ''}>proposal</span>
         <span className={item.hasDesign ? 'text-foreground' : ''}>design</span>

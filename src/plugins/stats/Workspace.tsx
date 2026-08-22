@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { formatBytes } from '../../web/lib/utils.js';
+import { ProgressBar } from '../../web/components/ProgressBar.js';
 
 interface ExtCount { ext: string; count: number }
 interface StatsData {
@@ -85,9 +86,7 @@ export default function Workspace(_props: WorkspaceProps) {
           {data.byExt.map(e => (
             <div key={e.ext} className="flex items-center gap-3 text-xs">
               <span className="w-16 font-mono text-foreground truncate">{e.ext}</span>
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full" style={{ width: `${(e.count / max * 100).toFixed(1)}%` }} />
-              </div>
+              <ProgressBar value={parseFloat((e.count / max * 100).toFixed(1))} className="flex-1 h-2" />
               <span className="w-8 text-right font-mono text-muted-foreground">{e.count}</span>
             </div>
           ))}

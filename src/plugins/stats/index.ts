@@ -1,6 +1,7 @@
 import type { Context } from 'cordis';
 import fs from 'node:fs';
 import path from 'node:path';
+import { walkDir } from '../../server/walk.js';
 
 interface Stats {
   root: string;
@@ -29,18 +30,13 @@ function scan(root: string): Stats {
   const extMap = new Map<string, number>();
 
   const walk = (dir: string) => {
-    let ents: fs.Dirent[];
-    try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const ent of ents) {
-      if (ent.name.startsWith('.') || SKIP_DIRS.has(ent.name)) continue;
-      const abs = path.join(dir, ent.name);
-      if (ent.isDirectory()) { stats.dirs++; walk(abs); continue; }
+    walkDir(dir, { skip: SKIP_DIRS, onDir: () => { stats.dirs++; }, onFile: (abs) => {
       stats.files++;
       try { stats.totalSize += fs.statSync(abs).size; } catch {}
-      const ext = path.extname(ent.name).toLowerCase() || '(无扩展名)';
+      const ext = path.extname(abs).toLowerCase() || '(无扩展名)';
       extMap.set(ext, (extMap.get(ext) ?? 0) + 1);
       if (ext === '.md' || ext === '.markdown') stats.markdown++;
-    }
+    }});
   };
   walk(root);
 

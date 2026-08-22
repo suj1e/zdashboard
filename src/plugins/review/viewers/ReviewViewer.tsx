@@ -1,17 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, RotateCcw, Send, X } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import remarkFrontmatter from 'remark-frontmatter';
-import rehypeRaw from 'rehype-raw';
-import rehypeSlug from 'rehype-slug';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import rehypeHighlight from 'rehype-highlight';
-import rehypeKatex from 'rehype-katex';
-import 'highlight.js/styles/github-dark.css';
-import 'katex/dist/katex.min.css';
+import { MdViewer } from '../../../web/viewers/MdViewer.js';
+import { ProgressBar } from '../../../web/components/ProgressBar.js';
+import { FilterPills } from '../../../web/components/FilterPills.js';
 
 type ItemState = 'open' | 'answered' | 'accepted' | 'dismissed';
 type ReviewStatus = 'draft' | 'reviewing' | 'passed' | 'rejected';
@@ -55,64 +47,6 @@ const STATE_BADGE: Record<ItemState, string> = {
 const STATE_TEXT: Record<ItemState, string> = {
   open: '待处理', answered: '已答复', accepted: '已采纳', dismissed: '已驳回',
 };
-
-function CodeBlock({ children }: { children?: React.ReactNode }) {
-  const ref = useRef<HTMLPreElement>(null);
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    const text = ref.current?.innerText ?? '';
-    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }
-    catch (e) { console.error('[zdashboard] clipboard copy failed:', e); }
-  };
-  return (
-    <div className="not-prose relative my-4 group">
-      <button onClick={copy} className="absolute right-2 top-2 z-10 px-2 py-0.5 rounded border border-border bg-background/80 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
-        {copied ? '已复制' : '复制'}
-      </button>
-      <pre ref={ref} className="overflow-auto rounded-md border bg-[#0d1117] p-3 text-xs leading-relaxed">{children}</pre>
-    </div>
-  );
-}
-
-function MdViewer({ path }: { path: string }) {
-  const [text, setText] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    fetch('/' + encodeURI(path), { cache: 'no-store' }).then(r => r.text()).then(t => { if (alive) setText(t); }).catch(() => { if (alive) setText(''); });
-    return () => { alive = false; };
-  }, [path]);
-
-  if (text === null) return <p className="p-3 text-xs text-muted-foreground">加载中…</p>;
-  const fmMatch = text.match(/^---\n([\s\S]*?)\n---\n?/);
-  const frontmatter = fmMatch?.[1] ?? null;
-  const body = frontmatter ? text.slice(fmMatch![0].length) : text;
-
-  return (
-    <div className="prose dark:prose-invert mx-auto max-w-3xl p-8 prose-headings:scroll-mt-4 prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0">
-      {frontmatter && (
-        <details className="not-prose mb-4 rounded border p-3 text-sm">
-          <summary className="cursor-pointer font-medium">YAML frontmatter</summary>
-          <pre className="mt-2 whitespace-pre-wrap text-xs">{frontmatter}</pre>
-        </details>
-      )}
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath, remarkFrontmatter]}
-        rehypePlugins={[
-          rehypeRaw, rehypeSlug,
-          [rehypeAutolinkHeadings, { behavior: 'wrap', properties: { className: ['no-underline'] } }],
-          [rehypeHighlight, { detect: true, ignoreMissing: true }],
-          [rehypeKatex, { strict: false }],
-        ]}
-        components={{ pre: ({ children }) => <CodeBlock>{children}</CodeBlock>, a: ({ href, children }) => {
-          const ext = href?.startsWith('http');
-          return <a href={href} target={ext ? '_blank' : undefined} rel={ext ? 'noreferrer noopener' : undefined}>{children}</a>;
-        } }}
-      >
-        {body}
-      </ReactMarkdown>
-    </div>
-  );
-}
 
 function ItemCard({ item, token, onUpdated }: { item: ReviewItem; token: string; onUpdated: (d: ReviewData) => void }) {
   const [answer, setAnswer] = useState(item.answer ?? '');
@@ -261,21 +195,17 @@ export default function ReviewViewer() {
                   <span className="text-muted-foreground">处理进度</span>
                   <span className="font-mono">{processed}/{total} · {p}%</span>
                 </div>
-                <div className={`h-1.5 rounded-full bg-muted overflow-hidden ${counts.open > 0 ? '' : ''}`}>
-                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${p}%` }} />
-                </div>
+                <ProgressBar value={p} className="h-1.5" />
               </>
             );
           })()}
         </div>
-        <div className="px-3 pt-2 pb-1.5 flex flex-wrap gap-1">
-          {FILTERS.map(f => (
-            <button key={f.key} onClick={() => setFilter(f.key)}
-              className={`px-1.5 py-0.5 rounded text-[11px] border ${filter === f.key ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted text-muted-foreground'}`}>
-              {f.label} {counts[f.key]}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          items={FILTERS.map(f => ({ key: String(f.key), label: `${f.label} ${counts[f.key]}` }))}
+          value={filter}
+          onChange={(v) => setFilter(v as ItemState | 'all')}
+          ariaLabel="评审项筛选"
+        />
         <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">文档 · 评审项</div>
         {groups.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">无评审项</p>}
         {groups.map(g => (

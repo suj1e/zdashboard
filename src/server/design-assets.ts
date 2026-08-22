@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { walkDir } from './walk.js';
 
 export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font' | 'other';
 
@@ -35,18 +36,10 @@ export function scanAssets(root: string): ScanResult {
   const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font','other'];
   for (const k of keys) out[k] = [];
   const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
-  function walk(dir: string, rel: string) {
-    let ents: fs.Dirent[];
-    try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const ent of ents) {
-      if (ent.name.startsWith('.') || SKIP.has(ent.name)) continue;
-      const r = rel ? `${rel}/${ent.name}` : ent.name;
-      if (ent.isDirectory()) { walk(path.join(dir, ent.name), r); continue; }
-      const ext = path.extname(ent.name).toLowerCase();
-      const t = categorize(r, ext);
-      if (t) out[t].push({ path: r, name: ent.name, ext, type: t });
-    }
-  }
-  walk(root, '');
+  walkDir(root, { skip: SKIP, onFile: (abs, rel) => {
+    const ext = path.extname(abs).toLowerCase();
+    const t = categorize(rel, ext);
+    if (t) out[t].push({ path: rel, name: path.basename(abs), ext, type: t });
+  }});
   return out;
 }

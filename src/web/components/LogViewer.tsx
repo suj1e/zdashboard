@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { Play, Square, RotateCw, LayoutGrid, Eraser } from 'lucide-react';
+import { Play, Square, RotateCw, Eraser } from 'lucide-react';
 import { Button } from './ui/button';
+import { FilterPills } from './FilterPills.js';
 import { toast } from 'sonner';
 import { intervalToDuration } from 'date-fns';
 
@@ -100,39 +101,46 @@ export function LogViewer() {
     : exited ? (t?.signal ? 'bg-muted-foreground' : t?.code ? 'bg-red-500' : 'bg-emerald-500/60')
     : 'bg-muted-foreground/30';
 
+  const consoleItem: FilterItem = {
+    key: '__console__',
+    label: '',
+    badge: <span className="font-mono opacity-80">{runningCount > 0 ? runningCount : ''}</span>,
+    className: selected === null ? '' : 'border-border text-muted-foreground hover:text-foreground',
+  };
+
+  const recipeItems: FilterItem[] = recipes.map(r => {
+    const t = tasks[r.name];
+    const running = t?.state === 'running';
+    const exited = t?.state === 'exited';
+    const isSel = selected === r.name;
+    return {
+      key: r.name,
+      label: r.name,
+      className: isSel ? '' : running ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20' : '',
+      renderLabel: () => (
+        <>
+          <span className={`h-1.5 w-1.5 rounded-full ${pill(running, exited, t)}`} />
+          <span>{r.name}</span>
+        </>
+      ),
+      renderExtra: () => exited && !isSel ? (
+        <span className={`text-[10px] ${t?.signal ? 'opacity-60' : t?.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+          {t?.signal ? '停' : t?.code}
+        </span>
+      ) : undefined,
+    };
+  });
+
   return (
     <div className="h-full flex flex-col">
       {/* ── 药丸行:总控台 + 全部任务,横铺 ── */}
       <div className="flex-none flex items-center gap-1.5 flex-wrap px-3 py-2 border-b bg-background">
-        <button
-          onClick={() => setSelected(null)}
-          className={`inline-flex items-center gap-1.5 h-7 px-3 rounded-full border text-xs transition-colors
-            ${selected === null ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
-        >
-          <LayoutGrid className="h-3 w-3" />总控台
-          {runningCount > 0 && <span className="font-mono opacity-80">{runningCount}</span>}
-        </button>
-        {recipes.map(r => {
-          const t = tasks[r.name];
-          const running = t?.state === 'running';
-          const exited = t?.state === 'exited';
-          const isSel = selected === r.name;
-          return (
-            <button
-              key={r.name}
-              onClick={() => setSelected(r.name)}
-              title={r.description || r.name}
-              className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-xs font-mono transition-colors
-                ${isSel ? 'bg-primary text-primary-foreground border-primary'
-                  : running ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
-                  : 'border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/40'}`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${pill(running, exited, t)}`} />
-              {r.name}
-              {exited && !isSel && <span className={`text-[10px] ${t.signal ? 'opacity-60' : t.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>{t.signal ? '停' : t.code}</span>}
-            </button>
-          );
-        })}
+        <FilterPills
+          items={[consoleItem, ...recipeItems]}
+          value={selected ?? '__console__'}
+          onChange={(v) => setSelected(v === '__console__' ? null : v)}
+          ariaLabel="任务筛选"
+        />
       </div>
 
       {/* ── 内容区 ── */}

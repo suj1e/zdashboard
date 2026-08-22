@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { countTasks } from './parse-tasks.js';
 
 export interface ChangeSummary {
   name: string;
@@ -17,12 +18,6 @@ export interface ChangeDetail extends ChangeSummary {
   tasks: string;
   dependsOn: string[];
   hasTestStrategy: boolean;
-}
-
-function countTasks(md: string): { total: number; done: number } {
-  const all = (md.match(/^\s*-\s*\[[ xX]\]\s*/gm) || []).length;
-  const done = (md.match(/^\s*-\s*\[[xX]\]\s*/gm) || []).length;
-  return { total: all, done };
 }
 
 function readText(p: string): string {

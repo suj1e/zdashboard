@@ -1,43 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff } from 'lucide-react';
-import { MdViewer } from '../../web/viewers/MdViewer';
+import { MdViewer } from '../../web/viewers/MdViewer.js';
+import { ImageViewer } from '../../web/viewers/ImageViewer.js';
+import { CodeViewer } from '../../web/viewers/CodeViewer.js';
+import { FilterPills } from '../../web/components/FilterPills.js';
 import { designState } from './state.js';
 
 type VpMode = 0 | 768 | 375 | 'custom';
 
 function PageViewer({ path }: { path: string }) {
   return <iframe src={'/' + encodeURI(path)} title="预览" className="w-full h-full border-0 bg-white" />;
-}
-
-function ImageViewer({ path }: { path: string }) {
-  const [dim, setDim] = useState('-');
-  const [zoom, setZoom] = useState(1);
-  const [err, setErr] = useState(false);
-  const name = path.split('/').pop();
-  const chess: React.CSSProperties = {
-    backgroundImage: 'linear-gradient(45deg,hsl(var(--border)) 25%,transparent 25%),linear-gradient(-45deg,hsl(var(--border)) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,hsl(var(--border)) 75%),linear-gradient(-45deg,transparent 75%,hsl(var(--border)) 75%)',
-    backgroundSize: '16px 16px', backgroundPosition: '0 0,0 8px,8px -8px,-8px 0',
-  };
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-none px-4 py-2 border-b text-xs flex items-center gap-3">
-        <span className="font-mono text-foreground">{name}</span>
-        <span className="text-muted-foreground">{dim}</span>
-        <div className="ml-auto flex items-center gap-1">
-          <button onClick={() => setZoom(z => Math.max(0.25, +(z - 0.25).toFixed(2)))} className="w-6 h-6 rounded bg-muted hover:bg-muted/70" aria-label="缩小">−</button>
-          <span className="w-10 text-center text-muted-foreground">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.min(8, +(z + 0.25).toFixed(2)))} className="w-6 h-6 rounded bg-muted hover:bg-muted/70" aria-label="放大">+</button>
-          <button onClick={() => setZoom(1)} className="ml-1 px-2 h-6 rounded bg-muted hover:bg-muted/70">复位</button>
-        </div>
-      </div>
-      <div className="flex-1 min-h-0 overflow-auto grid place-items-center p-6" style={chess}>
-        {err ? <p className="text-muted-foreground">该格式无法预览</p> : (
-          <img src={'/' + encodeURI(path)} alt={name} style={{ transform: `scale(${zoom})` }} className="max-w-full max-h-full object-contain transition-transform"
-            onLoad={e => setDim(`${e.currentTarget.naturalWidth} × ${e.currentTarget.naturalHeight} px`)} onError={() => setErr(true)} />
-        )}
-      </div>
-    </div>
-  );
 }
 
 function TokenViewer({ path }: { path: string }) {
@@ -79,14 +51,31 @@ function CodeViewer({ path }: { path: string }) {
 }
 
 function FontViewer({ path }: { path: string }) {
-  const [url, setUrl] = useState('');
-  useEffect(() => { setUrl('/' + encodeURI(path)); }, [path]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let face: FontFace | null = null;
+    const url = '/' + encodeURI(path);
+    fetch(url, { cache: 'no-store' }).then(r => r.blob()).then(blob => {
+      face = new FontFace('preview-font', URL.createObjectURL(blob));
+      return face.load();
+    }).then(() => {
+      if (face) {
+        document.fonts.add(face);
+        setLoaded(true);
+      }
+    }).catch(() => setLoaded(true));
+    return () => {
+      if (face) {
+        document.fonts.delete(face);
+        face.source?.forEach?.((b: any) => { if (b instanceof Blob) URL.revokeObjectURL(b as any); });
+      }
+    };
+  }, [path]);
   return (
     <div className="p-8 h-full flex flex-col gap-4">
       <div className="text-xs text-muted-foreground">字体文件: {path}</div>
       <div className="flex-1 grid place-items-center">
-        {url && <link rel="preload" as="font" href={url} crossOrigin="anonymous" />}
-        <div className="text-6xl" style={{ fontFamily: url ? `url(${url})` : 'serif' }}>Aa 字体</div>
+        <div className="text-6xl" style={{ fontFamily: loaded ? "'preview-font', serif" : 'serif' }}>Aa 字体</div>
       </div>
     </div>
   );
@@ -101,7 +90,7 @@ function UnsupportedViewer({ path }: { path: string }) {
 const VIEWERS: Partial<Record<string, React.ComponentType<{ path: string }>>> = {
   page: PageViewer, icon: ImageViewer, token: TokenViewer, md: MdViewer,
   video: VideoViewer, audio: AudioViewer, pdf: PdfViewer,
-component: CodeViewer, font: FontViewer,
+  component: CodeViewer, font: FontViewer,
 };
 
 function selectViewer(type: string): React.ComponentType<{ path: string }> {
@@ -121,11 +110,12 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted">
-        {btns.map(b => (
-          <button key={String(b.v)} onClick={() => onMode(b.v)} className={`h-7 gap-1.5 px-2.5 rounded text-xs inline-flex items-center ${mode === b.v ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted/70'}`}>
-            {b.icon}<span className="hidden sm:inline">{b.label}</span>
-          </button>
-        ))}
+        <FilterPills
+          items={btns.map(b => ({ key: String(b.v), label: b.label, renderLabel: () => <>{b.icon}<span className="hidden sm:inline">{b.label}</span></> }))}
+          value={String(mode)}
+          onChange={(v) => onMode(v === '0' ? 0 : v === 'custom' ? 'custom' : Number(v))}
+          ariaLabel="视口模式"
+        />
       </div>
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         <input type="number" value={w} min={280} max={3000} step={8} onChange={e => onW(Number(e.target.value))} aria-label="自定义宽度" className={inputCls} />
