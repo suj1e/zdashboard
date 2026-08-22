@@ -49,6 +49,8 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
+    --terminal-bg: 13 17 23;
+    --terminal-fg: 201 209 217;
     --radius: 0.5rem;
   }
 

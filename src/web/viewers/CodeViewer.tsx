@@ -65,7 +65,7 @@ export function CodeViewer({ path }: { path: string }) {
         {text === null ? (
           <p className="p-4 text-xs text-muted-foreground">加载中…</p>
         ) : (
-          <pre className="m-0 p-4 text-xs leading-relaxed bg-[#0d1117] text-[#c9d1d9] overflow-auto">
+          <pre className="m-0 p-4 text-xs leading-relaxed bg-terminal-bg text-terminal-fg overflow-auto">
             <code dangerouslySetInnerHTML={{ __html: highlighted }} />
           </pre>
         )}

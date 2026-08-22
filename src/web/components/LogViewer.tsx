@@ -20,7 +20,7 @@ function levelClass(t: string) {
   if (/^\[(WARN|WARNING)\]/.test(t) || /^WARN(ING)?\b/.test(t)) return 'text-warning';
   if (/^\[DEBUG\]/.test(t) || /^DEBUG\b/.test(t)) return 'text-info';
   if (/^\[(INFO|DOWNLOAD|PROGRESS)\]/.test(t) || /^INFO\b/.test(t)) return 'text-success';
-  return 'text-zinc-200';
+  return 'text-terminal-fg';
 }
 
 function fmtElapsed(ms: number) {
@@ -173,8 +173,8 @@ export function LogViewer() {
                   </span>
                 </div>
                 {r.description && <p className="mt-1 text-[11px] text-muted-foreground/70 truncate">{r.description}</p>}
-                <div className="mt-2 rounded bg-[#0d1117] px-2 py-1.5 font-mono text-[10px] leading-relaxed text-zinc-400 min-h-[3.4em]">
-                  {tail.length ? tail.map((l, i) => <div key={i} className="truncate">{l}</div>) : <span className="text-zinc-600">$ just {r.name} …</span>}
+                <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-[10px] leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
+                  {tail.length ? tail.map((l, i) => <div key={i} className="truncate">{l}</div>) : <span className="text-terminal-fg/40">$ just {r.name} …</span>}
                 </div>
               </div>
             );
@@ -197,8 +197,8 @@ export function LogViewer() {
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-[#0d1117] p-3.5 font-mono text-xs leading-relaxed text-zinc-200">
-            {selLines.length === 0 && <p className="text-zinc-500">$ just {selected} · 等待输出…</p>}
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-terminal-bg p-3.5 font-mono text-xs leading-relaxed text-terminal-fg">
+            {selLines.length === 0 && <p className="text-terminal-fg/50">$ just {selected} · 等待输出…</p>}
             {selLines.map((l, i) => {
               const text = l.replace(/\r?\n$/, '');
               return (

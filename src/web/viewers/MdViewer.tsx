@@ -30,7 +30,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
       >
         {copied ? '已复制' : '复制'}
       </button>
-      <pre ref={ref} className="overflow-auto rounded-md border bg-[#0d1117] p-3 text-xs leading-relaxed">
+      <pre ref={ref} className="overflow-auto rounded-md border bg-terminal-bg p-3 text-xs leading-relaxed">
         {children}
       </pre>
     </div>

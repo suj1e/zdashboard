@@ -2,6 +2,8 @@
 
 /* Nord light mode */
 [data-theme="nord"] {
+  --terminal-bg: 46 52 64;
+  --terminal-fg: 216 222 233;
   --success: 152 21% 67%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;

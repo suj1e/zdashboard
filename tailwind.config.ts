@@ -8,6 +8,7 @@ export default {
     extend: {
       colors: {
         border: 'hsl(var(--border))',
+        terminal: { bg: 'hsl(var(--terminal-bg))', fg: 'hsl(var(--terminal-fg))' },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',

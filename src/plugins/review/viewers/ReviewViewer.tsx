@@ -26,7 +26,7 @@ interface ReviewData {
 }
 
 const STATUS_BADGE: Record<ReviewStatus, string> = {
-  draft: 'bg-zinc-500 text-white',
+  draft: 'bg-muted-foreground text-white',
   reviewing: 'bg-warning text-white',
   passed: 'bg-success text-white',
   rejected: 'bg-destructive text-white',
