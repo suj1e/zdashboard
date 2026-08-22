@@ -33,11 +33,17 @@ export const apply = {
       });
 
       /** start/restart 须带合法 recipe(同名 start 即重启,不影响其他任务);stop 可带单个 recipe 或省略(停全部) */
-      const handleAction = async (req: http.IncomingMessage, res: http.ServerResponse, act: 'start' | 'stop' | 'restart') => {
+      const handleAction = async (req: http.IncomingMessage, res: http.ServerResponse, act: 'start' | 'stop' | 'restart' | 'clear') => {
         if (req.headers['x-stop-token'] !== ctx.server.stopToken) { res.writeHead(403); res.end('forbidden'); return; }
         const body = await readBody(req);
         let recipe: string | undefined;
         try { recipe = JSON.parse(body || '{}').recipe; } catch { /* ignore */ }
+        if (act === 'clear') {
+          if (recipe) runner.clear(recipe);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end('{"ok":true}');
+          return;
+        }
         if (act !== 'stop') {
           if (!recipe) { res.writeHead(400); res.end('{"error":"no recipe"}'); return; }
           const recipes = await runner.recipes();
@@ -60,6 +66,7 @@ export const apply = {
       routeAction('start');
       routeAction('stop');
       routeAction('restart');
+      routeAction('clear');
     });
   },
 };

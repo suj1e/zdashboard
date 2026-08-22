@@ -134,6 +134,15 @@ export class JustRunner {
     if (this.tasks.has(recipe)) this.start(recipe);
   }
 
+  /** 清空某任务的日志缓冲并广播(真源清除,重连重放不会复活) */
+  clear(recipe: string) {
+    const task = this.tasks.get(recipe);
+    if (!task) return;
+    task.buffer = [];
+    task.pending = '';
+    this.emit({ type: 'clear', recipe });
+  }
+
   private killOne(recipe: string) {
     const task = this.tasks.get(recipe);
     const child = task?.child;

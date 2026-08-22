@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { Play, Square, RotateCw, LayoutGrid } from 'lucide-react';
+import { Play, Square, RotateCw, LayoutGrid, Eraser } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Recipe { name: string; description: string; }
@@ -76,7 +76,7 @@ export function LogViewer() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [selLines.length, selected]);
 
-  const act = (action: 'start' | 'stop', recipe: string) => {
+  const act = (action: 'start' | 'stop' | 'clear', recipe: string) => {
     fetch(`/__just/${action}`, {
       method: 'POST',
       headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
@@ -180,6 +180,7 @@ export function LogViewer() {
               {selRunning
                 ? <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', selected)}><Square className="h-2.5 w-2.5" />停止</Button>
                 : <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', selected)}><RotateCw className="h-2.5 w-2.5" />{selTask ? '重跑' : '启动'}</Button>}
+              <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('clear', selected)} disabled={!selLines.length}><Eraser className="h-2.5 w-2.5" />清屏</Button>
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>
