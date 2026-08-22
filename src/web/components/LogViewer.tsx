@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { Play, Square, RotateCw, X, Terminal, Trash2 } from 'lucide-react';
+import { Play, Square, RotateCw, Terminal } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Recipe { name: string; description: string; }
@@ -27,64 +27,15 @@ function fmtElapsed(ms: number) {
   return m < 60 ? `${m}m${s % 60}s` : `${Math.floor(m / 60)}h${m % 60}m`;
 }
 
-/** 单张任务卡:头部(recipe/状态/时长/操作) + 独立日志流(跟随底部) */
-function TaskCard({ recipe, task, lines, onStop, onRestart, onClose }: {
-  recipe: string; task: TaskState; lines: string[];
-  onStop: () => void; onRestart: () => void; onClose: () => void;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const running = task.state === 'running';
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [lines]);
-
-  const dot = running
-    ? 'bg-emerald-500 animate-pulse'
-    : task.signal
-      ? 'bg-muted-foreground'
-      : task.code
-        ? 'bg-red-500'
-        : 'bg-emerald-500/70';
-  const elapsed = running ? fmtElapsed(Date.now() - task.startedAt) : null;
-
-  return (
-    <div className="flex flex-col min-h-[220px] rounded-lg overflow-hidden border bg-background">
-      <div className="flex-none flex items-center gap-2 px-3 h-9 border-b bg-muted/40 text-xs">
-        <span className={`h-2 w-2 rounded-full flex-none ${dot}`} />
-        <span className="font-mono font-medium truncate">{recipe}</span>
-        {running
-          ? <span className="text-muted-foreground flex-none">{elapsed}</span>
-          : <span className={`flex-none font-mono ${task.signal ? 'text-muted-foreground' : task.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
-              {task.signal ? `已停止 (${task.signal})` : `exit ${task.code}`}
-            </span>}
-        <span className="ml-auto flex items-center gap-0.5 flex-none">
-          {running && <Button size="ghost" className="h-6 w-6 p-0" title="停止" onClick={onStop}><Square className="h-3 w-3" /></Button>}
-          {!running && <Button size="ghost" className="h-6 w-6 p-0" title="重新运行" onClick={onRestart}><RotateCw className="h-3 w-3" /></Button>}
-          <Button size="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" title="关闭卡片" onClick={onClose}><X className="h-3 w-3" /></Button>
-        </span>
-      </div>
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-[#0d1117] p-3 font-mono text-xs leading-relaxed text-zinc-200">
-        {lines.length === 0 && <p className="text-zinc-500">等待输出…</p>}
-        {lines.map((l, i) => {
-          const text = l.replace(/\r?\n$/, '');
-          return (
-            <div key={i} className="whitespace-pre-wrap break-all min-h-[1.25rem]">
-              {/\x1b\[/.test(text) ? <Ansi>{text}</Ansi> : <span className={levelClass(text)}>{text}</span>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function LogViewer() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [tasks, setTasks] = useState<Record<string, TaskState>>({});
   const [logs, setLogs] = useState<Record<string, string[]>>({});
-  const [closed, setClosed] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<string | null>(null);
   const tokenRef = useRef('');
   const [, forceTick] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const selLines = selected ? logs[selected] ?? [] : [];
 
   useEffect(() => {
     fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()).then(setRecipes).catch(() => setRecipes([]));
@@ -112,99 +63,114 @@ export function LogViewer() {
             ...prev,
             [ev.recipe]: { state: ev.state, code: ev.code, signal: ev.signal, startedAt: ev.startedAt ?? prev[ev.recipe]?.startedAt ?? Date.now() },
           }));
-          setClosed(prev => { const n = new Set(prev); n.delete(ev.recipe); return n; }); // 重新出现的任务自动恢复卡片
+          if (ev.state === 'running') setSelected(ev.recipe); // 新任务自动聚焦
         }
       } catch { /* ignore */ }
     };
     es.onerror = () => { /* EventSource 自动重连,onopen 里处理重放去重 */ };
-    // 运行中任务的时长计时刷新
     const timer = setInterval(() => forceTick(t => t + 1), 1000);
     return () => { es.close(); clearInterval(timer); };
   }, []);
 
-  const act = (action: 'start' | 'stop' | 'restart', recipe?: string) => {
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [selLines.length, selected]);
+
+  const act = (action: 'start' | 'stop', recipe: string) => {
     fetch(`/__just/${action}`, {
       method: 'POST',
       headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
-      body: JSON.stringify(recipe ? { recipe } : {}),
+      body: JSON.stringify({ recipe }),
     }).catch((e) => console.error('[zdashboard] just action failed:', e));
   };
 
-  const running = Object.entries(tasks).filter(([, t]) => t.state === 'running');
-  const exited = Object.entries(tasks).filter(([, t]) => t.state === 'exited');
-  const visibleCards = Object.entries(tasks)
-    .filter(([name]) => !closed.has(name))
-    .sort(([a, ta], [b, tb]) => (ta.state === tb.state ? (tb.startedAt ?? 0) - (ta.startedAt ?? 0) : ta.state === 'running' ? -1 : 1)); // 运行中在前
-  const cols = visibleCards.length === 1 ? 'grid-cols-1' : 'md:grid-cols-2 xl:grid-cols-3';
+  const rows = recipes.map(r => ({ ...r, task: tasks[r.name] }));
+  const runningCount = rows.filter(r => r.task?.state === 'running').length;
+  const selTask = selected ? tasks[selected] : undefined;
+  const selRunning = selTask?.state === 'running';
 
   return (
     <div className="h-full flex flex-col">
-      {/* 顶部:全部 recipe pills(启停入口;运行中绿色呼吸点,点击即停) */}
-      <div className="flex-none flex items-center gap-1.5 flex-wrap px-3.5 py-2.5 border-b bg-background">
-        <Terminal className="h-3.5 w-3.5 text-muted-foreground flex-none mr-0.5" />
-        {recipes.map(r => {
-          const t = tasks[r.name];
-          const isRunning = t?.state === 'running';
-          const hasExited = t?.state === 'exited';
-          return (
-            <button
-              key={r.name}
-              onClick={() => act(isRunning ? 'stop' : 'start', r.name)}
-              title={r.description ? `${r.name} — ${r.description}` : r.name}
-              className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-xs font-mono transition-colors
-                ${isRunning
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
-                  : hasExited
-                    ? 'border-border bg-muted/60 text-foreground hover:bg-muted'
-                    : 'border-border bg-background text-muted-foreground hover:text-foreground hover:border-muted-foreground/40'}`}
-            >
-              {isRunning && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-              {r.name}
-            </button>
-          );
-        })}
-        {exited.length > 0 && (
-          <Button
-            size="ghost" className="h-7 gap-1 px-2 ml-auto text-xs text-muted-foreground"
-            onClick={() => setClosed(new Set(exited.map(([n]) => n)))}
-            title="收起全部已退出的任务卡片"
-          >
-            <Trash2 className="h-3 w-3" />清已完成
-          </Button>
-        )}
+      {/* ── 总控台:全部任务状态一览 + 启停控制;点击行聚焦日志 ── */}
+      <div className="flex-none border-b bg-background">
+        <div className="flex items-center gap-2 px-3.5 h-9 border-b bg-muted/40 text-[11px] text-muted-foreground">
+          <Terminal className="h-3 w-3" />
+          <span className="font-medium">总控台</span>
+          <span className="ml-auto font-mono">{runningCount} 运行 / {rows.length} 任务</span>
+        </div>
+        <div className="max-h-[38%] overflow-auto">
+          {rows.length === 0 && <p className="px-3.5 py-3 text-xs text-muted-foreground">未发现 justfile recipes</p>}
+          {rows.map(r => {
+            const t = r.task;
+            const running = t?.state === 'running';
+            const exited = t?.state === 'exited';
+            const isSel = selected === r.name;
+            return (
+              <div
+                key={r.name}
+                onClick={() => setSelected(r.name)}
+                title={r.description || undefined}
+                className={`flex items-center gap-2.5 px-3.5 h-10 border-l-2 cursor-pointer text-xs
+                  ${isSel ? 'bg-muted border-primary' : 'border-transparent hover:bg-muted/50'}`}
+              >
+                <span className={`h-2 w-2 rounded-full flex-none
+                  ${running ? 'bg-emerald-500 animate-pulse' : exited ? (t.signal ? 'bg-muted-foreground' : t.code ? 'bg-red-500' : 'bg-emerald-500/60') : 'bg-muted-foreground/30'}`} />
+                <span className="font-mono font-medium flex-none">{r.name}</span>
+                {running && <span className="text-emerald-600 dark:text-emerald-400 flex-none font-mono">{fmtElapsed(Date.now() - t.startedAt)}</span>}
+                {exited && (
+                  <span className={`flex-none font-mono ${t.signal ? 'text-muted-foreground' : t.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {t.signal ? '已停止' : `exit ${t.code}`}
+                  </span>
+                )}
+                {!t && <span className="text-muted-foreground/60 flex-none">未运行</span>}
+                {r.description && <span className="truncate text-muted-foreground/70 hidden lg:inline">{r.description}</span>}
+                <span className="ml-auto flex items-center gap-1 flex-none" onClick={e => e.stopPropagation()}>
+                  {running ? (
+                    <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', r.name)}><Square className="h-2.5 w-2.5" />停止</Button>
+                  ) : (
+                    <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', r.name)}>
+                      {exited ? <RotateCw className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}{exited ? '重跑' : '启动'}
+                    </Button>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 任务卡片网格:并行任务并行可见 */}
-      <div className="flex-1 min-h-0 overflow-auto p-3">
-        {visibleCards.length === 0 ? (
-          <div className="h-full grid place-items-center text-muted-foreground">
+      {/* ── 聚焦日志区:当前选中任务的实时输出 ── */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {selected ? (
+          <>
+            <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-[11px]">
+              <span className={`h-1.5 w-1.5 rounded-full ${selRunning ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
+              <span className="font-mono font-medium">{selected}</span>
+              <span className="text-muted-foreground font-mono">
+                {selRunning ? `running · ${fmtElapsed(Date.now() - selTask.startedAt)}` : selTask?.signal ? '已停止' : selTask ? `exit ${selTask.code}` : ''}
+              </span>
+              <span className="ml-auto text-muted-foreground font-mono">{selLines.length} 行</span>
+            </div>
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-[#0d1117] p-3.5 font-mono text-xs leading-relaxed text-zinc-200">
+              {selLines.length === 0 && <p className="text-zinc-500">$ just {selected} · 等待输出…</p>}
+              {selLines.map((l, i) => {
+                const text = l.replace(/\r?\n$/, '');
+                return (
+                  <div key={i} className="whitespace-pre-wrap break-all min-h-[1.25rem]">
+                    {/\x1b\[/.test(text) ? <Ansi>{text}</Ansi> : <span className={levelClass(text)}>{text}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 grid place-items-center bg-[#0d1117] text-zinc-500 font-mono text-xs">
             <div className="text-center">
-              <Terminal className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">点击上方 recipe 启动任务</p>
-              <p className="mt-1 text-xs">可同时运行多个任务，每个任务一张卡片</p>
+              <p>$ just &lt;recipe&gt;</p>
+              <p className="mt-2">在总控台选择或启动一个任务，日志会流到这里</p>
             </div>
           </div>
-        ) : (
-          <div className={`grid gap-3 h-full ${cols}`}>
-            {visibleCards.map(([name, t]) => (
-              <TaskCard
-                key={name}
-                recipe={name}
-                task={t}
-                lines={logs[name] ?? []}
-                onStop={() => act('stop', name)}
-                onRestart={() => act('start', name)}
-                onClose={() => setClosed(prev => new Set(prev).add(name))}
-              />
-            ))}
-          </div>
         )}
-      </div>
-
-      {/* 底部状态条 */}
-      <div className="flex-none flex items-center justify-between px-3.5 h-7 border-t bg-background text-[11px] text-muted-foreground font-mono">
-        <span>{recipes.length} recipes</span>
-        <span>{running.length} 运行中{exited.length ? ` · ${exited.length} 已退出` : ''}</span>
       </div>
     </div>
   );
