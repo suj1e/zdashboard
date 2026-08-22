@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ClipboardCheck } from 'lucide-react';
+import { EmptyState } from '../../../web/components/EmptyState.js';
 import { Check, ChevronDown, ChevronUp, RotateCcw, Send, X } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
 import { MdViewer } from '../../../web/viewers/MdViewer.js';

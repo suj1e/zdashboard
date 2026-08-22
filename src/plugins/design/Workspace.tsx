@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff, Palette } from 'lucide-react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { FilterPills } from '../../web/components/FilterPills.js';
 import { designState } from './state.js';
+import { EmptyState } from '../../web/components/EmptyState.js';
 
 type VpMode = 0 | 768 | 375 | 'custom';
 
@@ -223,13 +224,7 @@ export default function Workspace() {
           </div>
         </>
       ) : (
-        <div className="flex-1 grid place-items-center text-muted-foreground">
-          <div className="text-center">
-            <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">z</div>
-            <p>从左侧选择一个资产预览</p>
-            <p className="mt-1 text-xs">点左侧折叠钮展开资产树 · 改文件即时刷新</p>
-          </div>
-        </div>
+        <EmptyState icon={Palette} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" tone="primary" />
       )}
     </div>
   );

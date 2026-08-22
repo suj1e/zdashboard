@@ -1,51 +1,53 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
-import { FolderOpen, FileText, BookOpen, Terminal } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import type { WebPlugin } from '../lib/plugins';
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 
-function Pill({ label, on }: { label: string; on: boolean }) {
-  return <span className={`text-[11px] ${on ? 'text-foreground' : 'text-muted-foreground'}`}>{label}: {on ? 'ON' : 'OFF'}</span>;
-}
+const DETECT_ITEMS: { key: keyof Detects; label: string }[] = [
+  { key: 'hasOpenspec', label: 'openspec' },
+  { key: 'hasDocs', label: 'docs' },
+  { key: 'hasJust', label: 'just' },
+  { key: 'hasBugs', label: 'bugs' },
+];
 
 export function HomeGrid({ plugins, detect, onSelect }: {
   plugins: WebPlugin[]; detect: Detects; onSelect: (mode: string) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {plugins.map((p) => (
           <button
             key={p.mode}
             onClick={() => onSelect(p.mode)}
-            className="text-left"
+            className="text-left group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Card>
+            <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-muted-foreground/30">
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg leading-none">{p.icon}</span>
-                  <CardTitle className="text-sm">{p.label}</CardTitle>
-                  {p.external && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">外部</span>}
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-muted text-lg leading-none group-hover:bg-primary/10 transition-colors">{p.icon}</span>
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm flex items-center gap-1.5">
+                      <span className="truncate">{p.label}</span>
+                      {p.external && <span className="flex-none text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border">外部</span>}
+                    </CardTitle>
+                    <CardDescription className="truncate">{p.description ?? p.mode}</CardDescription>
+                  </div>
                 </div>
-                {p.description && <CardDescription>{p.description}</CardDescription>}
               </CardHeader>
             </Card>
           </button>
         ))}
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xs text-muted-foreground">探测信息</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Pill label="openspec" on={detect.hasOpenspec} />
-            <Pill label="docs" on={detect.hasDocs} />
-            <Pill label="just" on={detect.hasJust} />
-            <Pill label="bugs" on={detect.hasBugs} />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="mr-1">探测</span>
+        {DETECT_ITEMS.map(d => (
+          <span key={d.key} className={`inline-flex items-center gap-1 rounded-full border px-2 h-[19px] font-mono ${detect[d.key] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'border-border bg-muted/40 text-muted-foreground/70'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${detect[d.key] ? 'bg-emerald-500' : 'bg-muted-foreground/40'}`} />
+            {d.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

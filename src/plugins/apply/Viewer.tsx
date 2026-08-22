@@ -1,3 +1,5 @@
+import { FolderGit2 } from 'lucide-react';
+import { EmptyState } from '../../web/components/EmptyState.js';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -212,7 +214,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
 
         {!changes.length ? (
           <div className="text-center text-muted-foreground py-8">
-            <p className="text-sm">没有进行中的 change</p>
+            <EmptyState icon={FolderGit2} title="没有进行中的 change" />
             <p className="text-xs mt-1">在 openspec/changes/ 下创建 change 后会显示在这里</p>
           </div>
         ) : (

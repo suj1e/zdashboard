@@ -5,6 +5,8 @@ import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import { viewState } from './state.js';
 import OutlineNav from './OutlineNav.js';
+import { EmptyState } from '../../web/components/EmptyState.js';
+import { Eye } from 'lucide-react';
 
 const LONG_DOC_THRESHOLD = 2500;
 
@@ -55,13 +57,7 @@ export default function Workspace(_props: WorkspaceProps) {
           {showOutline && <OutlineNav containerRef={contentRef} />}
         </div>
       ) : (
-        <div className="flex-1 grid place-items-center text-muted-foreground">
-          <div className="text-center">
-            <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">👁️</div>
-            <p>从左侧选择文件预览</p>
-            <p className="mt-1 text-xs">支持 Markdown、图片、代码等格式</p>
-          </div>
-        </div>
+        <EmptyState icon={Eye} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
       )}
     </div>
   );

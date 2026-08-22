@@ -10,7 +10,8 @@ export function IconRail({ active, onSelect, plugins }: {
         <TooltipTrigger asChild>
           <button
             onClick={() => onSelect(null)}
-            className={`w-9 h-9 flex items-center justify-center rounded-md text-sm transition-colors ${active === null ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`relative w-9 h-9 flex items-center justify-center rounded-lg text-sm transition-all ${active === null ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground hover:scale-105'}`}
+            aria-current={active === null ? 'page' : undefined}
           >
             <Home className="h-4 w-4" />
           </button>
@@ -22,7 +23,8 @@ export function IconRail({ active, onSelect, plugins }: {
           <TooltipTrigger asChild>
             <button
               onClick={() => onSelect(p.mode)}
-              className={`w-9 h-9 flex items-center justify-center rounded-md text-base transition-colors ${active === p.mode ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+              aria-current={active === p.mode ? 'page' : undefined}
+              className={`relative w-9 h-9 flex items-center justify-center rounded-lg text-base transition-all ${active === p.mode ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground hover:scale-105'}`}
             >
               <span>{p.icon}</span>
             </button>

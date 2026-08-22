@@ -84,7 +84,7 @@ export function BugViewer() {
         ) : !data.ok ? (
           <p className="p-4 text-xs text-destructive">{data.error}</p>
         ) : !bugs.length ? (
-          <p className="p-4 text-xs text-muted-foreground">{filter === 'mine' ? '没有指派给你的 bug 🎉' : '无 bug 🎉(该状态下)'}</p>
+          <EmptyState icon={BugIcon} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
         ) : (
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-background border-b">
@@ -98,7 +98,7 @@ export function BugViewer() {
             </thead>
             <tbody>
               {bugs.map((b) => (
-                <tr key={b.id} className="border-b last:border-0 hover:bg-muted/50">
+                <tr key={b.id} className="border-b last:border-0 hover:bg-muted/40 transition-colors">
                   <td className="px-3 py-2 font-mono text-muted-foreground">{b.id}</td>
                   <td className="px-3 py-2">
                     <button
