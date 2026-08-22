@@ -70,7 +70,7 @@ export function BugViewer() {
     : null;
 
   return (
-    <div className="mx-auto max-w-5xl h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+    <div className="mx-auto h-full max-w-6xl flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
       <div className="flex-none flex items-center gap-2 px-3 py-2 border-b">
         {STATUS_FILTERS.map((f) => (
           <button

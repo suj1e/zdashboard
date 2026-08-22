@@ -1,10 +1,16 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Topbar } from './components/Topbar';
 import { IconRail } from './layout/IconRail';
+import { SidebarFrame } from './layout/SidebarFrame';
 import { StatusBar } from './layout/StatusBar';
 import { HomeGrid } from './home/HomeGrid';
 import { usePlugins, type WebPlugin } from './lib/plugins';
 import { useSSE } from './hooks/useSSE';
+
+const dotBg: React.CSSProperties = {
+  backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)',
+  backgroundSize: '20px 20px',
+};
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 
@@ -73,28 +79,36 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, [plugins]);
 
-  const ActiveWorkspace = mode ? plugins.find((p) => p.mode === mode)?.Workspace : null;
+  const plugin = mode ? plugins.find((p) => p.mode === mode) : null;
 
   return (
     <div className="flex h-screen flex-col">
       <Topbar status={status} stoppedRef={stoppedRef} />
       <div className="flex-1 min-h-0 flex">
         <IconRail active={mode} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
-        <section className="flex-1 min-h-0 flex flex-col">
-          {mode && ActiveWorkspace ? (
-            <Suspense fallback={
-              <div className="flex-1 grid place-items-center text-muted-foreground text-xs">加载工作区…</div>
-            }>
-              <ActiveWorkspace />
+        {plugin?.Sidebar && (
+          <SidebarFrame mode={mode}>
+            <Suspense fallback={<div className="w-full h-full" />}>
+              <plugin.Sidebar />
             </Suspense>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-auto p-6">
+          </SidebarFrame>
+        )}
+        <section className="flex-1 min-h-0" style={dotBg}>
+          <div className="h-full p-6">
+            {mode && plugin ? (
+              <Suspense fallback={
+                <div className="flex h-full items-center justify-center text-muted-foreground text-xs">加载工作区…</div>
+              }>
+                <plugin.Workspace />
+              </Suspense>
+            ) : (
               <HomeGrid plugins={plugins} detect={detect} onSelect={handleSelect} />
-            </div>
-          )}
+            )}
+          </div>
         </section>
       </div>
       <StatusBar projectPath={projectPath} stoppedRef={stoppedRef} />
     </div>
   );
 }
+

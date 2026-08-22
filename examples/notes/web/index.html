@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>便签</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; background: #09090b; color: #fafafa; padding: 28px 32px; }
+  h1 { font-size: 17px; margin-bottom: 4px; }
+  .sub { color: #a1a1aa; font-size: 12.5px; margin-bottom: 18px; }
+  .row { display: flex; gap: 8px; margin-bottom: 14px; }
+  input[type="text"] { flex: 1; height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid #27272a; background: #18181b; color: #fafafa; outline: none; }
+  input[type="text"]:focus { border-color: #6366f1; }
+  button { height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #27272a; background: #18181b; color: #e4e4e7; cursor: pointer; font-size: 13px; }
+  button.primary { background: #6366f1; border-color: #6366f1; color: white; }
+  button.danger { color: #ef4444; }
+  ul { list-style: none; }
+  li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #27272a; border-radius: 10px; background: #18181b; margin-bottom: 8px; }
+  li.done span { text-decoration: line-through; color: #71717a; }
+  .check { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #52525b; cursor: pointer; display: grid; place-items: center; color: #18181b; font-size: 11px; }
+  .check.checked { background: #22c55e; border-color: #22c55e; color: white; }
+  .text { flex: 1; font-size: 13px; word-break: break-all; }
+  .time { font-size: 11px; color: #71717a; font-family: ui-monospace, monospace; }
+  .err { color: #ef4444; padding: 18px; }
+</style>
+</head>
+<body>
+  <h1>🗒️ 便签</h1>
+  <p class="sub">示例插件 · 读写持久化 + SSE 热刷新</p>
+  <div class="row">
+    <input id="inp" type="text" placeholder="添加一条便签…" />
+    <button class="primary" id="add">添加</button>
+    <button id="clear">清空已完成</button>
+  </div>
+  <ul id="list"></ul>
+  <div id="err" class="err" style="display:none"></div>
+
+  <script>
+    const list = document.getElementById('list');
+    const inp = document.getElementById('inp');
+    const addBtn = document.getElementById('add');
+    const clearBtn = document.getElementById('clear');
+    const errEl = document.getElementById('err');
+
+    function fmt(ts) {
+      const d = new Date(ts);
+      return d.toLocaleString('zh-CN', { hour12: false });
+    }
+
+    function render(notes) {
+      list.innerHTML = '';
+      notes.forEach(n => {
+        const li = document.createElement('li');
+        li.className = n.done ? 'done' : '';
+        li.innerHTML = `
+          <div class="check ${n.done ? 'checked' : ''}" data-id="${n.id}">${n.done ? '✓' : ''}</div>
+          <span class="text">${n.text.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span>
+          <span class="time">${fmt(n.updatedAt)}</span>
+          <button class="danger" data-id="${n.id}">删除</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function load() {
+      try {
+        const r = await fetch('/__notes/data');
+        if (!r.ok) throw new Error(await r.text());
+        render(await r.json());
+      } catch (e) {
+        errEl.style.display = 'block';
+        errEl.textContent = '加载失败: ' + e.message;
+      }
+    }
+
+    async function save(notes) {
+      const r = await fetch('/__notes/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-stop-token': (await fetch('/__config').then(r => r.json()).catch(() => ({}))).stopToken ?? '' },
+        body: JSON.stringify(notes),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+
+    addBtn.addEventListener('click', async () => {
+      const text = inp.value.trim();
+      if (!text) return;
+      const notes = await (await fetch('/__notes/data')).json();
+      notes.push({ id: crypto.randomUUID(), text, done: false, updatedAt: Date.now() });
+      await save(notes);
+      inp.value = '';
+      await load();
+    });
+
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') addBtn.click(); });
+
+    list.addEventListener('click', async (e) => {
+      const check = e.target.closest('.check');
+      const del = e.target.closest('.danger');
+      if (!check && !del) return;
+      const id = (check || del).dataset.id;
+      const notes = await (await fetch('/__notes/data')).json();
+      if (del) {
+        await save(notes.filter(n => n.id !== id));
+      } else {
+        const n = notes.find(x => x.id === id);
+        if (n) { n.done = !n.done; n.updatedAt = Date.now(); await save(notes); }
+      }
+      await load();
+    });
+
+    clearBtn.addEventListener('click', async () => {
+      const notes = await (await fetch('/__notes/data')).json();
+      await save(notes.filter(n => !n.done));
+      await load();
+    });
+
+    load();
+  </script>
+</body>
+</html>

@@ -248,7 +248,7 @@ export default function ReviewViewer() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="mx-auto h-full max-w-6xl bg-background border rounded-lg shadow-sm overflow-hidden flex">
       <aside className="w-[240px] flex-none border-r bg-background overflow-auto">
         <div className="px-3 pt-3 pb-1.5 flex flex-wrap gap-1">
           {FILTERS.map(f => (

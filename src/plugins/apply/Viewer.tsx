@@ -136,7 +136,7 @@ export function ApplyViewer() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+    <div className="mx-auto h-full max-w-6xl flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
       <div className="flex-none px-4 py-3 border-b flex items-center gap-2">
         <span className="text-sm font-medium">OpenSpec 执行进度</span>
         <span className="ml-auto text-[11px] text-muted-foreground">openspec/changes/</span>

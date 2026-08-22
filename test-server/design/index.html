@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>演示落地页 · Acme Cloud</title>
+<style>
+  :root { --brand: #6366f1; --ink: #0f172a; --muted: #64748b; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; color: var(--ink); background: #f8fafc; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  nav b { font-size: 18px; }
+  nav span a { margin-left: 24px; color: var(--muted); text-decoration: none; font-size: 14px; }
+  .hero { text-align: center; padding: 96px 24px 80px; background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 60%); }
+  .hero h1 { font-size: 44px; letter-spacing: -1px; }
+  .hero p { color: var(--muted); margin: 16px 0 32px; font-size: 17px; }
+  .btn { display: inline-block; background: var(--brand); color: #fff; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; }
+  .btn.ghost { background: transparent; color: var(--brand); border: 1.5px solid var(--brand); margin-left: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 960px; margin: -40px auto 80px; padding: 0 24px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 26px; box-shadow: 0 1px 3px rgb(15 23 42 / 5%); }
+  .card h3 { font-size: 16px; margin-bottom: 8px; }
+  .card p { color: var(--muted); font-size: 13.5px; line-height: 1.7; }
+  .card .n { font-size: 26px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+  <nav><b>⚡ Acme Cloud</b><span><a href="#">产品</a><a href="#">文档</a><a href="#">定价</a><a href="#">登录</a></span></nav>
+  <section class="hero">
+    <h1>让部署快到没有感觉</h1>
+    <p>从代码到上线，一条命令。全球 28 个边缘节点，构建缓存加速 10 倍。</p>
+    <a class="btn" href="#">免费开始</a><a class="btn ghost" href="#">查看演示</a>
+  </section>
+  <section class="grid">
+    <div class="card"><div class="n">28</div><h3>边缘节点</h3><p>覆盖亚太、欧美主要区域，静态与函数混合部署。</p></div>
+    <div class="card"><div class="n">10×</div><h3>构建加速</h3><p>增量缓存 + 远程执行，大型前端项目平均 40 秒完成。</p></div>
+    <div class="card"><div class="n">99.99%</div><h3>可用性</h3><p>多活容灾，自动回滚，发布永不中断线上流量。</p></div>
+  </section>
+</body>
+</html>

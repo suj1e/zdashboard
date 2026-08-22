@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>登录 · Acme Cloud</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; min-height: 100vh; display: grid; place-items: center; background: #0f172a; }
+  .panel { width: 360px; background: #fff; border-radius: 16px; padding: 40px 36px; }
+  .panel h1 { font-size: 20px; margin-bottom: 4px; }
+  .panel small { color: #64748b; }
+  label { display: block; font-size: 13px; color: #334155; margin: 18px 0 6px; font-weight: 600; }
+  input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; font-size: 14px; outline: none; }
+  input:focus { border-color: #6366f1; }
+  button { width: 100%; margin-top: 24px; padding: 11px; background: #6366f1; color: #fff; border: 0; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .alt { text-align: center; margin-top: 16px; font-size: 13px; color: #64748b; }
+</style>
+</head>
+<body>
+  <form class="panel">
+    <h1>欢迎回来</h1><small>登录 Acme Cloud 控制台</small>
+    <label>邮箱</label><input type="email" placeholder="you@acme.dev" />
+    <label>密码</label><input type="password" placeholder="••••••••" />
+    <button>登 录</button>
+    <p class="alt">没有账号？<a href="#" style="color:#6366f1">立即注册</a></p>
+  </form>
+</body>
+</html>

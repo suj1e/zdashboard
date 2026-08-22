@@ -14,6 +14,7 @@ import { apply as reviewApply } from './plugins/review/index.js';
 import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
 import { apply as viewApply } from './plugins/view/index.js';
+import { apply as statsApply } from './plugins/stats/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -116,6 +117,7 @@ async function main() {
 
   // built-in plugins
   const plugins = [
+    { name: 'stats', apply: statsApply },
     { name: 'just', apply: justApply },
     { name: 'bugs', apply: bugsApply },
     { name: 'review', apply: reviewApply },

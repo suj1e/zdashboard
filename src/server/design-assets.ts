@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'code' | 'font' | 'other';
+export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font' | 'other';
 
 const PAGE_EXTS = ['.html', '.htm'];
 const ICON_EXTS = ['.svg', '.png', '.ico', '.jpg', '.jpeg', '.gif', '.webp'];
@@ -11,7 +11,7 @@ const CODE_EXTS = ['.js', '.mjs', '.ts', '.tsx', '.jsx', '.css', '.json', '.txt'
 const FONT_EXTS = ['.woff', '.woff2', '.ttf', '.otf'];
 const TOKEN_RE = /token|theme|design|color|palette|typograph/i;
 
-export function categorize(rel: string, ext: string): AssetType {
+export function categorize(rel: string, ext: string): AssetType | null {
   if (rel.indexOf('components/') === 0) return 'component';
   if (VIDEO_EXTS.includes(ext)) return 'video';
   if (AUDIO_EXTS.includes(ext)) return 'audio';
@@ -20,7 +20,10 @@ export function categorize(rel: string, ext: string): AssetType {
   if (FONT_EXTS.includes(ext)) return 'font';
   if (ICON_EXTS.includes(ext)) return 'icon';
   if (PAGE_EXTS.includes(ext)) return 'page';
-  if (CODE_EXTS.includes(ext)) return TOKEN_RE.test(rel) && (ext === '.css' || ext === '.json') ? 'token' : 'code';
+  if (CODE_EXTS.includes(ext)) {
+    if (TOKEN_RE.test(rel) && (ext === '.css' || ext === '.json')) return 'token';
+    return null;
+  }
   return 'other';
 }
 
@@ -29,7 +32,7 @@ export type ScanResult = Record<AssetType, AssetFile[]>;
 
 export function scanAssets(root: string): ScanResult {
   const out: ScanResult = {} as ScanResult;
-  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','code','font','other'];
+  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font','other'];
   for (const k of keys) out[k] = [];
   const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
   function walk(dir: string, rel: string) {
@@ -41,7 +44,7 @@ export function scanAssets(root: string): ScanResult {
       if (ent.isDirectory()) { walk(path.join(dir, ent.name), r); continue; }
       const ext = path.extname(ent.name).toLowerCase();
       const t = categorize(r, ext);
-      out[t].push({ path: r, name: ent.name, ext, type: t });
+      if (t) out[t].push({ path: r, name: ent.name, ext, type: t });
     }
   }
   walk(root, '');

@@ -13,6 +13,7 @@ zdashboard/                    ← 一个核心包，永远不写业务逻辑
 │   │   ├── tree.ts             ← /__files 文件树
 │   │   └── manifest.ts         ← /__plugins 插件清单
 │   ├── plugins/                ← 内置 plugins（随核心发版）
+│   │   ├── stats/                  ← 项目统计（文件/目录/大小/扩展名 Top10）
 │   │   ├── just/               ← Just Runner 任务执行
 │   │   ├── bugs/               ← 禅道 Bugs 只读列表
 │   │   ├── review/             ← 文档评审状态流转
@@ -59,6 +60,21 @@ export default {
   label: '显示名',
   icon: '🎯',
   description: '简短描述',
+  Workspace: lazy(() => import('./Workspace.js')),
+} as const;
+```
+
+可选 `Sidebar` 槽（如 view、design 提供侧栏）：
+
+```ts
+import Sidebar from './Sidebar.js';
+
+export default {
+  mode: '<mode>',
+  label: '显示名',
+  icon: '🎯',
+  description: '简短描述',
+  Sidebar: lazy(() => import('./Sidebar.js')),
   Workspace: lazy(() => import('./Workspace.js')),
 } as const;
 ```
@@ -209,6 +225,9 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 | `/__apply` | GET | OpenSpec changes 列表 |
 | `/__apply/change` | GET | `?name=<change>` 详情 |
 | `/__design/assets` | GET | 设计资产扫描 |
+| `/__stats/data` | GET | 项目统计（内置 stats 插件） |
+| `/__notes/data` | GET | 便签列表（examples/notes 示例） |
+| `/__notes/save` | POST | 保存便签（`x-stop-token` 鉴权） |
 
 ## 前端路由
 

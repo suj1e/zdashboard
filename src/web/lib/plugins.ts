@@ -9,9 +9,10 @@ export interface WebPlugin {
   description?: string;
   external?: boolean;
   Workspace: React.ComponentType<unknown> | React.LazyExoticComponent<React.ComponentType<unknown>>;
+  Sidebar?: React.LazyExoticComponent<React.ComponentType<unknown>>;
 }
 
-const ORDER = ['view', 'bugs', 'review', 'design', 'apply', 'just'];
+const ORDER = ['stats', 'view', 'bugs', 'review', 'design', 'apply', 'just'];
 
 export function usePlugins() {
   const [plugins, setPlugins] = React.useState<WebPlugin[]>([]);
