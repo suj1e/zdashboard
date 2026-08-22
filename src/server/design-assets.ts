@@ -8,7 +8,7 @@ const PAGE_EXTS = ['.html', '.htm'];
 const ICON_EXTS = ['.svg', '.png', '.ico', '.jpg', '.jpeg', '.gif', '.webp'];
 const VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.ogg', '.ogv'];
 const AUDIO_EXTS = ['.mp3', '.wav', '.flac', '.aac', '.m4a'];
-const CODE_EXTS = ['.js', '.mjs', '.ts', '.tsx', '.jsx', '.css', '.json', '.txt', '.xml', '.yml', '.yaml', '.sh', '.md'];
+const CODE_EXTS = ['.js', '.mjs', '.cjs', '.mts', '.cts', '.ts', '.tsx', '.jsx', '.css', '.json', '.txt', '.xml', '.yml', '.yaml', '.sh', '.md'];
 const FONT_EXTS = ['.woff', '.woff2', '.ttf', '.otf'];
 const TOKEN_RE = /token|theme|design|color|palette|typograph/i;
 
