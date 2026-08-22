@@ -17,20 +17,25 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   // Build outline from DOM anchors (rehype-slug has already generated id attributes)
+  // 依赖内容信号: MdViewer 异步渲染,容器 ref 稳定,须在内容变化后重建,否则 mount 时 headings 为空
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let cancelled = false;
 
-    const headings = el.querySelectorAll('h1[id], h2[id], h3[id]');
-    const out: OutlineItem[] = [];
-    headings.forEach((h) => {
-      out.push({
-        id: h.id,
-        text: h.textContent?.trim() ?? '',
-        level: parseInt(h.tagName[1], 10),
+    const build = () => {
+      if (cancelled) return;
+      const headings = el.querySelectorAll('h1[id], h2[id], h3[id]');
+      const out: OutlineItem[] = [];
+      headings.forEach((h) => {
+        out.push({ id: h.id, text: h.textContent?.trim() ?? '', level: parseInt(h.tagName[1], 10) });
       });
-    });
-    setItems(out);
+      setItems(out);
+    };
+    build();
+    const obs = new MutationObserver(build);
+    obs.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => { cancelled = true; obs.disconnect(); };
   }, [containerRef]);
 
   // Track which heading is currently in view via IntersectionObserver

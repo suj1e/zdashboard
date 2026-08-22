@@ -98,11 +98,12 @@ export default function Sidebar({ navTarget }: SidebarProps) {
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
 
   // B2: pre-fill filter when navigated from stats drill-down
+  // 无条件覆盖(不 gate 在 !filter):同 mode 导航/重挂载时,传入的新 filter 必须生效
   useEffect(() => {
-    if (navTarget?.filter && !filter) {
+    if (navTarget?.filter) {
       setFilter(navTarget.filter);
     }
-  }, [navTarget?.filter]);
+  }, [navTarget?.filter, navTarget?.navToken]);
 
   useEffect(() => {
     fetch('/__files', { cache: 'no-store' }).then(r => r.json()).then((d) => setData(d.tree ?? []));

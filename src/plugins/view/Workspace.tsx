@@ -30,11 +30,19 @@ export default function Workspace(_props: WorkspaceProps) {
 
   useEffect(() => viewState.subscribe(setCurrent), []);
 
-  // After the viewer renders, check if the document is long enough to warrant an outline
+  // 大纲阈值:在内容真实渲染后测量——MdViewer 异步 fetch,current 变化时 textContent 还是加载占位符
+  // 用 MutationObserver 监听容器内容变化,渲染完成后才测量,避免永远量到 4 字符占位
   useEffect(() => {
-    if (!contentRef.current) return;
-    const textLen = contentRef.current.textContent?.length ?? 0;
-    setShowOutline(textLen > LONG_DOC_THRESHOLD);
+    const el = contentRef.current;
+    if (!el) return;
+    const checkLen = () => {
+      const textLen = el.textContent?.length ?? 0;
+      setShowOutline(textLen > LONG_DOC_THRESHOLD);
+    };
+    checkLen();
+    const obs = new MutationObserver(checkLen);
+    obs.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => obs.disconnect();
   }, [current]);
 
   return (

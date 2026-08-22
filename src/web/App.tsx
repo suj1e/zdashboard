@@ -73,8 +73,8 @@ export default function App() {
     const onNav = (ev: Event) => {
       const detail = (ev as CustomEvent<NavTarget>).detail;
       if (!detail?.mode) return;
-      // clear any stale target when new nav event arrives
-      setNavTarget(detail);
+      // 递增 token:每次导航强制目标插件重挂载(filter 预填/聚焦不因 stale state 失效),并让消费方识别新目标
+      setNavTarget({ ...detail, navToken: Date.now() });
       setMode(detail.mode);
       window.location.hash = detail.mode;
     };
@@ -98,8 +98,8 @@ export default function App() {
 
   const plugin = mode ? plugins.find((p) => p.mode === mode) : null;
 
-  // Build props to pass to plugin Workspace; clear navTarget once delivered so tab-switch doesn't re-fire
-  const workspaceProps = navTarget ? { navTarget, _navToken: Symbol('nav') } : {};
+  // navTarget 透传依赖 navToken 作 key 强制重挂载;不再需要 workspaceProps 中间件
+
 
   return (
     <div className="flex h-screen flex-col">
@@ -110,7 +110,7 @@ export default function App() {
           {plugin?.Sidebar ? (
             <Suspense fallback={<div className="w-full h-full" />}>
               <div key={mode} className="h-full animate-in fade-in slide-in-from-left-1 duration-200">
-                <plugin.Sidebar navTarget={navTarget} />
+                <plugin.Sidebar key={navTarget?.navToken ?? 'side'} navTarget={navTarget} />
               </div>
             </Suspense>
           ) : null}
@@ -122,7 +122,7 @@ export default function App() {
                 <div className="mx-auto h-full max-w-6xl rounded-lg border bg-background shadow-sm animate-pulse" />
               }>
                 <div key={mode} className="h-full animate-in fade-in duration-200">
-                  <plugin.Workspace {...(navTarget ? { navTarget } : {})} />
+                  <plugin.Workspace key={navTarget?.navToken ?? 'ws'} {...(navTarget ? { navTarget } : {})} />
                 </div>
               </Suspense>
             ) : (

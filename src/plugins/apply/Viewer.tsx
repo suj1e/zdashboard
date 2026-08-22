@@ -148,7 +148,7 @@ function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
 }
 
 interface ApplyViewerProps {
-  navTarget?: { wt?: string };
+  navTarget?: { wt?: string; navToken?: number };
 }
 
 export function ApplyViewer({ navTarget }: ApplyViewerProps) {
@@ -189,14 +189,16 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
   }, []);
 
   // A5: focus on the change corresponding to the worktree name when navigated via navTarget
+  // 依赖 changes: 首挂载时 changes=[] 会 bail,列表加载后需重跑才能聚焦(非依赖 SSE 碰运气)
   useEffect(() => {
     if (!navTarget?.wt || !changes.length) return;
-    const match = changes.find((c) => c.name === navTarget.wt || c.inWorktree);
+    const match = changes.find((c) => c.name === navTarget.wt);
     if (match) {
       select(match.name);
     }
+    // navToken 变化强制重试一次,避免同 mode 导航时 stale
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navTarget?.wt, refreshKey]);
+  }, [navTarget?.wt, navTarget?.navToken, changes, select]);
 
   if (loading && !changes.length) {
     return (
