@@ -56,13 +56,14 @@ function TestStrategyBadge() {
   );
 }
 
-function DependencyChip({ name, isArchived }: { name: string; isArchived: boolean }) {
-  const cls = isArchived
+function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
+  // pending = 前置仍在活跃 change 列表（未归档）→ 灰色「等待前置」；已归档/不存在 → 正常显示（已满足）
+  const cls = pending
     ? 'bg-muted text-muted-foreground border-border'
-    : 'bg-orange-500/10 text-orange-600 border-orange-500/30';
+    : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono ${cls}`}>
-      {isArchived ? '等待前置' : name}
+      {pending ? `${name} · 等待前置` : name}
     </span>
   );
 }
@@ -111,7 +112,7 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
   );
 }
 
-function WorktreeOverview({ items }: { items: ChangeSummary[] }) {
+function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
   const [wts, setWts] = useState<{ name: string; branch: string; head: string }[]>([]);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ function WorktreeOverview({ items }: { items: ChangeSummary[] }) {
       .then((r) => r.json())
       .then(setWts)
       .catch(() => setWts([]));
-  }, []);
+  }, [refreshKey]);
 
   if (!wts.length) return null;
 
@@ -202,7 +203,7 @@ export function ApplyViewer() {
         <span className="ml-auto text-[11px] text-muted-foreground">openspec/changes/</span>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
-        <WorktreeOverview items={changes} />
+        <WorktreeOverview refreshKey={refreshKey ?? 0} />
 
         {!changes.length ? (
           <div className="text-center text-muted-foreground py-8">
@@ -237,7 +238,7 @@ export function ApplyViewer() {
                   <DependencyChip
                     key={name}
                     name={name}
-                    isArchived={!changes.some((c) => c.name === name)}
+                    pending={changes.some((c) => c.name === name)}
                   />
                 ))}
               </div>

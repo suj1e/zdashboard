@@ -48,6 +48,7 @@ export class ReviewStore {
   }
 
   private write(data: ReviewData) {
+    fs.mkdirSync(path.dirname(this.file), { recursive: true });
     fs.writeFileSync(this.file, YAML.stringify(data), 'utf8');
     this.onChange?.();
   }

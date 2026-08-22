@@ -6,6 +6,9 @@ import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import { viewState } from './state.js';
 
 function viewerFor(path: string) {
+  const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
+  // 无扩展名的任务文件（justfile/Justfile/makefile 等）按代码预览
+  if (name === 'justfile' || name === 'makefile') return CodeViewer;
   const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
   if (ext === '.md' || ext === '.markdown') return MdViewer;
   if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;

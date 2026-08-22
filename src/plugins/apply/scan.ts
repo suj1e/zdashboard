@@ -37,24 +37,15 @@ function changeDir(root: string, name: string): string {
   return path.join(root, 'openspec', 'changes', name);
 }
 
-function resolveFile(root: string, wt: string, rel: string): { text: string; inWorktree: boolean } {
-  // 优先 worktree 内，主目录兜底
-  const wtPath = path.join(wt, 'openspec', 'changes', path.basename(wt), rel);
-  const mainPath = path.join(changeDir(root, path.basename(wt)), rel);
-  const wtExists = fs.existsSync(wtPath);
-  const text = readText(wtExists ? wtPath : mainPath);
-  return { text, inWorktree: wtExists };
-}
-
 function parseDependsOn(proposal: string): string[] {
   const deps: string[] = [];
   // 提取 "## 依赖" 节：紧跟该标题的列表行
-  const m = proposal.match(/^##\s+依赖\s*\n([\s\S]*?)(?:\n##\s+|\n---\s*\n|$)/i);
+  const m = proposal.match(/^##\s+依赖\s*\n([\s\S]*?)(?:\n#{1,6}\s|\n---\s*\n|$)/i);
   if (!m) return deps;
   for (const line of m[1].split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('-')) continue;
-    const name = trimmed.slice(1).trim();
+    // 仅收集零缩进的一级条目（/^-/），子级列表（缩进 -）不算依赖名
+    if (!/^-\s+/.test(line)) continue;
+    const name = line.replace(/^-\s+/, '').trim();
     if (name) deps.push(name);
   }
   return deps;
@@ -72,14 +63,17 @@ export function scanApplyChanges(root: string): ChangeSummary[] {
       const fallback = readText(path.join(changesDir, ent.name, 'tasks.md'));
       if (fallback) {
         const { total, done } = countTasks(fallback);
+        const wtChange = path.join(wt, 'openspec', 'changes', ent.name);
+        const mainChange = path.join(changesDir, ent.name);
         out.push({
           name: ent.name,
           path: `openspec/changes/${ent.name}`,
           total,
           done,
-          hasProposal: fs.existsSync(path.join(changesDir, ent.name, 'proposal.md')),
-          hasDesign: fs.existsSync(path.join(changesDir, ent.name, 'design.md')),
-          inWorktree: false,
+          hasProposal: fs.existsSync(path.join(wtChange, 'proposal.md')) || fs.existsSync(path.join(mainChange, 'proposal.md')),
+          hasDesign: fs.existsSync(path.join(wtChange, 'design.md')) || fs.existsSync(path.join(mainChange, 'design.md')),
+          // worktree 目录存在即算执行中（tasks.md 可能尚未落盘）
+          inWorktree: fs.existsSync(wtChange),
         });
       }
     } else {

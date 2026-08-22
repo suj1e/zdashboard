@@ -202,7 +202,6 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 
 ### 环境变量
 
-- `PORT`：默认 4190（未被 `--port` 覆盖时）
 
 ### 内置路由
 

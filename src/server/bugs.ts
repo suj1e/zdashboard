@@ -99,7 +99,15 @@ function normBug(b: Record<string, unknown>, account: string): ZenBug {
 /** 只读拉取禅道 bug 列表(GET,绝不写)。失败返回 ok:false,不抛。 */
 export async function fetchBugs(root: string): Promise<BugsResult> {
   const cfg = loadConfig(root);
-  if (!cfg) return { ok: false, error: '.zdev/config.yaml 缺失(由 zgoal skill 创建)' };
+  if (!cfg) {
+    const anyExists = BUGS_CONFIG_CANDIDATES.some((rel) => fs.existsSync(path.join(root, rel)));
+    return {
+      ok: false,
+      error: anyExists
+        ? '配置存在但无效(缺 url 或 product 字段)——检查 .zdev/config.yaml'
+        : '.zdev/config.yaml 缺失(由 zgoal skill 创建;存量 .zgoal/config.yaml 亦可)',
+    };
+  }
   try {
     const token = await getToken(cfg);
     const json = await fetchJson(

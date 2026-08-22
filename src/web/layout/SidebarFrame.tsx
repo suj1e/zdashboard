@@ -99,6 +99,17 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
       </button>
       )}
 
+      {/* 移动端关闭态重开入口（<sm 无 chevron/热区，关闭后无重开控件） */}
+      {hasContent && !show && (
+        <button
+          onClick={toggle}
+          aria-label="展开侧栏"
+          className="sm:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 h-12 w-6 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-muted-foreground shadow"
+        >
+          <svg className="h-3.5 w-3.5 rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+      )}
+
       {/* 折叠态热区（桌面）：hover 临时展开，移开收回 */}
       {hasContent && !open && (
         <div
