@@ -13,6 +13,8 @@ export const apply = {
       const runner = new JustRunner(root);
       ctx.effect(() => () => runner.stop());
 
+      ctx.dashboard.register({ mode: 'just', label: 'Just Runner', icon: '📜', description: 'Just 多任务并发执行与日志' });
+
       ctx.server.route('/__just/recipes', async (_req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
         try {
@@ -30,42 +32,27 @@ export const apply = {
         return unsub;
       });
 
-      ctx.server.route('/__just/start', async (req, res) => {
+      /** start/restart 须带合法 recipe(同名 start 即重启,不影响其他任务);stop 可带单个 recipe 或省略(停全部) */
+      const handleAction = async (req: http.IncomingMessage, res: http.ServerResponse, act: 'start' | 'stop' | 'restart') => {
         if (req.headers['x-stop-token'] !== ctx.server.stopToken) { res.writeHead(403); res.end('forbidden'); return; }
         const body = await readBody(req);
         let recipe: string | undefined;
-        try { recipe = JSON.parse(body || '{}').recipe; } catch {}
-        const target = recipe ?? runner.info().recipe;
-        if (!target) { res.writeHead(400); res.end('{"error":"no recipe"}'); return; }
-        const recipes = await runner.recipes();
-        if (!recipes.some((r) => r.name === target)) { res.writeHead(403); res.end('{"error":"unknown recipe"}'); return; }
-        runner.start(target);
+        try { recipe = JSON.parse(body || '{}').recipe; } catch { /* ignore */ }
+        if (act !== 'stop') {
+          if (!recipe) { res.writeHead(400); res.end('{"error":"no recipe"}'); return; }
+          const recipes = await runner.recipes();
+          if (!recipes.some((r) => r.name === recipe)) { res.writeHead(403); res.end('{"error":"unknown recipe"}'); return; }
+          runner.start(recipe);
+        } else {
+          runner.stop(recipe || undefined);
+        }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(runner.info()));
-      });
+        res.end(JSON.stringify(runner.list()));
+      };
 
-      ctx.server.route('/__just/stop', async (req, res) => {
-        if (req.headers['x-stop-token'] !== ctx.server.stopToken) { res.writeHead(403); res.end('forbidden'); return; }
-        runner.stop();
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(runner.info()));
-      });
-
-      ctx.server.route('/__just/restart', async (req, res) => {
-        if (req.headers['x-stop-token'] !== ctx.server.stopToken) { res.writeHead(403); res.end('forbidden'); return; }
-        const body = await readBody(req);
-        let recipe: string | undefined;
-        try { recipe = JSON.parse(body || '{}').recipe; } catch {}
-        const target = recipe ?? runner.info().recipe;
-        if (!target) { res.writeHead(400); res.end('{"error":"no recipe"}'); return; }
-        const recipes = await runner.recipes();
-        if (!recipes.some((r) => r.name === target)) { res.writeHead(403); res.end('{"error":"unknown recipe"}'); return; }
-        runner.restart(target);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(runner.info()));
-      });
-
-      ctx.dashboard.register({ mode: 'just', label: 'Just Runner', icon: '📜', description: 'Just 任务日志与执行' });
+      ctx.server.route('/__just/start', (req, res) => { void handleAction(req, res, 'start'); });
+      ctx.server.route('/__just/stop', (req, res) => { void handleAction(req, res, 'stop'); });
+      ctx.server.route('/__just/restart', (req, res) => { void handleAction(req, res, 'restart'); });
     });
   },
 };

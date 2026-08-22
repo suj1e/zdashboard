@@ -1,22 +1,30 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 
 export interface Recipe { name: string; description: string; }
-export type JustState = 'idle' | 'running' | 'exited';
+export type TaskStatus = 'running' | 'exited';
+export interface TaskInfo { recipe: string; state: TaskStatus; code: number | null; }
+
 export type JustEvent =
-  | { type: 'log'; text: string }
-  | { type: 'clear' }
-  | { type: 'state'; state: JustState; recipe: string | null; code: number | null };
+  | { type: 'log'; recipe: string; text: string }
+  | { type: 'clear'; recipe: string }
+  | { type: 'state'; recipe: string; state: TaskStatus; code: number | null };
+
+interface Task {
+  recipe: string;
+  child: ChildProcess | null;
+  state: TaskStatus;
+  code: number | null;
+  startedAt: number;
+  buffer: string[];
+  pending: string; // 行缓冲:块缓冲输出会在行中间断开,攒到 \n 才切行
+}
 
 const MAX_BUFFER = 1000;
 
+/** 多任务并发 runner:每个 recipe 独立进程/日志/状态,同名 start 即重启,互不影响 */
 export class JustRunner {
   private cwd: string;
-  private child: ChildProcess | null = null;
-  private recipe: string | null = null;
-  private state: JustState = 'idle';
-  private code: number | null = null;
-  private buffer: string[] = [];
-  private pending = ''; // 行缓冲:块缓冲输出(如 maven)的 chunk 会在行中间断开,攒到 \n 才切行
+  private tasks = new Map<string, Task>();
   private clients = new Set<(ev: JustEvent) => void>();
   private recipesCache: Recipe[] | null = null;
 
@@ -48,26 +56,27 @@ export class JustRunner {
 
   subscribe(fn: (ev: JustEvent) => void): () => void {
     this.clients.add(fn);
-    // 连上即重放:历史日志 + 当前状态
-    for (const text of this.buffer) fn({ type: 'log', text });
-    fn({ type: 'state', state: this.state, recipe: this.recipe, code: this.code });
+    // 连上即重放:全部任务的日志与状态
+    for (const t of this.tasks.values()) {
+      for (const text of t.buffer) fn({ type: 'log', recipe: t.recipe, text });
+      fn({ type: 'state', recipe: t.recipe, state: t.state, code: t.code });
+    }
     return () => this.clients.delete(fn);
   }
 
   private emit(ev: JustEvent) { for (const fn of this.clients) fn(ev); }
 
-  info() { return { state: this.state, recipe: this.recipe, code: this.code }; }
+  list(): TaskInfo[] {
+    return Array.from(this.tasks.values(), (t) => ({ recipe: t.recipe, state: t.state, code: t.code }));
+  }
 
-  /** 启动 recipe(调用方须先用 recipes() 校验名字);自动停旧进程 */
+  /** 启动 recipe:同名先停旧进程(重启语义),不影响其他任务;调用方须先用 recipes() 校验名字 */
   start(recipe: string) {
-    this.killChild();
-    this.recipe = recipe;
-    this.code = null;
-    this.state = 'running';
-    this.buffer = [];
-    this.pending = '';
-    this.emit({ type: 'clear' }); // 广播清屏:已连接的订阅者同步清掉上一个任务的残留日志
-    this.emit({ type: 'state', state: 'running', recipe, code: null });
+    this.killOne(recipe);
+    const task: Task = { recipe, child: null, state: 'running', code: null, startedAt: Date.now(), buffer: [], pending: '' };
+    this.tasks.set(recipe, task);
+    this.emit({ type: 'clear', recipe }); // 广播清屏:同步清掉该任务上一轮残留日志
+    this.emit({ type: 'state', recipe, state: 'running', code: null });
     const child = spawn('just', [recipe], {
       cwd: this.cwd,
       shell: true,
@@ -79,52 +88,54 @@ export class JustRunner {
         CI: '',
       },
     });
-    this.child = child;
+    task.child = child;
     const push = (d: Buffer) => {
-      this.pending += d.toString();
+      task.pending += d.toString();
       let idx: number;
-      while ((idx = this.pending.indexOf('\n')) >= 0) {
-        const line = this.pending.slice(0, idx + 1);
-        this.pending = this.pending.slice(idx + 1);
-        this.pushLine(line);
+      while ((idx = task.pending.indexOf('\n')) >= 0) {
+        const line = task.pending.slice(0, idx + 1);
+        task.pending = task.pending.slice(idx + 1);
+        this.pushLine(task, line);
       }
       // 无 \n 的尾巴留在 pending,等下个 chunk(块缓冲输出会在行中断开,不能当独立行)
     };
     child.stdout?.on('data', push);
     child.stderr?.on('data', push);
-    child.on('error', (err) => { this.pushLine(`[zdashboard] spawn error: ${err.message}\n`); });
+    child.on('error', (err) => { this.pushLine(task, `[zdashboard] spawn error: ${err.message}\n`); });
     child.on('exit', (code) => {
-      if (this.pending) { this.pushLine(this.pending + '\n'); this.pending = ''; } // flush 末尾无换行的残留
-      this.child = null;
-      this.state = 'exited';
-      this.code = code ?? 0;
-      this.emit({ type: 'state', state: 'exited', recipe: this.recipe, code: this.code });
+      if (task.pending) { this.pushLine(task, task.pending + '\n'); task.pending = ''; } // flush 末尾无换行的残留
+      task.child = null;
+      task.state = 'exited';
+      task.code = code ?? 0;
+      this.emit({ type: 'state', recipe, state: 'exited', code: task.code });
     });
   }
 
-  private pushLine(line: string) {
-    this.buffer.push(line);
-    if (this.buffer.length > MAX_BUFFER) this.buffer.shift();
-    this.emit({ type: 'log', text: line });
+  private pushLine(task: Task, line: string) {
+    task.buffer.push(line);
+    if (task.buffer.length > MAX_BUFFER) task.buffer.shift();
+    this.emit({ type: 'log', recipe: task.recipe, text: line });
   }
 
-  stop() {
-    this.killChild();
+  /** 停单个任务;不传 recipe 停全部 */
+  stop(recipe?: string) {
+    if (recipe === undefined) { for (const t of this.tasks.values()) this.killOne(t.recipe); }
+    else this.killOne(recipe);
   }
 
-  restart(recipe?: string) {
-    const target = recipe ?? this.recipe;
-    if (target) this.start(target);
+  restart(recipe: string) {
+    if (this.tasks.has(recipe)) this.start(recipe);
   }
 
-  private killChild() {
-    const child = this.child;
+  private killOne(recipe: string) {
+    const task = this.tasks.get(recipe);
+    const child = task?.child;
     if (child?.pid) {
       try {
         if (process.platform === 'win32') spawn('taskkill', ['/PID', String(child.pid), '/T', '/F']);
         else child.kill('SIGTERM');
       } catch { /* 已退出 */ }
     }
-    this.child = null;
+    if (task) { task.child = null; }
   }
 }
