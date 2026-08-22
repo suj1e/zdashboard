@@ -4,7 +4,7 @@ import { useSSE } from '../hooks/useSSE';
 
 interface GitInfo { branch?: string; dirty?: number }
 
-const CHIP = 'inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 h-[18px] font-mono text-[10px] leading-none text-muted-foreground';
+const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[19px] font-mono text-[10px] leading-none text-muted-foreground';
 
 /** 底部状态条:胶囊 chip 呈现项目身份(左)与系统状态(右),与全站药丸/badge 视觉语言一致 */
 export function StatusBar({ projectPath, stoppedRef }: {
@@ -37,8 +37,8 @@ export function StatusBar({ projectPath, stoppedRef }: {
             <GitBranch className="h-3 w-3" />
             {git.branch}
             {git.dirty
-              ? <span className="text-amber-600 dark:text-amber-400">●{git.dirty}</span>
-              : <span className="text-emerald-600 dark:text-emerald-400">✓</span>}
+              ? <span className="text-amber-600 dark:text-amber-400" title="未提交变更">● {git.dirty}</span>
+              : <span className="text-emerald-600 dark:text-emerald-400">clean</span>}
           </span>
         )}
       </div>
