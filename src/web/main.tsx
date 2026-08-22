@@ -5,6 +5,9 @@ import { Toaster } from 'sonner';
 import { TooltipProvider } from './components/ui/tooltip';
 import App from './App';
 import './globals.css';
+import './themes/pixel.css';
+import './themes/nord.css';
+import '@fontsource/vt323/latin.css';
 
 const rootEl = document.documentElement;
 
@@ -18,9 +21,10 @@ if (!mode) {
 }
 rootEl.dataset.mode = mode;
 
-// style: zd-theme → data-theme="default"/"pixel"
+// style: zd-theme → data-theme="default"/"pixel"/"nord"
 let theme = localStorage.getItem('zd-theme') ?? 'default';
 rootEl.dataset.theme = theme;
+rootEl.dispatchEvent(new CustomEvent('themechange'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

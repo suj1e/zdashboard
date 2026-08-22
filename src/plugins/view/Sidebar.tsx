@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
-  ChevronRight, Folder, FolderOpen, GitBranch, ListTodo, Boxes,
-  ShieldCheck, BookOpen, Package, type LucideIcon,
+  ChevronRight, Folder, FolderOpen, GitBranch, type LucideIcon,
 } from 'lucide-react';
 import { FileIcon } from '../../web/components/FileIcon.js';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
 import { useDebounce } from 'use-debounce';
+import { useIcons } from '../../web/lib/icons.js';
 
 interface WorktreeInfo {
   path: string;
@@ -22,11 +22,6 @@ function matches(node: TreeNode, q: string): boolean {
   return (node.children ?? []).some((c) => matches(c, q));
 }
 
-/** 树顶层分组名 → 图标(changes/archive/specs/docs/other 与 change 子目录区分) */
-const GROUP_ICON: Record<string, LucideIcon> = {
-  changes: ListTodo, archive: Boxes, specs: ShieldCheck, docs: BookOpen, other: Package,
-};
-
 function TreeDir({ node, depth, filter, current, onSelectFile }: {
   node: TreeNode; depth: number; filter: string; current: string | null; onSelectFile: (p: string) => void;
 }) {
@@ -34,11 +29,12 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
   const [open, setOpen] = useState(!node.defaultCollapsed);
   const expanded = filter ? true : open;
   if (!children.length && filter) return null;
+  const { icon } = useIcons();
   return (
     <div>
       {(() => {
         const groupMatch = node.name.match(/^([a-z]+)(?: \((\d+)\))?$/);
-        const GroupIcon = groupMatch ? GROUP_ICON[groupMatch[1]] : undefined;
+        const GroupIcon = groupMatch ? (icon(groupMatch[1] as any) as LucideIcon | undefined) : undefined;
         const DirIcon = expanded ? FolderOpen : Folder;
         return (
           <button

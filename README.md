@@ -248,6 +248,21 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 - **构建**：tsup（CLI） + Vite（SPA）
 - **包管理**：pnpm
 
+## 主题系统
+
+### 添加主题 SOP
+
+1. 新建 `src/web/themes/<id>.css`，仅覆盖语义色变量（`--background/--foreground/--card/--popover/--primary/--secondary/--muted/--accent/--destructive/--border/--input/--ring` 等），**不覆盖圆角/阴影变量**（mode 正交性：`[data-theme="..."][data-mode="dark"]` 组合由机制层处理）
+2. 在 `src/web/lib/themes.ts` 的 `STYLES` 数组加一条：`{ id: '<id>', label: '<名>', swatch: ['#色1', '#色2', '#色3', '#色4'] }`
+3. 在 `src/web/globals.css` 顶部 `@import` 块加一行：`@import './themes/<id>.css';`
+
+**约束清单**
+- mode（dark/light）正交，不进主题定义，由 CSS 组合选择器自然派生
+- 语义色必须走 CSS 变量令牌（`hsl(var(--xxx))`），不硬编码色值到组件
+- 装饰色（图标、插画、背景纹理）豁免令牌，可在主题文件中直接写值
+- `font-mono` 覆盖点：`--font-mono` 令牌，主题文件可覆盖，组件用 `font-mono` class
+- 主题切换选择器：`data-theme`，localStorage key `zd-theme`，legacy `zdashboard-theme` 已迁移
+
 ## 数据约定
 
 ### .zdev/ 数据目录

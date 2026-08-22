@@ -23,11 +23,19 @@ export default {
         popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' },
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
       },
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
+      },
       borderRadius: {
         lg: 'var(--radius-lg)',
         md: 'var(--radius-md)',
         sm: 'var(--radius-sm)',
         full: 'var(--radius-full)',
+      },
+      borderWidth: {
+        DEFAULT: 'var(--border-width)',
+        2: '2px',
       },
       boxShadow: {
         sm: 'var(--shadow-sm)',

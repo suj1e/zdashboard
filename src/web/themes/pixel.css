@@ -1,0 +1,89 @@
+/* pixel style, light mode */
+[data-theme="pixel"] {
+  --success: 134 61% 44%;
+  --success-foreground: 0 0% 100%;
+  --warning: 30 50% 40%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 64% 54%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 240 21% 96%;
+  --foreground: 240 21% 11%;
+  --card: 240 21% 96%;
+  --card-foreground: 240 21% 11%;
+  --popover: 240 21% 96%;
+  --popover-foreground: 240 21% 11%;
+  --primary: 16 77% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 250 30% 80%;
+  --secondary-foreground: 240 21% 11%;
+  --muted: 250 30% 80%;
+  --muted-foreground: 220 14% 40%;
+  --accent: 250 30% 80%;
+  --accent-foreground: 240 21% 11%;
+  --destructive: 0 60% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 15% 70%;
+  --input: 240 15% 70%;
+  --ring: 16 77% 61%;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 0px;
+  --radius: 0px;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+
+  --border-width: 2px;
+  --font-mono: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* pixel style, dark mode — highest specificity wins over both parents */
+[data-theme="pixel"][data-mode="dark"] {
+  --success: 134 61% 44%;
+  --success-foreground: 0 0% 100%;
+  --warning: 30 50% 40%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 64% 54%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 240 21% 11%;
+  --foreground: 0 0% 95%;
+  --card: 240 25% 15%;
+  --card-foreground: 0 0% 95%;
+  --popover: 240 25% 15%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 16 77% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 250 30% 26%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 250 30% 26%;
+  --muted-foreground: 220 14% 60%;
+  --accent: 250 30% 26%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 60% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 25% 26%;
+  --input: 240 25% 26%;
+  --ring: 16 77% 61%;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-full: 0px;
+  --radius: 0px;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+
+  --border-width: 2px;
+  --font-mono: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* pixel dot-grid: denser / stronger for both pixel modes */
+[data-theme="pixel"] .dot-grid {
+  background-size: 12px 12px;
+  background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1.2px, transparent 0);
+}

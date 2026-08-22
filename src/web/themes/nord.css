@@ -1,0 +1,61 @@
+/* Nord palette — 调色板主题，保留圆角阴影 */
+
+/* Nord light mode */
+[data-theme="nord"] {
+  --success: 152 21% 67%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 89% 48%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 231 16% 96%;
+  --foreground: 218 20% 13%;
+  --card: 231 16% 96%;
+  --card-foreground: 218 20% 13%;
+  --popover: 231 16% 96%;
+  --popover-foreground: 218 20% 13%;
+  --primary: 219 35% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 16% 88%;
+  --secondary-foreground: 218 20% 13%;
+  --muted: 220 16% 88%;
+  --muted-foreground: 218 14% 46%;
+  --accent: 220 16% 88%;
+  --accent-foreground: 218 20% 13%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 219 12% 86%;
+  --input: 219 12% 86%;
+  --ring: 219 35% 45%;
+}
+
+/* Nord dark mode */
+[data-theme="nord"][data-mode="dark"] {
+  --success: 152 21% 67%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 89% 48%;
+  --info-foreground: 0 0% 100%;
+
+  --background: 220 16% 16%;
+  --foreground: 218 20% 93%;
+  --card: 220 16% 16%;
+  --card-foreground: 218 20% 93%;
+  --popover: 220 16% 16%;
+  --popover-foreground: 218 20% 93%;
+  --primary: 219 35% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 218 20% 24%;
+  --secondary-foreground: 218 20% 93%;
+  --muted: 218 20% 24%;
+  --muted-foreground: 218 12% 64%;
+  --accent: 218 20% 24%;
+  --accent-foreground: 218 20% 93%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 218 20% 24%;
+  --input: 218 20% 24%;
+  --ring: 219 35% 45%;
+}
