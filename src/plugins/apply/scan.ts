@@ -84,13 +84,16 @@ export function scanApplyChanges(root: string): ChangeSummary[] {
       }
     } else {
       const { total, done } = countTasks(tasks);
+      const wtChange = path.join(wt, 'openspec', 'changes', ent.name);
+      const mainChange = path.join(changesDir, ent.name);
       out.push({
         name: ent.name,
         path: `openspec/changes/${ent.name}`,
         total,
         done,
-        hasProposal: fs.existsSync(path.join(wt, 'openspec', 'changes', ent.name, 'proposal.md')),
-        hasDesign: fs.existsSync(path.join(wt, 'openspec', 'changes', ent.name, 'design.md')),
+        // 任一侧存在即算（详情读取是 worktree 优先、主目录兜底，列表标记保持一致）
+        hasProposal: fs.existsSync(path.join(wtChange, 'proposal.md')) || fs.existsSync(path.join(mainChange, 'proposal.md')),
+        hasDesign: fs.existsSync(path.join(wtChange, 'design.md')) || fs.existsSync(path.join(mainChange, 'design.md')),
         inWorktree: true,
       });
     }
