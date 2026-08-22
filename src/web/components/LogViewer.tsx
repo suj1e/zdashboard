@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
 import { Play, Square, RotateCw, LayoutGrid, Eraser } from 'lucide-react';
 import { Button } from './ui/button';
+import { toast } from 'sonner';
+import { intervalToDuration } from 'date-fns';
 
 interface Recipe { name: string; description: string; }
 type TaskStatus = 'running' | 'exited';
@@ -21,10 +23,13 @@ function levelClass(t: string) {
 }
 
 function fmtElapsed(ms: number) {
-  const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  return m < 60 ? `${m}m${s % 60}s` : `${Math.floor(m / 60)}h${m % 60}m`;
+  const d = intervalToDuration({ start: 0, end: ms });
+  const h = d.hours ?? 0;
+  const m = d.minutes ?? 0;
+  const s = d.seconds ?? 0;
+  if (h === 0 && m === 0) return `${s}s`;
+  if (h === 0) return `${m}m${s}s`;
+  return `${h}h${m}m`;
 }
 
 export function LogViewer() {
@@ -81,7 +86,7 @@ export function LogViewer() {
       method: 'POST',
       headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
       body: JSON.stringify({ recipe }),
-    }).catch((e) => console.error('[zdashboard] just action failed:', e));
+    }).catch(() => toast.error(`just ${action} 动作失败`));
   };
 
   // selected=null → 总控台视图;string → 聚焦该任务

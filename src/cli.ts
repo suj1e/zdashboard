@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { access, readdir } from 'node:fs/promises';
 import { exec } from 'node:child_process';
+import { parseArgs as utilParseArgs } from 'node:util';
 import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
 import { Context, Service } from 'cordis';
@@ -32,30 +33,27 @@ const DEFAULT_PORT = 4190;
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const opts: Record<string, string | boolean> = {};
-  let portExplicit = false;
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith('--')) {
-      const key = a.slice(2);
-      const next = args[i + 1];
-      if (next && !next.startsWith('--')) {
-        opts[key] = next;
-        i++;
-      } else {
-        opts[key] = true;
-      }
-      if (key === 'port') portExplicit = true;
-    }
-  }
+  const { values } = utilParseArgs({
+    options: {
+      dir: { type: 'string' },
+      port: { type: 'string' },
+      open: { type: 'boolean', default: false },
+      page: { type: 'string' },
+      restart: { type: 'boolean', default: false },
+      plugins: { type: 'string' },
+    },
+    args,
+    strict: false,
+    allowPositionals: false,
+  });
   return {
-    dir: typeof opts.dir === 'string' ? opts.dir : process.cwd(),
-    port: typeof opts.port === 'string' ? Number(opts.port) : DEFAULT_PORT,
-    portExplicit,
-    open: !!opts.open,
-    page: typeof opts.page === 'string' ? opts.page : null,
-    restart: !!opts.restart,
-    plugins: typeof opts.plugins === 'string' ? opts.plugins : null,
+    dir: typeof values.dir === 'string' ? values.dir : process.cwd(),
+    port: typeof values.port === 'string' ? Number(values.port) : DEFAULT_PORT,
+    portExplicit: args.some(a => a === '--port'),
+    open: !!values.open,
+    page: typeof values.page === 'string' ? values.page : null,
+    restart: !!values.restart,
+    plugins: typeof values.plugins === 'string' ? values.plugins : null,
   };
 }
 

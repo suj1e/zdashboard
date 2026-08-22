@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
+import { formatBytes } from '../lib/utils.js';
 
 function escHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -52,7 +53,7 @@ export function CodeViewer({ path }: { path: string }) {
     <div className="h-full flex flex-col">
       <div className="flex-none px-4 py-2 border-b text-xs flex items-center gap-3">
         <span className="font-mono text-foreground">{name}</span>
-        <span className="text-muted-foreground">{(text?.length ?? 0).toLocaleString()} 字节</span>
+        <span className="text-muted-foreground">{formatBytes(text?.length ?? 0)}</span>
         <button
           onClick={copy}
           className="ml-auto px-2 py-0.5 rounded border border-border bg-background/80 text-[11px] hover:bg-muted transition-colors"

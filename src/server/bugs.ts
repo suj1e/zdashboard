@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import YAML from 'yaml';
 import { fetchJson } from './api/fetch.js';
 
 /** .zdev/config.yaml（优先）或 .zgoal/config.yaml（回退）：禅道凭据配置,扁平 key: value */
@@ -29,25 +30,26 @@ export type BugsResult =
   | { ok: true; url: string; total: number; bugs: ZenBug[] }
   | { ok: false; error: string };
 
-/** 极简扁平 yaml 解析(仅 key: value 行,够 .zdev/.zgoal/config.yaml 用) */
 function loadConfig(root: string): ZgoalConfig | null {
   for (const rel of BUGS_CONFIG_CANDIDATES) {
     const file = path.join(root, rel);
     if (!fs.existsSync(file)) continue;
-    const kv: Record<string, string> = {};
-    for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-      const m = line.match(/^\s*([A-Za-z_]\w*)\s*:\s*(.+?)\s*$/);
-      if (m && !m[2].startsWith('#')) kv[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    try {
+      const kv = YAML.parse(fs.readFileSync(file, 'utf8'));
+      if (!kv || typeof kv !== 'object') return null;
+      const record = kv as Record<string, unknown>;
+      const product = Number(record.product);
+      if (!record.url || !product) return null;
+      return {
+        url: String(record.url).replace(/\/+$/, ''),
+        account: record.account ?? '',
+        password: record.password,
+        token: record.token,
+        product,
+      };
+    } catch {
+      return null;
     }
-    const product = Number(kv.product);
-    if (!kv.url || !product) return null;
-    return {
-      url: kv.url.replace(/\/+$/, ''),
-      account: kv.account ?? '',
-      password: kv.password,
-      token: kv.token,
-      product,
-    };
   }
   return null;
 }

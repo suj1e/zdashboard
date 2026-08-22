@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Power } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from './ui/button';
 
 export function StopButton({ stoppedRef }: { stoppedRef: React.MutableRefObject<boolean> }) {
@@ -10,7 +11,7 @@ export function StopButton({ stoppedRef }: { stoppedRef: React.MutableRefObject<
     try {
       const cfg = await fetch('/__config').then(r => r.json());
       await fetch('/__stop', { method: 'POST', headers: { 'x-stop-token': cfg.stopToken ?? '' } });
-    } catch (e) { console.error('[zdashboard] stop failed:', e); }
+    } catch (e) { toast.error('停止预览服务失败'); }
     setStopped(true);
   };
   if (stopped) return <div className="fixed inset-0 z-50 grid place-items-center bg-muted"><div className="text-center text-muted-foreground"><div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold">v</div><p>预览服务已停止</p><p className="mt-1 text-xs">关闭此页,或在终端重新启动</p></div></div>;

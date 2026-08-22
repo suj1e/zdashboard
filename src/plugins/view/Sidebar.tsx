@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { ChevronRight, FileText, Image as ImageIcon, GitBranch } from 'lucide-react';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
+import { useDebounce } from 'use-debounce';
 
 interface WorktreeInfo {
   path: string;
@@ -100,6 +101,7 @@ export default function Sidebar({ navTarget }: SidebarProps) {
   const current = useSyncExternalStore(viewState.subscribe, viewState.get);
   const [data, setData] = useState<TreeNode[] | null>(null);
   const [filter, setFilter] = useState('');
+  const [debouncedFilter] = useDebounce(filter, 150);
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
 
   // B2: pre-fill filter when navigated from stats drill-down
@@ -123,8 +125,8 @@ export default function Sidebar({ navTarget }: SidebarProps) {
 
   const tree = useMemo(() => {
     if (!data) return [];
-    return data.filter((n) => matches(n, filter));
-  }, [data, filter]);
+    return data.filter((n) => matches(n, debouncedFilter));
+  }, [data, debouncedFilter]);
 
   const showWorktrees = worktrees.length > 0;
 
@@ -144,7 +146,7 @@ export default function Sidebar({ navTarget }: SidebarProps) {
         <div className="py-1">
           {showWorktrees && <WorktreeGroup worktrees={worktrees} />}
           {tree.map((n) => (
-            <TreeDir key={n.name} node={n} depth={0} filter={filter} current={current} onSelectFile={(p) => viewState.set(p)} />
+            <TreeDir key={n.name} node={n} depth={0} filter={debouncedFilter} current={current} onSelectFile={(p) => viewState.set(p)} />
           ))}
         </div>
       )}

@@ -1,40 +1,8 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { useLocalStorage } from '@uidotdev/usehooks';
+import { ChevronLeft } from 'lucide-react';
 
 const STORAGE_PREFIX = 'zd-sidebar-';
-
-function useSidebarState(mode: string, defaultOpen = true) {
-  const [open, setOpen] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(`${STORAGE_PREFIX}${mode}`);
-      if (raw === '1') return true;
-      if (raw === '0') return false;
-    } catch { /* ignore */ }
-    return defaultOpen;
-  });
-  const prevMode = useRef(mode);
-
-  useEffect(() => {
-    if (prevMode.current !== mode) {
-      try {
-        const raw = localStorage.getItem(`${STORAGE_PREFIX}${mode}`);
-        if (raw === '1') setOpen(true);
-        else if (raw === '0') setOpen(false);
-        else setOpen(defaultOpen);
-      } catch { setOpen(defaultOpen); }
-      prevMode.current = mode;
-    }
-  }, [mode, defaultOpen]);
-
-  const toggle = () => {
-    setOpen(prev => {
-      const next = !prev;
-      try { localStorage.setItem(`${STORAGE_PREFIX}${mode}`, next ? '1' : '0'); } catch { /* ignore */ }
-      return next;
-    });
-  };
-
-  return [open, toggle] as const;
-}
 
 /**
  * 侧栏框架：桌面折叠 chevron + 按 mode 记忆开合 + 折叠态热区 hover 临时展开；
@@ -42,10 +10,12 @@ function useSidebarState(mode: string, defaultOpen = true) {
  * 无侧栏内容的插件（hasContent=false）整体动画收起——容器常驻保证宽度始终可过渡。
  */
 export function SidebarFrame({ mode, hasContent = true, children, className }: { mode: string; hasContent?: boolean; children: ReactNode; className?: string }) {
-  const [open, toggle] = useSidebarState(mode, true);
+  const [open, setOpen] = useLocalStorage(`${STORAGE_PREFIX}${mode}`, true);
   const [hovered, setHovered] = useState(false);
 
-  const show = hasContent && (open || hovered); // hover 临时展开只影响视觉，不写 localStorage
+  const toggle = () => setOpen(prev => !prev);
+
+  const show = hasContent && (open || hovered);
 
   return (
     <div className={`relative flex-none ${className ?? ''}`}>
@@ -90,12 +60,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
           text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         aria-label={open ? '折叠侧栏' : '展开侧栏'}
       >
-        <svg
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? '' : 'rotate-180'}`}
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-        >
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
+        <ChevronLeft className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? '' : 'rotate-180'}`} />
       </button>
       )}
 
@@ -106,7 +71,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
           aria-label="展开侧栏"
           className="sm:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 h-12 w-6 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-muted-foreground shadow"
         >
-          <svg className="h-3.5 w-3.5 rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
         </button>
       )}
 

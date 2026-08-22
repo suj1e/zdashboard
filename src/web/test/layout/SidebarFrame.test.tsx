@@ -33,7 +33,7 @@ describe('SidebarFrame', () => {
     );
     const btn = container.querySelector('[aria-label="折叠侧栏"]')!;
     fireEvent.click(btn);
-    expect(storage['zd-sidebar-view']).toBe('0');
+    expect(storage['zd-sidebar-view']).toBe('false');
   });
 
   it('hover hotzone temporarily expands collapsed sidebar without writing storage', () => {
@@ -59,6 +59,6 @@ describe('SidebarFrame', () => {
     const overlay = container.querySelector('.bg-black\\/40')!;
     expect(overlay).toBeTruthy();
     fireEvent.click(overlay);
-    expect(storage['zd-sidebar-view']).toBe('0');
+    expect(storage['zd-sidebar-view']).toBe('false');
   });
 });

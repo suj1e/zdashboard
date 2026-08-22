@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatBytes } from '../../web/lib/utils.js';
 
 interface ExtCount { ext: string; count: number }
 interface StatsData {
@@ -43,13 +44,12 @@ export default function Workspace(_props: WorkspaceProps) {
     );
   }
 
-  const mb = (data.totalSize / 1024 / 1024).toFixed(2);
   const max = Math.max(...data.byExt.map(e => e.count), 1);
 
   const cards = [
     { label: '文件', value: data.files, mode: null as string | null, filter: null as string | null },
     { label: '目录', value: data.dirs, mode: null as string | null, filter: null as string | null },
-    { label: '总大小', value: `${mb} MB`, mode: null as string | null, filter: null as string | null },
+    { label: '总大小', value: formatBytes(data.totalSize), mode: null as string | null, filter: null as string | null },
     { label: 'Markdown', value: data.markdown, mode: 'view', filter: '.md' },
     { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}`, mode: 'apply', filter: null },
   ];
