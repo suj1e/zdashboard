@@ -1,3 +1,14 @@
+/* VT323 字形度量偏小(同 font-size 视觉小一号),size-adjust 放大补偿;
+   同族同名优先级高于 @fontsource 默认 @font-face,零组件改动 */
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/vt323/files/vt323-latin-400-normal.woff2') format('woff2');
+  size-adjust: 135%;
+}
+
 /* pixel style, light mode */
 [data-theme="pixel"] {
   --success: 134 61% 44%;
