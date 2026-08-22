@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { access, readdir } from 'node:fs/promises';
+import { exec } from 'node:child_process';
 import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
 import { Context, Service } from 'cordis';
@@ -8,6 +9,12 @@ import { ServerService, PLUGIN_STATIC_PREFIX } from './core/server.js';
 import { ReloadService } from './core/reload.js';
 import { apply as treeApply } from './core/tree.js';
 import { DashboardService } from './core/manifest.js';
+import {
+  findReusable,
+  stopInstance,
+  writeRecord,
+  clearRecord,
+} from './core/instance.js';
 import { apply as justApply } from './plugins/just/index.js';
 import { apply as bugsApply } from './plugins/bugs/index.js';
 import { apply as reviewApply } from './plugins/review/index.js';
@@ -39,6 +46,7 @@ function parseArgs() {
     port: typeof opts.port === 'string' ? Number(opts.port) : 4190,
     open: !!opts.open,
     page: typeof opts.page === 'string' ? opts.page : null,
+    restart: !!opts.restart,
     plugins: typeof opts.plugins === 'string' ? opts.plugins : null,
   };
 }
@@ -103,6 +111,23 @@ async function loadExternal(ctx: Context, dir: string, root: string) {
 async function main() {
   const args = parseArgs();
   const root = path.resolve(args.dir);
+
+  // --- instance reuse (before creating Context) ---
+  const existing = await findReusable(root);
+  if (existing && !args.restart) {
+    const u = `http://localhost:${existing.port}` + (args.page ? `#${args.page}` : '');
+    if (args.open) {
+      const cmd = process.platform === 'darwin' ? 'open' : 'start';
+      exec(`${cmd} ${u}`);
+    }
+    console.log(`[zdashboard] 已复用实例 ${u}（--restart 可强制重开）`);
+    process.exit(0);
+  }
+  if (existing && args.restart) {
+    console.log(`[zdashboard] --restart：停止旧实例 pid=${existing.pid}`);
+    await stopInstance(existing);
+  }
+
   const appDir = path.resolve(__dirname, 'web');
 
   const det = await detect(root);
@@ -110,7 +135,15 @@ async function main() {
   const ctx = new Context();
 
   // core services
-  ctx.plugin(ServerService, { root, appDir, port: args.port, open: args.open, detect: det, page: args.page });
+  ctx.plugin(ServerService, {
+    root,
+    appDir,
+    port: args.port,
+    open: args.open,
+    detect: det,
+    page: args.page,
+    onListen: (port: number) => writeRecord(root, port),
+  });
   ctx.plugin(ReloadService, { root });
   ctx.plugin(treeApply, { root });
   ctx.plugin(DashboardService);
@@ -137,6 +170,15 @@ async function main() {
   if (args.plugins) {
     await loadExternal(ctx, path.resolve(args.plugins), root);
   }
+
+  // graceful shutdown: clear .zdev record on SIGTERM / SIGINT
+  const shutdown = () => {
+    try { clearRecord(root); } catch {}
+    process.exit(0);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+
   return ctx;
 }
 

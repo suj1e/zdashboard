@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import type { Context, DetectResult } from 'cordis';
 import { Service } from 'cordis';
+import { clearRecord } from './instance.js';
 
 const VERSION = pkg.version;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +19,7 @@ export interface ServerOptions {
   open: boolean;
   page: string | null;
   detect: DetectResult;
+  onListen?: (port: number) => void;
 }
 
 declare module 'cordis' {
@@ -66,6 +68,7 @@ export class ServerService extends Service {
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
   private prefixStatic = new Map<string, string>();
   private server?: http.Server;
+  private onListen?: (port: number) => void;
 
   constructor(ctx: Context, config: ServerOptions) {
     super(ctx, 'server');
@@ -75,6 +78,7 @@ export class ServerService extends Service {
     this.open = config.open;
     this.page = config.page;
     this.det = config.detect;
+    this.onListen = config.onListen;
     ctx.effect(() => () => this.dispose());
 
     this.route('/__config', (_req, res) => {
@@ -196,11 +200,13 @@ export class ServerService extends Service {
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
       if (this.open) exec(process.platform === 'darwin' ? `open ${target}` : `start ${target}`);
+      this.onListen?.(port);
     });
   }
 
   stop() {
     if (this.server) { try { this.server.close(); } catch {} }
+    try { clearRecord(this.root); } catch {}
     setTimeout(() => {
       try { this.ctx.root.fiber.dispose(); } catch {}
       process.exit(0);
@@ -209,5 +215,6 @@ export class ServerService extends Service {
 
   dispose() {
     if (this.server) { try { this.server.close(); } catch {} }
+    try { clearRecord(this.root); } catch {}
   }
 }
