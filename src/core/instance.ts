@@ -38,8 +38,7 @@ export function readRecord(root: string): InstanceRecord | null {
 }
 
 export function writeRecord(root: string, port: number): void {
-  const dir = path.join(root, '.zdev');
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(path.dirname(recordPath(root)), { recursive: true });
   const rec: InstanceRecord = {
     pid: process.pid,
     port,
@@ -51,6 +50,9 @@ export function writeRecord(root: string, port: number): void {
 
 export function clearRecord(root: string): void {
   try {
+    // 属主校验:记录若已指向别的实例(并发双启落败者),不得误删胜者记录
+    const rec = readRecord(root);
+    if (rec && rec.pid !== process.pid) return;
     fs.unlinkSync(recordPath(root));
   } catch {
     // best-effort

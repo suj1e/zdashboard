@@ -116,11 +116,10 @@ async function main() {
   const existing = await findReusable(root);
   if (existing && !args.restart) {
     const u = `http://localhost:${existing.port}` + (args.page ? `#${args.page}` : '');
-    if (args.open) {
-      const cmd = process.platform === 'darwin' ? 'open' : 'start';
-      exec(`${cmd} ${u}`);
-    }
+    if (args.open) openUrl(u);
     console.log(`[zdashboard] 已复用实例 ${u}（--restart 可强制重开）`);
+    // 管道场景下 stdout 是异步写,显式等 flush 再 exit,避免日志被截断
+    await new Promise<void>((resolve) => process.stdout.write('', () => resolve()));
     process.exit(0);
   }
   if (existing && args.restart) {

@@ -2,12 +2,12 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import type { Context, DetectResult } from 'cordis';
 import { Service } from 'cordis';
 import { clearRecord } from './instance.js';
+import { openUrl } from './open-url.js';
 
 const VERSION = pkg.version;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -199,7 +199,7 @@ export class ServerService extends Service {
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
-      if (this.open) exec(process.platform === 'darwin' ? `open ${target}` : `start ${target}`);
+      if (this.open) openUrl(target);
       this.onListen?.(port);
     });
   }
