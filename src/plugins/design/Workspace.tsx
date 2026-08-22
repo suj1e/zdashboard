@@ -159,7 +159,7 @@ export default function Workspace() {
           </div>
           <div className="flex-1 min-h-0 overflow-auto">
             {current.type === 'page' ? (
-              <div className="bg-background overflow-hidden"
+              <div className="mx-auto bg-background overflow-hidden"
                 style={{ maxWidth: mode === 0 ? undefined : mode === 'custom' ? w : mode, height: mode === 'custom' ? h : '100%' }}>
                 <Viewer path={current.path} />
               </div>

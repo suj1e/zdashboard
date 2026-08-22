@@ -86,20 +86,24 @@ export default function App() {
       <Topbar status={status} stoppedRef={stoppedRef} />
       <div className="flex-1 min-h-0 flex">
         <IconRail active={mode} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
-        {plugin?.Sidebar && (
-          <SidebarFrame mode={mode}>
+        <SidebarFrame mode={mode ?? 'home'} hasContent={!!plugin?.Sidebar}>
+          {plugin?.Sidebar ? (
             <Suspense fallback={<div className="w-full h-full" />}>
-              <plugin.Sidebar />
+              <div key={mode} className="h-full animate-in fade-in slide-in-from-left-1 duration-200">
+                <plugin.Sidebar />
+              </div>
             </Suspense>
-          </SidebarFrame>
-        )}
+          ) : null}
+        </SidebarFrame>
         <section className="flex-1 min-h-0" style={dotBg}>
           <div className="h-full p-6">
             {mode && plugin ? (
               <Suspense fallback={
-                <div className="flex h-full items-center justify-center text-muted-foreground text-xs">加载工作区…</div>
+                <div className="mx-auto h-full max-w-6xl rounded-lg border bg-background shadow-sm animate-pulse" />
               }>
-                <plugin.Workspace />
+                <div key={mode} className="h-full animate-in fade-in duration-200">
+                  <plugin.Workspace />
+                </div>
               </Suspense>
             ) : (
               <HomeGrid plugins={plugins} detect={detect} onSelect={handleSelect} />
