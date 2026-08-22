@@ -111,39 +111,34 @@ function PdfViewer({ path }: { path: string }) {
   return <div className="grid place-items-center p-8 h-full"><iframe src={'/' + encodeURI(path)} title="PDF" className="w-full h-full max-h-[80vh] rounded border bg-white" /></div>;
 }
 
-function CodeViewer({ path }: { path: string }) {
-  const [text, setText] = useState('');
-  useEffect(() => { fetch('/' + encodeURI(path), { cache: 'no-store' }).then(r => r.text()).then(setText); }, [path]);
-  return <pre className="p-6 text-xs leading-relaxed overflow-auto h-full">{text || '加载中…'}</pre>;
-}
-
 function FontViewer({ path }: { path: string }) {
-  const [loaded, setLoaded] = useState(false);
+  const [name, setName] = useState('');
   useEffect(() => {
+    let cancelled = false;
+    let objectUrl = '';
     let face: FontFace | null = null;
-    const url = '/' + encodeURI(path);
-    fetch(url, { cache: 'no-store' }).then(r => r.blob()).then(blob => {
-      face = new FontFace('preview-font', URL.createObjectURL(blob));
-      return face.load();
-    }).then(() => {
-      if (face) {
+    fetch('/' + encodeURI(path))
+      .then(r => r.blob())
+      .then(async blob => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        face = new FontFace('zd-font-preview', `url(${objectUrl})`);
+        await face.load();
+        if (cancelled) { (face as FontFace).dispose?.(); return; }
         document.fonts.add(face);
-        setLoaded(true);
-      }
-    }).catch(() => setLoaded(true));
+        setName(path.split('/').pop() ?? path);
+      })
+      .catch(() => { if (!cancelled) setName(path.split('/').pop() ?? path); });
     return () => {
-      if (face) {
-        document.fonts.delete(face);
-        face.source?.forEach?.((b: any) => { if (b instanceof Blob) URL.revokeObjectURL(b as any); });
-      }
+      cancelled = true;
+      if (face) { try { document.fonts.delete(face); (face as FontFace).dispose?.(); } catch { /* ignore */ } }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [path]);
   return (
-    <div className="p-8 h-full flex flex-col gap-4">
-      <div className="text-xs text-muted-foreground">字体文件: {path}</div>
-      <div className="flex-1 grid place-items-center">
-        <div className="text-6xl" style={{ fontFamily: loaded ? "'preview-font', serif" : 'serif' }}>Aa 字体</div>
-      </div>
+    <div className="h-full overflow-auto p-8 grid gap-6 place-content-center text-center">
+      <div className="text-xs text-muted-foreground font-mono break-all">{path}</div>
+      <div className="text-5xl" style={{ fontFamily: name ? "'zd-font-preview', serif" : 'serif' }}>Aa 字体预览 0123</div>
     </div>
   );
 }

@@ -157,7 +157,10 @@ export class ServerService extends Service {
           'Accept-Ranges': 'bytes',
           'Cache-Control': 'no-cache',
         });
-        fs.createReadStream(filePath, { start, end }).pipe(res);
+        // stat 成功后文件仍可能在 open 前被删/换(高频增删的工作区),流错误无人接会崩进程
+        const stream = fs.createReadStream(filePath, { start, end });
+        stream.on('error', () => { try { res.destroy(); } catch { /* 已断 */ } });
+        stream.pipe(res);
         return;
       }
 

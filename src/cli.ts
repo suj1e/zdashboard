@@ -49,7 +49,7 @@ function parseArgs() {
   return {
     dir: typeof values.dir === 'string' ? values.dir : process.cwd(),
     port: typeof values.port === 'string' ? Number(values.port) : DEFAULT_PORT,
-    portExplicit: args.some(a => a === '--port'),
+    portExplicit: args.some(a => a === '--port' || a.startsWith('--port=')),
     open: !!values.open,
     page: typeof values.page === 'string' ? values.page : null,
     restart: !!values.restart,

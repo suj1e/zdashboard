@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
 import { Play, Square, RotateCw, Eraser } from 'lucide-react';
 import { Button } from './ui/button';
-import { FilterPills } from './FilterPills.js';
+import { FilterPills, type FilterItem } from './FilterPills.js';
 import { toast } from 'sonner';
 import { intervalToDuration } from 'date-fns';
 
@@ -164,9 +164,9 @@ export function LogViewer() {
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {running ? (
-                      <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', r.name)}><Square className="h-2.5 w-2.5" />停止</Button>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', r.name)}><Square className="h-2.5 w-2.5" />停止</Button>
                     ) : (
-                      <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', r.name)}>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', r.name)}>
                         {exited ? <RotateCw className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}{exited ? '重跑' : '启动'}
                       </Button>
                     )}
@@ -191,9 +191,9 @@ export function LogViewer() {
             </span>
             <span className="ml-auto flex items-center gap-1">
               {selRunning
-                ? <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', selected)}><Square className="h-2.5 w-2.5" />停止</Button>
-                : <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', selected)}><RotateCw className="h-2.5 w-2.5" />{selTask ? '重跑' : '启动'}</Button>}
-              <Button size="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('clear', selected)} disabled={!selLines.length}><Eraser className="h-2.5 w-2.5" />清屏</Button>
+                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('stop', selected)}><Square className="h-2.5 w-2.5" />停止</Button>
+                : <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('start', selected)}><RotateCw className="h-2.5 w-2.5" />{selTask ? '重跑' : '启动'}</Button>}
+              <Button variant="ghost" className="h-6 gap-1 px-2 text-[11px]" onClick={() => act('clear', selected)} disabled={!selLines.length}><Eraser className="h-2.5 w-2.5" />清屏</Button>
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>
