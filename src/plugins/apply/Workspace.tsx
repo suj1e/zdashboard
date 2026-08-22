@@ -1,5 +1,9 @@
 import ApplyViewer from './Viewer.js';
 
-export default function Workspace() {
-  return <ApplyViewer />;
+interface WorkspaceProps {
+  navTarget?: { wt?: string };
+}
+
+export default function Workspace({ navTarget }: WorkspaceProps) {
+  return <ApplyViewer navTarget={navTarget} />;
 }

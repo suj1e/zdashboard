@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useRef } from 'react';
 import { useSSE } from '../../web/hooks/useSSE.js';
 import remarkGfm from 'remark-gfm';
 
@@ -59,7 +58,6 @@ function TestStrategyBadge() {
 }
 
 function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
-  // pending = 前置仍在活跃 change 列表（未归档）→ 灰色「等待前置」；已归档/不存在 → 正常显示（已满足）
   const cls = pending
     ? 'bg-muted text-muted-foreground border-border'
     : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
@@ -73,7 +71,7 @@ function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
 function TaskList({ tasks }: { tasks: string }) {
   const lines = tasks.split('\n').filter((l) => l.trim().startsWith('- ['));
   if (!lines.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
-  const firstUnchecked = lines.findIndex((l) => !/- \[[xX]\]/.test(l)); // 接下来要做的项
+  const firstUnchecked = lines.findIndex((l) => !/- \[[xX]\]/.test(l));
   return (
     <ul className="space-y-1 text-xs">
       {lines.map((l, i) => {
@@ -149,7 +147,11 @@ function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
   );
 }
 
-export function ApplyViewer() {
+interface ApplyViewerProps {
+  navTarget?: { wt?: string };
+}
+
+export function ApplyViewer({ navTarget }: ApplyViewerProps) {
   const [changes, setChanges] = useState<ChangeSummary[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const stoppedRef = useRef(false);
@@ -158,10 +160,10 @@ export function ApplyViewer() {
   const [selected, setSelected] = useState<ChangeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tasksExpanded, setTasksExpanded] = useState(false);
 
   const loadList = useCallback(() => {
     setLoading(true);
-    // 不清当前选中详情:文件变化刷新列表时,用户正在看的详情保持(SSE files 高频触发)
     fetch('/__apply', { cache: 'no-store' })
       .then((r) => r.json())
       .then(setChanges)
@@ -176,6 +178,7 @@ export function ApplyViewer() {
   const select = useCallback((name: string) => {
     setLoading(true);
     setSelectedName(name);
+    setTasksExpanded(true);
     fetch(`/__apply/change?name=${encodeURIComponent(name)}`, {
       cache: 'no-store',
     })
@@ -184,6 +187,16 @@ export function ApplyViewer() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // A5: focus on the change corresponding to the worktree name when navigated via navTarget
+  useEffect(() => {
+    if (!navTarget?.wt || !changes.length) return;
+    const match = changes.find((c) => c.name === navTarget.wt || c.inWorktree);
+    if (match) {
+      select(match.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navTarget?.wt, refreshKey]);
 
   if (loading && !changes.length) {
     return (

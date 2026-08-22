@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import { viewState } from './state.js';
+import OutlineNav from './OutlineNav.js';
+
+const LONG_DOC_THRESHOLD = 2500;
 
 function viewerFor(path: string) {
   const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
-  // 无扩展名的任务文件（justfile/Justfile/makefile 等）按代码预览
   if (name === 'justfile' || name === 'makefile') return CodeViewer;
   const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
   if (ext === '.md' || ext === '.markdown') return MdViewer;
@@ -16,17 +18,33 @@ function viewerFor(path: string) {
   return UnsupportedViewer;
 }
 
-export default function Workspace() {
+interface WorkspaceProps {
+  navTarget?: { wt?: string; filter?: string };
+}
+
+export default function Workspace(_props: WorkspaceProps) {
   const [current, setCurrent] = useState<string | null>(() => viewState.get());
+  const [showOutline, setShowOutline] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   const Viewer = current ? viewerFor(current) : null;
 
   useEffect(() => viewState.subscribe(setCurrent), []);
 
+  // After the viewer renders, check if the document is long enough to warrant an outline
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const textLen = contentRef.current.textContent?.length ?? 0;
+    setShowOutline(textLen > LONG_DOC_THRESHOLD);
+  }, [current]);
+
   return (
     <div className="mx-auto h-full max-w-5xl bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
       {current && Viewer ? (
-        <div className="flex-1 min-h-0 overflow-auto">
-          <Viewer path={current} />
+        <div className="flex-1 min-h-0 flex overflow-hidden">
+          <div ref={contentRef} className="flex-1 min-h-0 overflow-auto">
+            <Viewer path={current} />
+          </div>
+          {showOutline && <OutlineNav containerRef={contentRef} />}
         </div>
       ) : (
         <div className="flex-1 grid place-items-center text-muted-foreground">

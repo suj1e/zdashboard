@@ -12,7 +12,11 @@ interface StatsData {
   hasJust: boolean;
 }
 
-export default function Workspace() {
+interface WorkspaceProps {
+  navTarget?: { mode?: string; filter?: string; wt?: string };
+}
+
+export default function Workspace(_props: WorkspaceProps) {
   const [data, setData] = useState<StatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,23 +46,37 @@ export default function Workspace() {
   const mb = (data.totalSize / 1024 / 1024).toFixed(2);
   const max = Math.max(...data.byExt.map(e => e.count), 1);
 
+  const cards = [
+    { label: '文件', value: data.files, mode: null as string | null, filter: null as string | null },
+    { label: '目录', value: data.dirs, mode: null as string | null, filter: null as string | null },
+    { label: '总大小', value: `${mb} MB`, mode: null as string | null, filter: null as string | null },
+    { label: 'Markdown', value: data.markdown, mode: 'view', filter: '.md' },
+    { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}`, mode: 'apply', filter: null },
+  ];
+
+  const handleCardClick = (mode: string | null, filter: string | null) => {
+    if (!mode) return;
+    window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode, ...(filter ? { filter } : {}) } }));
+  };
+
   return (
     <div className="mx-auto h-full max-w-6xl overflow-auto rounded-lg border bg-background p-6 shadow-sm">
       <h1 className="text-lg font-semibold mb-1">📊 项目统计</h1>
-      <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新</p>
+      <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新 · 点击卡片跳转</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-          {[
-            { label: '文件', value: data.files },
-            { label: '目录', value: data.dirs },
-            { label: '总大小', value: `${mb} MB` },
-            { label: 'Markdown', value: data.markdown },
-            { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}` },
-          ].map(card => (
-            <div key={card.label} className="rounded-lg border bg-background p-4">
+          {cards.map(card => (
+            <button
+              key={card.label}
+              type="button"
+              onClick={() => handleCardClick(card.mode, card.filter)}
+              disabled={!card.mode}
+              title={card.mode ? `点击跳转至 ${card.label}` : undefined}
+              className={`rounded-lg border bg-background p-4 text-left transition-colors ${card.mode ? 'hover:bg-muted/70 cursor-pointer' : 'cursor-default opacity-80'}`}
+            >
               <div className="text-xl font-bold">{card.value}</div>
               <div className="text-[11px] text-muted-foreground mt-1">{card.label}</div>
-            </div>
+            </button>
           ))}
         </div>
 

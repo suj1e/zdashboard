@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { ChevronRight, FileText, Image as ImageIcon } from 'lucide-react';
+import { ChevronRight, FileText, Image as ImageIcon, GitBranch } from 'lucide-react';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
+
+interface WorktreeInfo {
+  path: string;
+  name: string;
+  branch: string;
+  head: string;
+  dirty: boolean;
+}
 
 function matches(node: TreeNode, q: string): boolean {
   if (!q) return true;
@@ -51,18 +59,68 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
   );
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  navTarget?: { mode?: string; filter?: string; wt?: string };
+}
+
+function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
+  const handleNav = (wt: WorktreeInfo) => {
+    window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode: 'apply', wt: wt.name } }));
+  };
+
+  return (
+    <div className="mb-1">
+      <div className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+        <GitBranch className="h-3 w-3" />
+        <span>Worktrees ({worktrees.length})</span>
+      </div>
+      {worktrees.map((wt) => (
+        <button
+          key={wt.name}
+          onClick={() => handleNav(wt)}
+          title={`${wt.branch}${wt.dirty ? ' · 有未提交变更' : ''}`}
+          className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-foreground hover:bg-muted border-l-2 border-transparent"
+          style={{ paddingLeft: 14 }}
+        >
+          <span className="truncate font-mono text-[11px]">{wt.branch}</span>
+          <span className="text-muted-foreground truncate">/{wt.name}</span>
+          {wt.dirty && <span className="ml-auto flex-none h-2 w-2 rounded-full bg-destructive shrink-0" title="有未提交变更" />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function Sidebar({ navTarget }: SidebarProps) {
   const current = useSyncExternalStore(viewState.subscribe, viewState.get);
   const [data, setData] = useState<TreeNode[] | null>(null);
   const [filter, setFilter] = useState('');
+  const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
+
+  // B2: pre-fill filter when navigated from stats drill-down
+  useEffect(() => {
+    if (navTarget?.filter && !filter) {
+      setFilter(navTarget.filter);
+    }
+  }, [navTarget?.filter]);
+
   useEffect(() => {
     fetch('/__files', { cache: 'no-store' }).then(r => r.json()).then((d) => setData(d.tree ?? []));
+  }, []);
+
+  useEffect(() => {
+    fetch('/__worktrees', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(setWorktrees)
+      .catch(() => setWorktrees([]));
   }, []);
 
   const tree = useMemo(() => {
     if (!data) return [];
     return data.filter((n) => matches(n, filter));
   }, [data, filter]);
+
+  const showWorktrees = worktrees.length > 0;
 
   return (
     <div className="p-2">
@@ -74,10 +132,11 @@ export default function Sidebar() {
       />
       {!data ? (
         <p className="p-3 text-xs text-muted-foreground">加载中…</p>
-      ) : !tree.length ? (
+      ) : !tree.length && !showWorktrees ? (
         <p className="p-3 text-xs text-muted-foreground">无匹配</p>
       ) : (
         <div className="py-1">
+          {showWorktrees && <WorktreeGroup worktrees={worktrees} />}
           {tree.map((n) => (
             <TreeDir key={n.name} node={n} depth={0} filter={filter} current={current} onSelectFile={(p) => viewState.set(p)} />
           ))}

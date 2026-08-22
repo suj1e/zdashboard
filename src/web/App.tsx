@@ -12,6 +12,8 @@ const dotBg: React.CSSProperties = {
   backgroundSize: '20px 20px',
 };
 
+interface NavTarget { mode: string; filter?: string; wt?: string }
+
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
 
 export default function App() {
@@ -20,6 +22,7 @@ export default function App() {
   const [projectPath, setProjectPath] = useState('');
   const stoppedRef = useRef(false);
   const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false });
+  const [navTarget, setNavTarget] = useState<NavTarget | null>(null);
 
   const status = useSSE(
     () => { window.location.reload(); },
@@ -58,11 +61,25 @@ export default function App() {
 
   const handleSelect = useCallback((m: string | null) => {
     setMode(m);
+    setNavTarget(null);
     if (m === null) {
       window.location.hash = '';
     } else {
       window.location.hash = m;
     }
+  }, []);
+
+  useEffect(() => {
+    const onNav = (ev: Event) => {
+      const detail = (ev as CustomEvent<NavTarget>).detail;
+      if (!detail?.mode) return;
+      // clear any stale target when new nav event arrives
+      setNavTarget(detail);
+      setMode(detail.mode);
+      window.location.hash = detail.mode;
+    };
+    window.addEventListener('zd-dashboard-nav', onNav);
+    return () => window.removeEventListener('zd-dashboard-nav', onNav);
   }, []);
 
   useEffect(() => {
@@ -81,6 +98,9 @@ export default function App() {
 
   const plugin = mode ? plugins.find((p) => p.mode === mode) : null;
 
+  // Build props to pass to plugin Workspace; clear navTarget once delivered so tab-switch doesn't re-fire
+  const workspaceProps = navTarget ? { navTarget, _navToken: Symbol('nav') } : {};
+
   return (
     <div className="flex h-screen flex-col">
       <Topbar status={status} stoppedRef={stoppedRef} />
@@ -90,7 +110,7 @@ export default function App() {
           {plugin?.Sidebar ? (
             <Suspense fallback={<div className="w-full h-full" />}>
               <div key={mode} className="h-full animate-in fade-in slide-in-from-left-1 duration-200">
-                <plugin.Sidebar />
+                <plugin.Sidebar navTarget={navTarget} />
               </div>
             </Suspense>
           ) : null}
@@ -102,7 +122,7 @@ export default function App() {
                 <div className="mx-auto h-full max-w-6xl rounded-lg border bg-background shadow-sm animate-pulse" />
               }>
                 <div key={mode} className="h-full animate-in fade-in duration-200">
-                  <plugin.Workspace />
+                  <plugin.Workspace {...(navTarget ? { navTarget } : {})} />
                 </div>
               </Suspense>
             ) : (
@@ -115,4 +135,3 @@ export default function App() {
     </div>
   );
 }
-

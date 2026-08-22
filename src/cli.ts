@@ -9,6 +9,7 @@ import { Context, Service } from 'cordis';
 import { ServerService, PLUGIN_STATIC_PREFIX } from './core/server.js';
 import { ReloadService } from './core/reload.js';
 import { apply as treeApply } from './core/tree.js';
+import { apply as worktreesApply } from './core/worktrees.js';
 import { DashboardService } from './core/manifest.js';
 import {
   findReusable,
@@ -162,6 +163,7 @@ async function main() {
   });
   ctx.plugin(ReloadService, { root });
   ctx.plugin(treeApply, { root });
+  ctx.plugin(worktreesApply, { root });
   ctx.plugin(DashboardService);
 
   // built-in plugins
