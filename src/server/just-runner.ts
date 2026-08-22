@@ -2,18 +2,19 @@ import { spawn, execFile, type ChildProcess } from 'node:child_process';
 
 export interface Recipe { name: string; description: string; }
 export type TaskStatus = 'running' | 'exited';
-export interface TaskInfo { recipe: string; state: TaskStatus; code: number | null; }
+export interface TaskInfo { recipe: string; state: TaskStatus; code: number | null; startedAt: number; signal?: string }
 
 export type JustEvent =
   | { type: 'log'; recipe: string; text: string }
   | { type: 'clear'; recipe: string }
-  | { type: 'state'; recipe: string; state: TaskStatus; code: number | null };
+  | { type: 'state'; recipe: string; state: TaskStatus; code: number | null; startedAt?: number; signal?: string };
 
 interface Task {
   recipe: string;
   child: ChildProcess | null;
   state: TaskStatus;
   code: number | null;
+  signal?: string;
   startedAt: number;
   buffer: string[];
   pending: string; // 行缓冲:块缓冲输出会在行中间断开,攒到 \n 才切行
@@ -59,7 +60,7 @@ export class JustRunner {
     // 连上即重放:全部任务的日志与状态
     for (const t of this.tasks.values()) {
       for (const text of t.buffer) fn({ type: 'log', recipe: t.recipe, text });
-      fn({ type: 'state', recipe: t.recipe, state: t.state, code: t.code });
+      fn({ type: 'state', recipe: t.recipe, state: t.state, code: t.code, startedAt: t.startedAt });
     }
     return () => this.clients.delete(fn);
   }
@@ -67,7 +68,7 @@ export class JustRunner {
   private emit(ev: JustEvent) { for (const fn of this.clients) fn(ev); }
 
   list(): TaskInfo[] {
-    return Array.from(this.tasks.values(), (t) => ({ recipe: t.recipe, state: t.state, code: t.code }));
+    return Array.from(this.tasks.values(), (t) => ({ recipe: t.recipe, state: t.state, code: t.code, startedAt: t.startedAt }));
   }
 
   /** 启动 recipe:同名先停旧进程(重启语义),不影响其他任务;调用方须先用 recipes() 校验名字 */
@@ -76,7 +77,7 @@ export class JustRunner {
     const task: Task = { recipe, child: null, state: 'running', code: null, startedAt: Date.now(), buffer: [], pending: '' };
     this.tasks.set(recipe, task);
     this.emit({ type: 'clear', recipe }); // 广播清屏:同步清掉该任务上一轮残留日志
-    this.emit({ type: 'state', recipe, state: 'running', code: null });
+    this.emit({ type: 'state', recipe, state: 'running', code: null, startedAt: task.startedAt });
     const child = spawn('just', [recipe], {
       cwd: this.cwd,
       shell: true,
@@ -89,7 +90,10 @@ export class JustRunner {
       },
     });
     task.child = child;
+    // 身份守卫:同名重启后旧进程的迟到输出/退出不得污染新任务(闭包 task 是旧对象时静默丢弃)
+    const isStale = () => this.tasks.get(recipe) !== task;
     const push = (d: Buffer) => {
+      if (isStale()) return;
       task.pending += d.toString();
       let idx: number;
       while ((idx = task.pending.indexOf('\n')) >= 0) {
@@ -102,12 +106,15 @@ export class JustRunner {
     child.stdout?.on('data', push);
     child.stderr?.on('data', push);
     child.on('error', (err) => { this.pushLine(task, `[zdashboard] spawn error: ${err.message}\n`); });
-    child.on('exit', (code) => {
-      if (task.pending) { this.pushLine(task, task.pending + '\n'); task.pending = ''; } // flush 末尾无换行的残留
+    child.on('exit', (code, signal) => {
+      if (task.pending && !isStale()) { this.pushLine(task, task.pending + '\n'); } // flush 末尾无换行的残留
+      task.pending = '';
       task.child = null;
       task.state = 'exited';
       task.code = code ?? 0;
-      this.emit({ type: 'state', recipe, state: 'exited', code: task.code });
+      task.signal = signal ?? undefined; // 用户主动 stop 时 code=null+SIGTERM,与成功退出区分
+      if (isStale()) return; // 迟到的旧进程退出,不打扰新任务状态
+      this.emit({ type: 'state', recipe, state: 'exited', code: task.code, startedAt: task.startedAt, signal: task.signal });
     });
   }
 

@@ -50,9 +50,16 @@ export const apply = {
         res.end(JSON.stringify(runner.list()));
       };
 
-      ctx.server.route('/__just/start', (req, res) => { void handleAction(req, res, 'start'); });
-      ctx.server.route('/__just/stop', (req, res) => { void handleAction(req, res, 'stop'); });
-      ctx.server.route('/__just/restart', (req, res) => { void handleAction(req, res, 'restart'); });
+      const routeAction = (name: 'start' | 'stop' | 'restart') => {
+        ctx.server.route(`/__just/${name}`, (req, res) => {
+          handleAction(req, res, name).catch(() => {
+            if (!res.headersSent) { res.writeHead(500); res.end('{"error":"internal"}'); }
+          });
+        });
+      };
+      routeAction('start');
+      routeAction('stop');
+      routeAction('restart');
     });
   },
 };
@@ -62,5 +69,6 @@ async function readBody(req: http.IncomingMessage): Promise<string> {
     let data = '';
     req.on('data', (c: string | Buffer) => { data += c; });
     req.on('end', () => resolve(data));
+    req.on('error', () => resolve('')); // 客户端中断时兜底 settle,避免悬挂
   });
 }

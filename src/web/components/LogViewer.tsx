@@ -5,11 +5,11 @@ import { Button } from './ui/button';
 
 interface Recipe { name: string; description: string; }
 type TaskStatus = 'running' | 'exited';
-interface TaskState { state: TaskStatus; code: number | null; startedAt: number; }
+interface TaskState { state: TaskStatus; code: number | null; startedAt: number; signal?: string; }
 type Ev =
   | { type: 'log'; recipe: string; text: string }
   | { type: 'clear'; recipe: string }
-  | { type: 'state'; recipe: string; state: TaskStatus; code: number | null };
+  | { type: 'state'; recipe: string; state: TaskStatus; code: number | null; startedAt?: number; signal?: string };
 
 /** 无 ANSI 色码的行按日志级别着色(maven/构建工具在非 tty 下不输出颜色,前端补齐) */
 function levelClass(t: string) {
@@ -40,9 +40,11 @@ function TaskCard({ recipe, task, lines, onStop, onRestart, onClose }: {
 
   const dot = running
     ? 'bg-emerald-500 animate-pulse'
-    : task.code
-      ? 'bg-red-500'
-      : 'bg-muted-foreground';
+    : task.signal
+      ? 'bg-muted-foreground'
+      : task.code
+        ? 'bg-red-500'
+        : 'bg-emerald-500/70';
   const elapsed = running ? fmtElapsed(Date.now() - task.startedAt) : null;
 
   return (
@@ -52,7 +54,9 @@ function TaskCard({ recipe, task, lines, onStop, onRestart, onClose }: {
         <span className="font-mono font-medium truncate">{recipe}</span>
         {running
           ? <span className="text-muted-foreground flex-none">{elapsed}</span>
-          : <span className={`flex-none font-mono ${task.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>exit {task.code}</span>}
+          : <span className={`flex-none font-mono ${task.signal ? 'text-muted-foreground' : task.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {task.signal ? `已停止 (${task.signal})` : `exit ${task.code}`}
+            </span>}
         <span className="ml-auto flex items-center gap-0.5 flex-none">
           {running && <Button size="ghost" className="h-6 w-6 p-0" title="停止" onClick={onStop}><Square className="h-3 w-3" /></Button>}
           {!running && <Button size="ghost" className="h-6 w-6 p-0" title="重新运行" onClick={onRestart}><RotateCw className="h-3 w-3" /></Button>}
@@ -86,6 +90,13 @@ export function LogViewer() {
     fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()).then(setRecipes).catch(() => setRecipes([]));
     fetch('/__config').then(r => r.json()).then(c => { tokenRef.current = c.stopToken ?? ''; }).catch(() => {});
     const es = new EventSource('/__just/logs');
+    let firstOpen = true;
+    es.onopen = () => {
+      if (firstOpen) { firstOpen = false; return; }
+      // 重连:清空本地状态,靠服务端 subscribe 重放重建快照(避免日志重复追加)
+      setLogs({});
+      setTasks({});
+    };
     es.onmessage = (e) => {
       try {
         const ev = JSON.parse(e.data) as Ev;
@@ -99,13 +110,13 @@ export function LogViewer() {
         } else if (ev.type === 'state') {
           setTasks(prev => ({
             ...prev,
-            [ev.recipe]: { state: ev.state, code: ev.code, startedAt: prev[ev.recipe]?.startedAt ?? Date.now() },
+            [ev.recipe]: { state: ev.state, code: ev.code, signal: ev.signal, startedAt: ev.startedAt ?? prev[ev.recipe]?.startedAt ?? Date.now() },
           }));
           setClosed(prev => { const n = new Set(prev); n.delete(ev.recipe); return n; }); // 重新出现的任务自动恢复卡片
         }
       } catch { /* ignore */ }
     };
-    es.onerror = () => { es.close(); };
+    es.onerror = () => { /* EventSource 自动重连,onopen 里处理重放去重 */ };
     // 运行中任务的时长计时刷新
     const timer = setInterval(() => forceTick(t => t + 1), 1000);
     return () => { es.close(); clearInterval(timer); };

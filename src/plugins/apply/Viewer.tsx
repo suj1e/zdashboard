@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useRef } from 'react';
+import { useSSE } from '../../web/hooks/useSSE.js';
 import remarkGfm from 'remark-gfm';
 
 interface ChangeSummary {
@@ -143,6 +145,9 @@ function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
 
 export function ApplyViewer() {
   const [changes, setChanges] = useState<ChangeSummary[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const stoppedRef = useRef(false);
+  useSSE(() => {}, () => setRefreshKey(k => k + 1), stoppedRef);
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [selected, setSelected] = useState<ChangeDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,7 +166,7 @@ export function ApplyViewer() {
 
   useEffect(() => {
     loadList();
-  }, [loadList]);
+  }, [loadList, refreshKey]);
 
   const select = useCallback((name: string) => {
     setLoading(true);
@@ -203,7 +208,7 @@ export function ApplyViewer() {
         <span className="ml-auto text-[11px] text-muted-foreground">openspec/changes/</span>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
-        <WorktreeOverview refreshKey={refreshKey ?? 0} />
+        <WorktreeOverview refreshKey={refreshKey} />
 
         {!changes.length ? (
           <div className="text-center text-muted-foreground py-8">
