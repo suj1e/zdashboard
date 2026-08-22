@@ -4,7 +4,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
-import type { Context, DetectResult } from 'cordis';
+import type { Context } from 'cordis';
+import type { DetectResult } from '../server/detect.js';
 import { Service } from 'cordis';
 import { clearRecord } from './instance.js';
 import { openUrl } from './open-url.js';
@@ -19,6 +20,7 @@ export interface ServerOptions {
   open: boolean;
   page: string | null;
   detect: DetectResult;
+  dataDir?: string;
   onListen?: (port: number) => void;
 }
 
@@ -64,6 +66,7 @@ export class ServerService extends Service {
   private open: boolean;
   private page: string | null;
   private det: DetectResult;
+  private dataDir?: string;
   private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
   private prefixStatic = new Map<string, string>();
@@ -78,6 +81,7 @@ export class ServerService extends Service {
     this.open = config.open;
     this.page = config.page;
     this.det = config.detect;
+    this.dataDir = config.dataDir;
     this.onListen = config.onListen;
     ctx.effect(() => () => this.dispose());
 
@@ -199,6 +203,7 @@ export class ServerService extends Service {
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
+      if (this.dataDir) console.log(`[zdashboard] data      -> ${this.dataDir}`);
       if (this.open) openUrl(target);
       this.onListen?.(port);
     });

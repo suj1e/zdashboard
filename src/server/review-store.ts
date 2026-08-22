@@ -20,7 +20,7 @@ export interface ReviewData {
   items: ReviewItem[];
 }
 
-const REVIEW_FILE = 'review.yaml';
+const REVIEW_CANDIDATES = ['.zdev/review.yaml', 'review.yaml'] as const;
 
 export class ReviewStore {
   private root: string;
@@ -29,8 +29,10 @@ export class ReviewStore {
 
   constructor(root: string, onChange?: () => void) {
     this.root = root;
-    this.file = path.join(root, REVIEW_FILE);
     this.onChange = onChange;
+    // 优先 .zdev/review.yaml，回退根目录 review.yaml；都不存在则用 .zdev 路径（新建跟着新协议走）
+    const existing = REVIEW_CANDIDATES.find((rel) => fs.existsSync(path.join(root, rel)));
+    this.file = path.join(root, existing ?? REVIEW_CANDIDATES[0]);
   }
 
   exists(): boolean { return fs.existsSync(this.file); }
@@ -73,8 +75,10 @@ export class ReviewStore {
 
   docs(): string[] {
     try {
-      return fs.readdirSync(this.root)
-        .filter((f) => /\.(md|markdown)$/i.test(f) && fs.statSync(path.join(this.root, f)).isFile())
+      const zdevDir = path.join(this.root, '.zdev');
+      if (!fs.existsSync(zdevDir) || !fs.statSync(zdevDir).isDirectory()) return [];
+      return fs.readdirSync(zdevDir)
+        .filter((f) => /\.(md|markdown)$/i.test(f) && fs.statSync(path.join(zdevDir, f)).isFile())
         .sort();
     } catch { return []; }
   }

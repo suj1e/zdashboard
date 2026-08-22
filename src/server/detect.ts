@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
+import { BUGS_CONFIG_CANDIDATES } from './bugs.js';
 
 export interface DetectResult {
   hasOpenspec: boolean;
@@ -22,6 +23,6 @@ export async function detect(root: string): Promise<DetectResult> {
   const hasOpenspec = fs.existsSync(path.join(root, 'openspec'));
   const hasDocs = fs.existsSync(path.join(root, 'docs'));
   const hasJust = await justAvailable(root);
-  const hasBugs = fs.existsSync(path.join(root, '.zgoal', 'config.yaml'));
+  const hasBugs = BUGS_CONFIG_CANDIDATES.some((rel) => fs.existsSync(path.join(root, rel)));
   return { hasOpenspec, hasDocs, hasJust, hasBugs };
 }

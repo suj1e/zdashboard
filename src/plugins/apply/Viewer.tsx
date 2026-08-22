@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { FileText, FolderOpen } from 'lucide-react';
+import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -10,12 +10,15 @@ interface ChangeSummary {
   done: number;
   hasProposal: boolean;
   hasDesign: boolean;
+  inWorktree: boolean;
 }
 
 interface ChangeDetail extends ChangeSummary {
   proposal?: string;
   design?: string;
   tasks: string;
+  dependsOn: string[];
+  hasTestStrategy: boolean;
 }
 
 function pct(done: number, total: number) {
@@ -33,6 +36,33 @@ function StatusPill({ done, total }: { done: number; total: number }) {
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono ${cls}`}>
       {done}/{total} · {p}%
+    </span>
+  );
+}
+
+function InWorktreeBadge() {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-sky-500/10 text-sky-600 border-sky-500/30">
+      worktree 执行中
+    </span>
+  );
+}
+
+function TestStrategyBadge() {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-purple-500/10 text-purple-600 border-purple-500/30">
+      含测试策略
+    </span>
+  );
+}
+
+function DependencyChip({ name, isArchived }: { name: string; isArchived: boolean }) {
+  const cls = isArchived
+    ? 'bg-muted text-muted-foreground border-border'
+    : 'bg-orange-500/10 text-orange-600 border-orange-500/30';
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono ${cls}`}>
+      {isArchived ? '等待前置' : name}
     </span>
   );
 }
@@ -67,16 +97,46 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
       onClick={onSelect}
       className="w-full text-left rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         <FolderOpen className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium font-mono truncate">{item.name}</span>
         <StatusPill done={item.done} total={item.total} />
+        {item.inWorktree && <InWorktreeBadge />}
       </div>
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
         <span className={item.hasProposal ? 'text-foreground' : ''}>proposal</span>
         <span className={item.hasDesign ? 'text-foreground' : ''}>design</span>
       </div>
     </button>
+  );
+}
+
+function WorktreeOverview({ items }: { items: ChangeSummary[] }) {
+  const [wts, setWts] = useState<{ name: string; branch: string; head: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/__worktrees', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(setWts)
+      .catch(() => setWts([]));
+  }, []);
+
+  if (!wts.length) return null;
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-[11px] text-muted-foreground mr-1">Worktree:</span>
+      {wts.map((w) => (
+        <span
+          key={w.name}
+          className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-sky-500/10 text-sky-600 border-sky-500/30"
+          title={w.head}
+        >
+          {w.name}@{w.branch || 'detached'}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -142,6 +202,8 @@ export function ApplyViewer() {
         <span className="ml-auto text-[11px] text-muted-foreground">openspec/changes/</span>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
+        <WorktreeOverview items={changes} />
+
         {!changes.length ? (
           <div className="text-center text-muted-foreground py-8">
             <p className="text-sm">没有进行中的 change</p>
@@ -161,10 +223,26 @@ export function ApplyViewer() {
 
         {selectedName && selected && !loading && (
           <section className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-medium">{selected.name}</h3>
               <StatusPill done={selected.done} total={selected.total} />
+              {selected.inWorktree && <InWorktreeBadge />}
+              {selected.hasTestStrategy && <TestStrategyBadge />}
             </div>
+
+            {selected.dependsOn.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">依赖:</span>
+                {selected.dependsOn.map((name) => (
+                  <DependencyChip
+                    key={name}
+                    name={name}
+                    isArchived={!changes.some((c) => c.name === name)}
+                  />
+                ))}
+              </div>
+            )}
+
             {selected.proposal && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">

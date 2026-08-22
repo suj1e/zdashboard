@@ -224,6 +224,7 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 | `/__docs` | GET | 项目文档列表 |
 | `/__apply` | GET | OpenSpec changes 列表 |
 | `/__apply/change` | GET | `?name=<change>` 详情 |
+| `/__worktrees` | GET | `.zworktree/` 下的 worktree 列表（`git worktree list --porcelain`） |
 | `/__design/assets` | GET | 设计资产扫描 |
 | `/__stats/data` | GET | 项目统计（内置 stats 插件） |
 | `/__notes/data` | GET | 便签列表（examples/notes 示例） |
@@ -247,6 +248,28 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 - **HTTP**：Node `http` 模块（无 express 依赖）
 - **构建**：tsup（CLI） + Vite（SPA）
 - **包管理**：pnpm
+
+## 数据约定
+
+### .zdev/ 数据目录
+
+zdashboard v2.1+ 优先读取 `.zdev/` 下的数据文件（与 zskills 新协议对齐）：
+
+| 文件 | 说明 | 回退路径 |
+|------|------|---------|
+| `.zdev/config.yaml` | 禅道凭据（zgoal skill 创建） | `.zgoal/config.yaml` |
+| `.zdev/review.yaml` | 评审数据 | 根目录 `review.yaml` |
+| `.zdev/*.md` | 评审相关文档（brief.md 等） | — |
+
+启动日志会打印数据目录：`data -> .zdev/`（仅 `.zdev/` 存在时）。
+
+### worktree 执行模型
+
+zapply 在 `.zworktree/<change-name>/` 下创建独立 worktree，apply 插件会优先读取 worktree 内的 `tasks.md`/`proposal.md`/`design.md`，主目录兜底。Viewer 卡片会显示 `worktree 执行中` badge。
+
+### --restart 端口继承
+
+`--restart` 重启时，新实例会优先尝试旧实例的端口（通过 `.zdev/dashboard.json` 记录），避免书签/标签失效。用户显式 `--port` 时仍尊重用户选择。
 
 ## 迁移状态
 

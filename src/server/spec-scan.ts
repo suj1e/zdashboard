@@ -60,7 +60,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
     const docs = walkFiles(path.join(root, 'docs'), 'docs');
     if (docs.length) tree.push({ name: 'docs', kind: 'dir', children: docs });
   }
-  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'test-server']);
+  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'test-server', '.zworktree']);
   // "其他"只收根目录的 md 文档(README/CLAUDE 等);构建配置(pom.xml/justfile 等)不收——对"方案+日志"定位是噪音
   const etc: TreeNode[] = [];
   try {

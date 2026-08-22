@@ -1,4 +1,5 @@
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { access, readdir } from 'node:fs/promises';
 import { exec } from 'node:child_process';
@@ -26,9 +27,12 @@ import { apply as statsApply } from './plugins/stats/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const DEFAULT_PORT = 4190;
+
 function parseArgs() {
   const args = process.argv.slice(2);
   const opts: Record<string, string | boolean> = {};
+  let portExplicit = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a.startsWith('--')) {
@@ -40,11 +44,13 @@ function parseArgs() {
       } else {
         opts[key] = true;
       }
+      if (key === 'port') portExplicit = true;
     }
   }
   return {
     dir: typeof opts.dir === 'string' ? opts.dir : process.cwd(),
-    port: typeof opts.port === 'string' ? Number(opts.port) : 4190,
+    port: typeof opts.port === 'string' ? Number(opts.port) : DEFAULT_PORT,
+    portExplicit,
     open: !!opts.open,
     page: typeof opts.page === 'string' ? opts.page : null,
     restart: !!opts.restart,
@@ -123,12 +129,21 @@ async function main() {
     await new Promise<void>((resolve) => process.stdout.write('', () => resolve()));
     process.exit(0);
   }
-  if (existing && args.restart) {
-    console.log(`[zdashboard] --restart：停止旧实例 pid=${existing.pid}`);
-    await stopInstance(existing);
+  // 记录旧端口（--restart 时用于端口继承；stopInstance 会清 record）
+  const oldRecord = existing && args.restart ? existing : null;
+  if (oldRecord) {
+    console.log(`[zdashboard] --restart：停止旧实例 pid=${oldRecord.pid}`);
+    await stopInstance(oldRecord);
   }
 
   const appDir = path.resolve(__dirname, 'web');
+
+  // P2: restart 且有旧记录时，起始端口用 record.port（用户显式 --port 则尊重）
+  const startPort = oldRecord && !args.portExplicit ? oldRecord.port : args.port;
+
+  // P0: 数据目录检测（.zdev/ 存在则优先）
+  const zdevDir = path.join(root, '.zdev');
+  const dataDir = fs.existsSync(zdevDir) ? '.zdev/' : '';
 
   const det = await detect(root);
 
@@ -138,10 +153,11 @@ async function main() {
   ctx.plugin(ServerService, {
     root,
     appDir,
-    port: args.port,
+    port: startPort,
     open: args.open,
     detect: det,
     page: args.page,
+    dataDir: dataDir || undefined,
     onListen: (port: number) => writeRecord(root, port),
   });
   ctx.plugin(ReloadService, { root });

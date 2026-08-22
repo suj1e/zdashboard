@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fetchJson } from './api/fetch.js';
 
-/** .zgoal/config.yaml(zgoal skill 的禅道凭据配置,扁平 key: value) */
+/** .zdev/config.yaml（优先）或 .zgoal/config.yaml（回退）：禅道凭据配置,扁平 key: value */
+export const BUGS_CONFIG_CANDIDATES = ['.zdev/config.yaml', '.zgoal/config.yaml'] as const;
+
 export interface ZgoalConfig {
   url: string;
   account: string;
@@ -27,24 +29,27 @@ export type BugsResult =
   | { ok: true; url: string; total: number; bugs: ZenBug[] }
   | { ok: false; error: string };
 
-/** 极简扁平 yaml 解析(仅 key: value 行,够 .zgoal/config.yaml 用) */
-function loadZgoalConfig(root: string): ZgoalConfig | null {
-  const file = path.join(root, '.zgoal', 'config.yaml');
-  if (!fs.existsSync(file)) return null;
-  const kv: Record<string, string> = {};
-  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Za-z_]\w*)\s*:\s*(.+?)\s*$/);
-    if (m && !m[2].startsWith('#')) kv[m[1]] = m[2].replace(/^["']|["']$/g, '');
+/** 极简扁平 yaml 解析(仅 key: value 行,够 .zdev/.zgoal/config.yaml 用) */
+function loadConfig(root: string): ZgoalConfig | null {
+  for (const rel of BUGS_CONFIG_CANDIDATES) {
+    const file = path.join(root, rel);
+    if (!fs.existsSync(file)) continue;
+    const kv: Record<string, string> = {};
+    for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+      const m = line.match(/^\s*([A-Za-z_]\w*)\s*:\s*(.+?)\s*$/);
+      if (m && !m[2].startsWith('#')) kv[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    }
+    const product = Number(kv.product);
+    if (!kv.url || !product) return null;
+    return {
+      url: kv.url.replace(/\/+$/, ''),
+      account: kv.account ?? '',
+      password: kv.password,
+      token: kv.token,
+      product,
+    };
   }
-  const product = Number(kv.product);
-  if (!kv.url || !product) return null;
-  return {
-    url: kv.url.replace(/\/+$/, ''),
-    account: kv.account ?? '',
-    password: kv.password,
-    token: kv.token,
-    product,
-  };
+  return null;
 }
 
 let tokenCache: { key: string; token: string; at: number } | null = null;
@@ -93,8 +98,8 @@ function normBug(b: Record<string, unknown>, account: string): ZenBug {
 
 /** 只读拉取禅道 bug 列表(GET,绝不写)。失败返回 ok:false,不抛。 */
 export async function fetchBugs(root: string): Promise<BugsResult> {
-  const cfg = loadZgoalConfig(root);
-  if (!cfg) return { ok: false, error: '.zgoal/config.yaml 缺失或 url/product 未配置(由 zgoal skill 创建)' };
+  const cfg = loadConfig(root);
+  if (!cfg) return { ok: false, error: '.zdev/config.yaml 缺失(由 zgoal skill 创建)' };
   try {
     const token = await getToken(cfg);
     const json = await fetchJson(
