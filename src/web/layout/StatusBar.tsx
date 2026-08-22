@@ -29,7 +29,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
         {projectPath && (
           <span className={`${CHIP} shrink-0`} title={projectPath}>
             <FolderOpen className="h-3 w-3" />
-            <span className="truncate max-w-[200px]">{'~' + projectPath.replace(/^\/Users\/[^/]+/, '')}</span>
+            {projectPath ? projectPath.split('/').pop() || projectPath : ''}
           </span>
         )}
         {git.branch && (
