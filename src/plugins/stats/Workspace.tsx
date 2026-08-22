@@ -97,7 +97,7 @@ export default function Workspace(_props: WorkspaceProps) {
         </div>
 
         <div className="mt-5 flex items-center gap-2 text-xs">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.hasJust ? 'text-emerald-600 border-emerald-500/30 bg-emerald-500/10' : 'text-muted-foreground border-border'}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
             justfile {data.hasJust ? '✓' : '✗'}
           </span>
           <span className="text-muted-foreground">root: {data.root}</span>

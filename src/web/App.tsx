@@ -7,11 +7,6 @@ import { HomeGrid } from './home/HomeGrid';
 import { usePlugins, type WebPlugin } from './lib/plugins';
 import { useSSE } from './hooks/useSSE';
 
-const dotBg: React.CSSProperties = {
-  backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)',
-  backgroundSize: '20px 20px',
-};
-
 interface NavTarget { mode?: string; filter?: string; wt?: string; navToken?: number; }
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
@@ -115,7 +110,7 @@ export default function App() {
             </Suspense>
           ) : null}
         </SidebarFrame>
-        <section className="flex-1 min-h-0" style={dotBg}>
+        <section className="flex-1 min-h-0 dot-grid">
           <div className="h-full p-6">
             {mode && plugin ? (
               <Suspense fallback={

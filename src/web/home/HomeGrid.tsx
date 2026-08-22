@@ -42,8 +42,8 @@ export function HomeGrid({ plugins, detect, onSelect }: {
       <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
         <span className="mr-1">探测</span>
         {DETECT_ITEMS.map(d => (
-          <span key={d.key} className={`inline-flex items-center gap-1 rounded-full border px-2 h-[19px] font-mono ${detect[d.key] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'border-border bg-muted/40 text-muted-foreground/70'}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${detect[d.key] ? 'bg-emerald-500' : 'bg-muted-foreground/40'}`} />
+          <span key={d.key} className={`inline-flex items-center gap-1 rounded-full border px-2 h-[19px] font-mono ${detect[d.key] ? 'border-success/30 bg-success/10 text-success' : 'border-border bg-muted/40 text-muted-foreground/70'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${detect[d.key] ? 'bg-success' : 'bg-muted-foreground/40'}`} />
             {d.label}
           </span>
         ))}

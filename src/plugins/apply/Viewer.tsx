@@ -63,14 +63,14 @@ function TaskList({ tasks }: { tasks: string }) {
       {items.map((t, i) => {
         const isNext = i === firstUnchecked;
         return (
-          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''} ${t.checked ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-warning/10 border-l-2 border-warning' : ''} ${t.checked ? 'text-foreground' : 'text-muted-foreground'}`}>
             {t.checked ? (
-              <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px]">✓</span>
+              <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-success text-white flex items-center justify-center text-[8px]">✓</span>
             ) : (
-              <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border ${isNext ? 'border-amber-500' : 'border-muted-foreground/50'}`} />
+              <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border ${isNext ? 'border-warning' : 'border-muted-foreground/50'}`} />
             )}
             <span>{t.text}</span>
-            {isNext && <span className="ml-auto flex-none text-[10px] font-medium text-amber-600 dark:text-amber-400">← 下一步</span>}
+            {isNext && <span className="ml-auto flex-none text-[10px] font-medium text-warning">← 下一步</span>}
           </li>
         );
       })}
@@ -119,7 +119,7 @@ function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
       {wts.map((w) => (
         <span
           key={w.name}
-          className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-sky-500/10 text-sky-600 border-sky-500/30"
+          className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-info/10 text-info border-info/30"
           title={w.head}
         >
           {w.name}@{w.branch || 'detached'}

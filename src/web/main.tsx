@@ -7,9 +7,20 @@ import App from './App';
 import './globals.css';
 
 const rootEl = document.documentElement;
-let theme = localStorage.getItem('zdashboard-theme');
-if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-rootEl.classList.toggle('dark', theme === 'dark');
+
+// mode: zd-mode (new) or legacy zdashboard-theme → map to data-mode="dark"/"light"
+let mode = localStorage.getItem('zd-mode');
+if (!mode) {
+  const legacy = localStorage.getItem('zdashboard-theme');
+  mode = legacy === 'light' ? 'light' : 'dark'; // default dark
+  localStorage.setItem('zd-mode', mode);
+  localStorage.removeItem('zdashboard-theme');
+}
+rootEl.dataset.mode = mode;
+
+// style: zd-theme → data-theme="default"/"pixel"
+let theme = localStorage.getItem('zd-theme') ?? 'default';
+rootEl.dataset.theme = theme;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

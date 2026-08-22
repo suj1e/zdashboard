@@ -22,7 +22,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
       .catch(() => {});
   }, [bump]);
 
-  const dot = status === 'live' ? 'bg-emerald-500 animate-pulse' : status === 'lost' ? 'bg-red-500' : 'bg-muted-foreground';
+  const dot = status === 'live' ? 'bg-success animate-pulse' : status === 'lost' ? 'bg-destructive' : 'bg-muted-foreground';
 
   return (
     <footer className="h-7 border-t bg-background flex items-center justify-between px-3 gap-2 text-[11px]">
@@ -45,8 +45,8 @@ export function StatusBar({ projectPath, stoppedRef }: {
                 <GitBranch className="h-3 w-3" />
                 {git.branch}
                 {git.dirty
-                  ? <span className="text-amber-600 dark:text-amber-400">● {git.dirty}</span>
-                  : <span className="text-emerald-600 dark:text-emerald-400">clean</span>}
+                  ? <span className="text-warning">● {git.dirty}</span>
+                  : <span className="text-success">clean</span>}
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-mono text-[10px]">

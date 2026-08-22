@@ -27,9 +27,9 @@ interface ReviewData {
 
 const STATUS_BADGE: Record<ReviewStatus, string> = {
   draft: 'bg-zinc-500 text-white',
-  reviewing: 'bg-amber-500 text-white',
-  passed: 'bg-emerald-600 text-white',
-  rejected: 'bg-red-500 text-white',
+  reviewing: 'bg-warning text-white',
+  passed: 'bg-success text-white',
+  rejected: 'bg-destructive text-white',
 };
 const STATUS_TEXT: Record<ReviewStatus, string> = {
   draft: '草案', reviewing: '评审中', passed: '已通过', rejected: '未通过',
@@ -38,12 +38,12 @@ const FILTERS: { key: ItemState | 'all'; label: string }[] = [
   { key: 'all', label: '全部' }, { key: 'open', label: '待处理' },
   { key: 'answered', label: '已答复' }, { key: 'accepted', label: '已采纳' }, { key: 'dismissed', label: '已驳回' },
 ];
-const SEV_COLOR: Record<string, string> = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-sky-500' };
+const SEV_COLOR: Record<string, string> = { high: 'bg-destructive', medium: 'bg-warning', low: 'bg-info' };
 const SEV_TEXT: Record<string, string> = { high: '高', medium: '中', low: '低' };
 const STATE_BADGE: Record<ItemState, string> = {
-  open: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
-  answered: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
-  accepted: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+  open: 'bg-destructive/15 text-destructive border-destructive/30',
+  answered: 'bg-info/15 text-info border-info/30',
+  accepted: 'bg-success/15 text-success border-success/30',
   dismissed: 'bg-muted text-muted-foreground border-border',
 };
 const STATE_TEXT: Record<ItemState, string> = {
@@ -93,7 +93,7 @@ function ItemCard({ item, token, onUpdated }: { item: ReviewItem; token: string;
         />
         <div className="flex items-center gap-1.5">
           {item.state === 'accepted' ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success/15 text-success text-xs font-medium">
               <Check className="h-3 w-3" />已采纳
             </span>
           ) : item.state === 'dismissed' ? (
@@ -102,10 +102,10 @@ function ItemCard({ item, token, onUpdated }: { item: ReviewItem; token: string;
             </span>
           ) : (
             <>
-              <button onClick={() => post(next('answered'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs">
+              <button onClick={() => post(next('answered'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-info hover:bg-info text-white text-xs">
                 <Send className="h-3 w-3" />{item.state === 'answered' ? '更新答复' : '答复'}
               </button>
-              <button onClick={() => post(next('accepted'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs">
+              <button onClick={() => post(next('accepted'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success hover:bg-success text-white text-xs">
                 <Check className="h-3 w-3" />采纳
               </button>
               <button onClick={() => post(next('dismissed'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted hover:bg-muted/70 text-xs">
@@ -232,11 +232,11 @@ export default function ReviewViewer() {
           {data && <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${STATUS_BADGE[data.status] ?? ''}`}>{STATUS_TEXT[data.status] ?? data.status}</span>}
           {counts.open > 0 && <span className="text-[11px] text-muted-foreground">还有 {counts.open} 项待处理</span>}
           <button onClick={pass} disabled={!data || data.status === 'passed' || counts.open > 0}
-            className="ml-auto h-7 px-3 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs">
+            className="ml-auto h-7 px-3 rounded bg-success hover:bg-success disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs">
             通过
           </button>
         </div>
-        {err && <div className="bg-red-500/10 text-red-600 dark:text-red-400 text-xs px-3.5 py-1.5 border-b border-red-500/20">{err}</div>}
+        {err && <div className="bg-destructive/10 text-destructive text-xs px-3.5 py-1.5 border-b border-destructive/20">{err}</div>}
         <div className="flex-1 min-h-0 flex flex-col">
           {docOpen && (
             <div className="flex-1 min-h-0 overflow-auto border-b bg-background relative">
@@ -247,7 +247,7 @@ export default function ReviewViewer() {
               {doc ? <MdViewer path={doc} /> : <p className="p-6 text-sm text-muted-foreground">在左侧选择评审项</p>}
             </div>
           )}
-          <div className={docOpen ? 'flex-none h-[42%] border-b overflow-auto p-3 flex flex-col gap-3' : 'flex-1 min-h-0 overflow-auto p-3 flex flex-col gap-3'} style={docOpen ? undefined : { backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0)', backgroundSize: '20px 20px' }}>
+          <div className={docOpen ? 'flex-none h-[42%] border-b overflow-auto p-3 flex flex-col gap-3' : 'flex-1 min-h-0 overflow-auto p-3 flex flex-col gap-3 dot-grid'}>
             {!docOpen && (
               <button onClick={() => setDocOpen(true)} title="展开文档"
                 className="self-start inline-flex items-center gap-1 h-6 px-2 rounded border border-border bg-background text-xs hover:bg-muted">

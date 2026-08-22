@@ -16,10 +16,10 @@ type Ev =
 
 /** 无 ANSI 色码的行按日志级别着色(maven/构建工具在非 tty 下不输出颜色,前端补齐) */
 function levelClass(t: string) {
-  if (/^\[(ERROR|FATAL)\]/.test(t) || /^ERROR\b/.test(t)) return 'text-red-400';
-  if (/^\[(WARN|WARNING)\]/.test(t) || /^WARN(ING)?\b/.test(t)) return 'text-amber-400';
-  if (/^\[DEBUG\]/.test(t) || /^DEBUG\b/.test(t)) return 'text-sky-400';
-  if (/^\[(INFO|DOWNLOAD|PROGRESS)\]/.test(t) || /^INFO\b/.test(t)) return 'text-emerald-400';
+  if (/^\[(ERROR|FATAL)\]/.test(t) || /^ERROR\b/.test(t)) return 'text-destructive';
+  if (/^\[(WARN|WARNING)\]/.test(t) || /^WARN(ING)?\b/.test(t)) return 'text-warning';
+  if (/^\[DEBUG\]/.test(t) || /^DEBUG\b/.test(t)) return 'text-info';
+  if (/^\[(INFO|DOWNLOAD|PROGRESS)\]/.test(t) || /^INFO\b/.test(t)) return 'text-success';
   return 'text-zinc-200';
 }
 
@@ -97,8 +97,8 @@ export function LogViewer() {
   const selRunning = selTask?.state === 'running';
 
   const pill = (running: boolean, exited: boolean, t?: TaskState) =>
-    running ? 'bg-emerald-500 animate-pulse'
-    : exited ? (t?.signal ? 'bg-muted-foreground' : t?.code ? 'bg-red-500' : 'bg-emerald-500/60')
+    running ? 'bg-success animate-pulse'
+    : exited ? (t?.signal ? 'bg-muted-foreground' : t?.code ? 'bg-destructive' : 'bg-success/60')
     : 'bg-muted-foreground/30';
 
   const consoleItem: FilterItem = {
@@ -116,7 +116,7 @@ export function LogViewer() {
     return {
       key: r.name,
       label: r.name,
-      className: isSel ? '' : running ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20' : '',
+      className: isSel ? '' : running ? 'border-success/40 bg-success/10 text-success hover:bg-success/20' : '',
       renderLabel: () => (
         <>
           <span className={`h-1.5 w-1.5 rounded-full ${pill(running, exited, t)}`} />
@@ -124,7 +124,7 @@ export function LogViewer() {
         </>
       ),
       renderExtra: () => exited && !isSel ? (
-        <span className={`text-[10px] ${t?.signal ? 'opacity-60' : t?.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+        <span className={`text-[10px] ${t?.signal ? 'opacity-60' : t?.code ? 'text-destructive' : 'text-success'}`}>
           {t?.signal ? '停' : t?.code}
         </span>
       ) : undefined,
@@ -159,8 +159,8 @@ export function LogViewer() {
                 <div className="flex items-center gap-2 text-xs">
                   <span className={`h-2 w-2 rounded-full flex-none ${pill(running, exited, t)}`} />
                   <span className="font-mono font-medium">{r.name}</span>
-                  {running && <span className="text-emerald-600 dark:text-emerald-400 font-mono">{fmtElapsed(Date.now() - t.startedAt)}</span>}
-                  {exited && <span className={`font-mono ${t.signal ? 'text-muted-foreground' : t.code ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>{t.signal ? '已停止' : `exit ${t.code}`}</span>}
+                  {running && <span className="text-success font-mono">{fmtElapsed(Date.now() - t.startedAt)}</span>}
+                  {exited && <span className={`font-mono ${t.signal ? 'text-muted-foreground' : t.code ? 'text-destructive' : 'text-success'}`}>{t.signal ? '已停止' : `exit ${t.code}`}</span>}
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {running ? (
@@ -184,7 +184,7 @@ export function LogViewer() {
         /* 单任务视图:状态头 + 完整日志流 */
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-[11px]">
-            <span className={`h-1.5 w-1.5 rounded-full ${selRunning ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
             <span className="font-mono font-medium">{selected}</span>
             <span className="text-muted-foreground font-mono">
               {selRunning ? `running · ${fmtElapsed(Date.now() - selTask.startedAt)}` : selTask?.signal ? '已停止' : selTask ? `exit ${selTask.code}` : '未运行'}
