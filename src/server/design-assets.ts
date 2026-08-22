@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { walkDir } from './walk.js';
 
-export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font' | 'other';
+export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font';
 
 const PAGE_EXTS = ['.html', '.htm'];
 const ICON_EXTS = ['.svg', '.png', '.ico', '.jpg', '.jpeg', '.gif', '.webp'];
@@ -25,7 +25,7 @@ export function categorize(rel: string, ext: string): AssetType | null {
     if (TOKEN_RE.test(rel) && (ext === '.css' || ext === '.json')) return 'token';
     return null;
   }
-  return 'other';
+  return null;
 }
 
 export interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
@@ -33,7 +33,7 @@ export type ScanResult = Record<AssetType, AssetFile[]>;
 
 export function scanAssets(root: string): ScanResult {
   const out: ScanResult = {} as ScanResult;
-  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font','other'];
+  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font'];
   for (const k of keys) out[k] = [];
   const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
   walkDir(root, { skip: SKIP, onFile: (abs, rel) => {
