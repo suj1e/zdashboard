@@ -30,6 +30,7 @@ export class ReloadService extends Service {
       this.watcher = fs.watch(config.root, { recursive: true }, () => {
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
+          this.ctx.server.refreshGitInfo(); // 分支/脏数可能已变,先行刷新再广播
           this.broadcast('reload');
           this.broadcast('files');
         }, WATCH_DEBOUNCE_MS);

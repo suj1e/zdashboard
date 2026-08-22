@@ -64,17 +64,22 @@ interface SidebarProps {
 }
 
 function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
+  const [open, setOpen] = useState(true);
   const handleNav = (wt: WorktreeInfo) => {
     window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode: 'apply', wt: wt.name } }));
   };
 
   return (
     <div className="mb-1">
-      <div className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground tracking-wide">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground tracking-wide hover:text-foreground"
+      >
+        <ChevronRight className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`} />
         <GitBranch className="h-3 w-3" />
         <span>Worktrees ({worktrees.length})</span>
-      </div>
-      {worktrees.map((wt) => (
+      </button>
+      {open && worktrees.map((wt) => (
         <button
           key={wt.name}
           onClick={() => handleNav(wt)}

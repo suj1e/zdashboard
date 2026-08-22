@@ -9,6 +9,7 @@ import type { DetectResult } from '../server/detect.js';
 import { Service } from 'cordis';
 import { clearRecord } from './instance.js';
 import { openUrl } from './open-url.js';
+import { execFile } from 'node:child_process';
 
 const VERSION = pkg.version;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -85,9 +86,10 @@ export class ServerService extends Service {
     this.onListen = config.onListen;
     ctx.effect(() => () => this.dispose());
 
+    this.refreshGitInfo();
     this.route('/__config', (_req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root }));
+      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root, ...this.gitInfo }));
     });
 
     this.route('/__stop', async (req, res) => {
@@ -211,6 +213,23 @@ export class ServerService extends Service {
       if (this.open) openUrl(target);
       this.onListen?.(port);
     });
+  }
+
+  /** 项目 git 信息(分支/脏文件数),启动探测一次,文件变更时刷新 */
+  private gitInfo: { branch?: string; dirty?: number } = {};
+
+  refreshGitInfo() {
+    const run = (args: string[]) => new Promise<string>((resolve) => {
+      execFile('git', args, { cwd: this.root, timeout: 3000 }, (err, stdout) => resolve(err ? '' : stdout));
+    });
+    void (async () => {
+      const [branch, status] = await Promise.all([
+        run(['rev-parse', '--abbrev-ref', 'HEAD']),
+        run(['status', '--porcelain']),
+      ]);
+      const b = branch.trim();
+      this.gitInfo = b ? { branch: b, dirty: status ? status.split('\n').filter(Boolean).length : 0 } : {};
+    })();
   }
 
   stop() {
