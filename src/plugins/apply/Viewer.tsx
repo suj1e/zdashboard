@@ -73,19 +73,22 @@ function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
 function TaskList({ tasks }: { tasks: string }) {
   const lines = tasks.split('\n').filter((l) => l.trim().startsWith('- ['));
   if (!lines.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
+  const firstUnchecked = lines.findIndex((l) => !/- \[[xX]\]/.test(l)); // 接下来要做的项
   return (
     <ul className="space-y-1 text-xs">
       {lines.map((l, i) => {
         const checked = /- \[[xX]\]/.test(l);
+        const isNext = i === firstUnchecked;
         const text = l.replace(/^-\s*\[[ xX]\]\s*/, '');
         return (
-          <li key={i} className={`flex items-start gap-2 ${checked ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''} ${checked ? 'text-foreground' : 'text-muted-foreground'}`}>
             {checked ? (
               <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px]">✓</span>
             ) : (
-              <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/50" />
+              <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border ${isNext ? 'border-amber-500' : 'border-muted-foreground/50'}`} />
             )}
             <span>{text}</span>
+            {isNext && <span className="ml-auto flex-none text-[10px] font-medium text-amber-600 dark:text-amber-400">← 下一步</span>}
           </li>
         );
       })}
@@ -100,11 +103,14 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
       onClick={onSelect}
       className="w-full text-left rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
     >
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
         <FolderOpen className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium font-mono truncate">{item.name}</span>
         <StatusPill done={item.done} total={item.total} />
         {item.inWorktree && <InWorktreeBadge />}
+      </div>
+      <div className="h-1 rounded-full bg-muted mb-2 overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${pct(item.done, item.total) === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${pct(item.done, item.total)}%` }} />
       </div>
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
         <span className={item.hasProposal ? 'text-foreground' : ''}>proposal</span>
@@ -155,8 +161,7 @@ export function ApplyViewer() {
 
   const loadList = useCallback(() => {
     setLoading(true);
-    setSelectedName(null);
-    setSelected(null);
+    // 不清当前选中详情:文件变化刷新列表时,用户正在看的详情保持(SSE files 高频触发)
     fetch('/__apply', { cache: 'no-store' })
       .then((r) => r.json())
       .then(setChanges)

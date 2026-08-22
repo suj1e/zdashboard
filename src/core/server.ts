@@ -191,6 +191,10 @@ export class ServerService extends Service {
 
   start(port: number) {
     this.server = http.createServer(this.handler);
+    // 浏览器复用空闲 keep-alive 连接时若已被服务端关闭,请求会石沉大海(点击无响应)。
+    // 拉长 keep-alive 使其远大于浏览器侧空闲窗口
+    this.server.keepAliveTimeout = 65_000;
+    this.server.headersTimeout = 66_000;
     this.server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         console.log(`[zdashboard] port ${port} busy, trying ${port + 1}`);

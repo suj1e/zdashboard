@@ -250,7 +250,25 @@ export default function ReviewViewer() {
   return (
     <div className="mx-auto h-full max-w-6xl bg-background border rounded-lg shadow-sm overflow-hidden flex">
       <aside className="w-[240px] flex-none border-r bg-background overflow-auto">
-        <div className="px-3 pt-3 pb-1.5 flex flex-wrap gap-1">
+        <div className="px-3 pt-3 pb-2 border-b">
+          {(() => {
+            const total = counts.all;
+            const processed = total - counts.open;
+            const p = total === 0 ? 0 : Math.round((processed / total) * 100);
+            return (
+              <>
+                <div className="flex items-center justify-between text-[11px] mb-1.5">
+                  <span className="text-muted-foreground">处理进度</span>
+                  <span className="font-mono">{processed}/{total} · {p}%</span>
+                </div>
+                <div className={`h-1.5 rounded-full bg-muted overflow-hidden ${counts.open > 0 ? '' : ''}`}>
+                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${p}%` }} />
+                </div>
+              </>
+            );
+          })()}
+        </div>
+        <div className="px-3 pt-2 pb-1.5 flex flex-wrap gap-1">
           {FILTERS.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
               className={`px-1.5 py-0.5 rounded text-[11px] border ${filter === f.key ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted text-muted-foreground'}`}>
