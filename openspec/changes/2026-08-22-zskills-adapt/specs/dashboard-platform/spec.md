@@ -24,6 +24,8 @@
 - **WHEN** 4190 端口实例被 `--restart` 替换且端口成功释放
 - **THEN** 新实例监听 4190（非顺延端口）；用户未显式指定 --port 时
 
+## ADDED Requirements
+
 ### Requirement: zskills 数据目录约定（.zdev）
 
 系统 SHALL 优先从 `.zdev/` 读取 skill 数据、存量路径回退：bugs 配置（`.zdev/config.yaml` → `.zgoal/config.yaml`）、评审数据（`.zdev/review.yaml` → 根 `review.yaml`）；评审文档列表 SHALL 扫描 `.zdev/*.md`。启动日志 SHALL 打印生效的数据目录。文件变更监听 SHALL 覆盖 `.zdev/` 子目录。
