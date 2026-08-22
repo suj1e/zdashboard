@@ -15,6 +15,7 @@ import {
   writeRecord,
   clearRecord,
 } from './core/instance.js';
+import { openUrl } from './core/open-url.js';
 import { apply as justApply } from './plugins/just/index.js';
 import { apply as bugsApply } from './plugins/bugs/index.js';
 import { apply as reviewApply } from './plugins/review/index.js';

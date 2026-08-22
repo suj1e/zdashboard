@@ -43,10 +43,9 @@ export default function Workspace() {
   const max = Math.max(...data.byExt.map(e => e.count), 1);
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="mx-auto max-w-6xl p-6">
-        <h1 className="text-lg font-semibold mb-1">📊 项目统计</h1>
-        <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新</p>
+    <div className="mx-auto h-full max-w-6xl overflow-auto rounded-lg border bg-background p-6 shadow-sm">
+      <h1 className="text-lg font-semibold mb-1">📊 项目统计</h1>
+      <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
           {[
@@ -82,7 +81,6 @@ export default function Workspace() {
           </span>
           <span className="text-muted-foreground">root: {data.root}</span>
         </div>
-      </div>
     </div>
   );
 }
