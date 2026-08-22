@@ -70,7 +70,7 @@ function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
 
   return (
     <div className="mb-1">
-      <div className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground tracking-wide">
         <GitBranch className="h-3 w-3" />
         <span>Worktrees ({worktrees.length})</span>
       </div>

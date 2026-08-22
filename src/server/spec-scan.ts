@@ -48,8 +48,8 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
       }
       archived.sort((a, b) => b.name.localeCompare(a.name)); // 日期前缀倒序
     }
-    if (active.length) tree.push({ name: `进行中 (${active.length})`, kind: 'dir', children: active });
-    if (archived.length) tree.push({ name: 'archive', kind: 'dir', defaultCollapsed: true, children: archived });
+    if (active.length) tree.push({ name: `changes (${active.length})`, kind: 'dir', children: active });
+    if (archived.length) tree.push({ name: `archive (${archived.length})`, kind: 'dir', defaultCollapsed: true, children: archived });
     const specsDir = path.join(root, 'openspec', 'specs');
     if (fs.existsSync(specsDir)) {
       const specs = walkFiles(specsDir, 'openspec/specs');
@@ -71,6 +71,6 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
     }
   } catch (e) { console.error('[zdashboard] scan root etc failed:', e); }
   etc.sort((a, b) => a.name.localeCompare(b.name));
-  if (etc.length) tree.push({ name: `其他 (${etc.length})`, kind: 'dir', children: etc });
+  if (etc.length) tree.push({ name: `other (${etc.length})`, kind: 'dir', children: etc });
   return tree;
 }
