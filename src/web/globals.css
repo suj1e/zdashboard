@@ -16,11 +16,13 @@
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
+    --radius-xl: 18px;
     --radius-full: 9999px;
 
     /* shadow tokens */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     /* font tokens */
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
@@ -30,8 +32,6 @@
     --border-width: 1px;
 
     /* text tokens */
-    --text-10: 10px;
-    --text-11: 11px;
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
     --text-base: 1rem;
@@ -42,6 +42,13 @@
     --statusbar-h: 28px;
     --chip-h: 19px;
     --icon-rail-w: 48px;
+    --sidebar-w: 280px;
+    --design-preview-h: 72px;
+    --design-toolbar-h: 38px;
+    --design-input-w: 50px;
+    --review-sidebar-w: 240px;
+    --token-card-min-w: 150px;
+    --bug-title-max-w: 420px;
 
     /* base light neutrals */
     --background: 0 0% 100%;

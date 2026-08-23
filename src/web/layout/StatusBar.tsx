@@ -5,7 +5,7 @@ import { useIcons } from '../lib/icons.js';
 
 interface GitInfo { branch?: string; dirty?: number }
 
-const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[var(--chip-h)] font-mono text-10 leading-none text-muted-foreground';
+const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[var(--chip-h)] font-mono text-xs leading-none text-muted-foreground';
 
 /** 底部状态条:胶囊 chip 呈现项目身份(左)与系统状态(右),与全站药丸/badge 视觉语言一致 */
 export function StatusBar({ projectPath, stoppedRef }: {
@@ -26,7 +26,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
   const dot = status === 'live' ? 'bg-success animate-pulse' : status === 'lost' ? 'bg-destructive' : 'bg-muted-foreground';
 
   return (
-    <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-11">
+    <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-sm">
       <div className="flex items-center gap-1.5 min-w-0">
         {projectPath && (
           <Tooltip>
@@ -36,7 +36,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
                 {projectPath.split('/').pop() || projectPath}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-mono text-10">{projectPath}</TooltipContent>
+            <TooltipContent side="top" className="font-mono text-xs">{projectPath}</TooltipContent>
           </Tooltip>
         )}
         {git.branch && (
@@ -50,7 +50,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
                   : <span className="text-success">clean</span>}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="font-mono text-10">
+            <TooltipContent side="top" className="font-mono text-xs">
               {git.dirty ? `${git.dirty} 个未提交变更` : '工作区干净'}
             </TooltipContent>
           </Tooltip>

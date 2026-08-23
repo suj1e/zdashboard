@@ -6,7 +6,7 @@ import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import { viewState } from './state.js';
 import OutlineNav from './OutlineNav.js';
 import { EmptyState } from '../../web/components/EmptyState.js';
-import { Eye } from 'lucide-react';
+import { useIcons } from '../../web/lib/icons.js';
 
 const LONG_DOC_THRESHOLD = 2500;
 
@@ -25,6 +25,7 @@ interface WorkspaceProps {
 }
 
 export default function Workspace(_props: WorkspaceProps) {
+  const { icon } = useIcons();
   const [current, setCurrent] = useState<string | null>(() => viewState.get());
   const [showOutline, setShowOutline] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -57,7 +58,7 @@ export default function Workspace(_props: WorkspaceProps) {
           {showOutline && <OutlineNav containerRef={contentRef} />}
         </div>
       ) : (
-        <EmptyState icon={<Eye className="h-6 w-6" />} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
+        <EmptyState icon={icon('eye', 'h-6 w-6')} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
       )}
     </div>
   );

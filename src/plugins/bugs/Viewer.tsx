@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bug, ExternalLink, RefreshCw } from 'lucide-react';
 import { EmptyState } from '../../web/components/EmptyState.js';
 import { Button } from '../../web/components/ui/button';
 import { Badge } from '../../web/components/ui/badge';
 import { FilterPills } from '../../web/components/FilterPills.js';
+import { useIcons } from '../../web/lib/icons.js';
 
 interface ZenBug {
   id: number;
@@ -40,6 +40,7 @@ function SevBadge({ severity }: { severity: number | string }) {
 }
 
 export function BugViewer() {
+  const { icon } = useIcons();
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>('mine');
@@ -74,9 +75,9 @@ export function BugViewer() {
           onChange={setFilter}
           ariaLabel="状态筛选"
         />
-        <span className="ml-auto text-[11px] text-muted-foreground">禅道 · 只读</span>
+        <span className="ml-auto text-sm text-muted-foreground">禅道 · 只读</span>
         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={load} title="刷新">
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          {icon('refresh-cw', `h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`)}
         </Button>
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
@@ -85,7 +86,7 @@ export function BugViewer() {
         ) : !data.ok ? (
           <p className="p-4 text-xs text-destructive">{data.error}</p>
         ) : !bugs.length ? (
-          <EmptyState icon={<Bug className="h-6 w-6" />} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
+          <EmptyState icon={icon('bug', 'h-6 w-6')} title={filter === 'mine' ? '没有指派给你的 bug' : '该状态下无 bug'} hint="🎉" />
         ) : (
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-background border-b">
@@ -107,8 +108,8 @@ export function BugViewer() {
                       onClick={() => window.open(`${data.url}/bug-view-${b.id}.html`, '_blank', 'noopener')}
                       title="在禅道打开"
                     >
-                      <span className="truncate max-w-[420px]">{b.title}</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate max-w-[var(--bug-title-max-w)]">{b.title}</span>
+                      {icon('external-link', 'h-3 w-3 shrink-0 text-muted-foreground')}
                     </button>
                   </td>
                   <td className="px-3 py-2"><SevBadge severity={b.severity} /></td>

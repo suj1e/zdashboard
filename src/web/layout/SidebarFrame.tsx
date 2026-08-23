@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { ChevronLeft } from 'lucide-react';
+import { useIcons } from '../lib/icons.js';
 
 const STORAGE_PREFIX = 'zd-sidebar-';
 
@@ -10,6 +10,7 @@ const STORAGE_PREFIX = 'zd-sidebar-';
  * 无侧栏内容的插件（hasContent=false）整体动画收起——容器常驻保证宽度始终可过渡。
  */
 export function SidebarFrame({ mode, hasContent = true, children, className }: { mode: string; hasContent?: boolean; children: ReactNode; className?: string }) {
+  const { icon } = useIcons();
   const [open, setOpen] = useLocalStorage(`${STORAGE_PREFIX}${mode}`, true);
   const [hovered, setHovered] = useState(false);
 
@@ -24,7 +25,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
       <div
         className={[
           'bg-background overflow-hidden',
-          'fixed left-0 top-0 h-full w-[78%] max-w-[280px] z-40 shadow-lg',
+          'fixed left-0 top-0 h-full w-[calc(var(--sidebar-w)*0.78)] max-w-[var(--sidebar-w)] z-40 shadow-lg',
           'transition-[width,transform] duration-200 ease-out',
           show ? 'translate-x-0' : '-translate-x-full',
           'sm:max-w-none sm:translate-x-0 sm:h-full sm:top-auto sm:left-auto',
@@ -32,14 +33,14 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
           // 收起(无内容/折叠未 hover)=w-0 宽度动画；展开=in-flow；hover 临时展开=overlay 浮出
           show
             ? open
-              ? 'sm:relative sm:z-auto sm:w-[280px] sm:shadow-none sm:border-r'
-              : 'sm:absolute sm:z-30 sm:w-[280px] sm:shadow-lg sm:border-r'
+              ? 'sm:relative sm:z-auto sm:w-[var(--sidebar-w)] sm:shadow-none sm:border-r'
+              : 'sm:absolute sm:z-30 sm:w-[var(--sidebar-w)] sm:shadow-lg sm:border-r'
             : 'sm:relative sm:z-auto sm:w-0 sm:shadow-none',
         ].join(' ')}
         onMouseEnter={() => !open && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className="h-full w-[280px] overflow-auto">{children}</div>
+        <div className="h-full w-[var(--sidebar-w)] overflow-auto">{children}</div>
       </div>
 
       {/* 移动端遮罩 */}
@@ -60,7 +61,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
           text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         aria-label={open ? '折叠侧栏' : '展开侧栏'}
       >
-        <ChevronLeft className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? '' : 'rotate-180'}`} />
+        {icon('chevron-left', `h-3.5 w-3.5 transition-transform duration-200 ${open ? '' : 'rotate-180'}`)}
       </button>
       )}
 
@@ -71,7 +72,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
           aria-label="展开侧栏"
           className="sm:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 h-12 w-6 flex items-center justify-center rounded-r-[var(--radius-md)] border border-l-0 border-border bg-background text-muted-foreground shadow"
         >
-          <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
+          {icon('chevron-left', 'h-3.5 w-3.5 rotate-180')}
         </button>
       )}
 

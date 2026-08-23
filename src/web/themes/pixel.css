@@ -41,18 +41,18 @@
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
+  --radius-xl: 0px;
   --radius-full: 0px;
   --radius: 0px;
 
   --shadow-sm: none;
   --shadow-md: none;
+  --shadow-lg: none;
 
   --border-width: 2px;
   --font-mono: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* text overrides */
-  --text-10: 12px;
-  --text-11: 13px;
   --text-xs: 0.85rem;
   --text-sm: 1rem;
   --text-base: 1.15rem;
@@ -97,18 +97,18 @@
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
+  --radius-xl: 0px;
   --radius-full: 0px;
   --radius: 0px;
 
   --shadow-sm: none;
   --shadow-md: none;
+  --shadow-lg: none;
 
   --border-width: 2px;
   --font-mono: 'VT323', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* text overrides */
-  --text-10: 12px;
-  --text-11: 13px;
   --text-xs: 0.85rem;
   --text-sm: 1rem;
   --text-base: 1.15rem;

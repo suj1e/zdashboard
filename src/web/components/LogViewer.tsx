@@ -131,7 +131,7 @@ export function LogViewer() {
         </>
       ),
       renderExtra: () => exited && !isSel ? (
-        <span className={`text-10 ${t?.signal ? 'opacity-60' : t?.code ? 'text-destructive' : 'text-success'}`}>
+        <span className={`text-xs ${t?.signal ? 'opacity-60' : t?.code ? 'text-destructive' : 'text-success'}`}>
           {t?.signal ? '停' : t?.code}
         </span>
       ) : undefined,
@@ -171,16 +171,16 @@ export function LogViewer() {
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {running ? (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
                     ) : (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('start', r.name)}>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('start', r.name)}>
                         {exited ? icon('rotate-cw', 'h-2.5 w-2.5') : icon('play', 'h-2.5 w-2.5')}{exited ? '重跑' : '启动'}
                       </Button>
                     )}
                   </span>
                 </div>
-                {r.description && <p className="mt-1 text-11 text-muted-foreground/70 truncate">{r.description}</p>}
-                <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-10 leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
+                {r.description && <p className="mt-1 text-sm text-muted-foreground/70 truncate">{r.description}</p>}
+                <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-xs leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
                   {tail.length ? tail.map((l, i) => <div key={i} className="truncate">{l}</div>) : <span className="text-terminal-fg/40">$ just {r.name} …</span>}
                 </div>
               </div>
@@ -190,7 +190,7 @@ export function LogViewer() {
       ) : (
         /* 单任务视图:状态头 + 完整日志流 */
         <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-11">
+          <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-sm">
             <span className={`h-1.5 w-1.5 rounded-[var(--radius-full)] ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
             <span className="font-mono font-medium">{selected}</span>
             <span className="text-muted-foreground font-mono">
@@ -198,9 +198,9 @@ export function LogViewer() {
             </span>
             <span className="ml-auto flex items-center gap-1">
               {selRunning
-                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
-                : <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
-              <Button variant="ghost" className="h-6 gap-1 px-2 text-11" onClick={() => act('clear', selected)} disabled={!selLines.length}>{icon('eraser', 'h-2.5 w-2.5')}清屏</Button>
+                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
+                : <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
+              <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('clear', selected)} disabled={!selLines.length}>{icon('eraser', 'h-2.5 w-2.5')}清屏</Button>
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>

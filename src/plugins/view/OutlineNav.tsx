@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { useIcons } from '../../web/lib/icons.js';
 
 interface OutlineItem {
   id: string;
@@ -13,6 +13,7 @@ interface OutlineNavProps {
 }
 
 export default function OutlineNav({ containerRef }: OutlineNavProps) {
+  const { icon } = useIcons();
   const [items, setItems] = useState<OutlineItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -72,8 +73,8 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
 
   return (
     <nav className="hidden md:flex w-44 shrink-0 flex-col border-l pl-3 py-2 overflow-y-auto" aria-label="文档大纲">
-      <div className="flex items-center gap-1 mb-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-        <FileText className="h-3 w-3" />
+      <div className="flex items-center gap-1 mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+        {icon('file-text', 'h-3 w-3')}
         <span>大纲</span>
       </div>
       <ul className="space-y-0.5">
@@ -82,7 +83,7 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
             <button
               type="button"
               onClick={() => scrollTo(item.id)}
-              className={`w-full text-left text-[11px] leading-snug py-0.5 px-1.5 rounded truncate transition-colors ${
+              className={`w-full text-left text-sm leading-snug py-0.5 px-1.5 rounded truncate transition-colors ${
                 activeId === item.id
                   ? 'bg-primary/10 text-foreground font-medium'
                   : 'text-muted-foreground hover:bg-muted/70'

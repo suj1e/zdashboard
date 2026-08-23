@@ -25,8 +25,6 @@ export default {
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
       },
       fontSize: {
-        '10': ['var(--text-10)', { lineHeight: '1.5' }],
-        '11': ['var(--text-11)', { lineHeight: '1.5' }],
         xs: ['var(--text-xs)', { lineHeight: '1.5' }],
         sm: ['var(--text-sm)', { lineHeight: '1.5' }],
         base: ['var(--text-base)', { lineHeight: '1.5' }],
@@ -41,6 +39,7 @@ export default {
         md: 'var(--radius-md)',
         sm: 'var(--radius-sm)',
         full: 'var(--radius-full)',
+        xl: 'var(--radius-xl)',
       },
       borderWidth: {
         DEFAULT: 'var(--border-width)',
@@ -49,6 +48,7 @@ export default {
       boxShadow: {
         sm: 'var(--shadow-sm)',
         md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
       },
     },
   },

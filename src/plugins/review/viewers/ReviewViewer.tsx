@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardCheck } from 'lucide-react';
 import { EmptyState } from '../../../web/components/EmptyState.js';
-import { Check, ChevronDown, ChevronUp, RotateCcw, Send, X } from 'lucide-react';
 import { useSSE } from '../../../web/hooks/useSSE';
 import { MdViewer } from '../../../web/viewers/MdViewer.js';
 import { ProgressBar } from '../../../web/components/ProgressBar.js';
 import { FilterPills } from '../../../web/components/FilterPills.js';
+import { useIcons } from '../../../web/lib/icons.js';
 
 type ItemState = 'open' | 'answered' | 'accepted' | 'dismissed';
 type ReviewStatus = 'draft' | 'reviewing' | 'passed' | 'rejected';
@@ -76,56 +75,57 @@ function ItemCard({ item, token, onUpdated }: { item: ReviewItem; token: string;
 
   return (
     <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
-      <div className="flex items-center gap-2 px-3 pt-2.5 text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-2 px-3 pt-2.5 text-sm text-muted-foreground">
         {item.severity && <span className={`h-2 w-2 rounded-full ${SEV_COLOR[item.severity] ?? 'bg-muted-foreground'}`} />}
         <span className="font-medium">{item.category ?? '通用'}</span>
         {item.severity && <span>{SEV_TEXT[item.severity] ?? item.severity}</span>}
-        <span className={`ml-auto px-1.5 py-0.5 rounded border text-[10px] font-medium ${STATE_BADGE[item.state] ?? ''}`}>{STATE_TEXT[item.state]}</span>
+        <span className={`ml-auto px-1.5 py-0.5 rounded border text-xs font-medium ${STATE_BADGE[item.state] ?? ''}`}>{STATE_TEXT[item.state]}</span>
       </div>
       <p className="px-3 py-2 text-sm leading-relaxed">{item.question}</p>
-      <div className="px-3 pb-3 flex flex-col gap-2">
-        <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="答复 / 补充说明…"
-          rows={2}
-          className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs focus:outline-none focus:border-primary resize-y"
-        />
-        <div className="flex items-center gap-1.5">
-          {item.state === 'accepted' ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success/15 text-success text-xs font-medium">
-              <Check className="h-3 w-3" />已采纳
-            </span>
-          ) : item.state === 'dismissed' ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted text-muted-foreground text-xs font-medium">
-              <X className="h-3 w-3" />已驳回
-            </span>
-          ) : (
-            <>
-              <button onClick={() => post(next('answered'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-info hover:bg-info text-white text-xs">
-                <Send className="h-3 w-3" />{item.state === 'answered' ? '更新答复' : '答复'}
-              </button>
-              <button onClick={() => post(next('accepted'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success hover:bg-success text-white text-xs">
-                <Check className="h-3 w-3" />采纳
-              </button>
-              <button onClick={() => post(next('dismissed'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted hover:bg-muted/70 text-xs">
-                <X className="h-3 w-3" />驳回
-              </button>
-            </>
-          )}
-          {done && (
-            <button onClick={() => post(next('open'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted hover:bg-muted/70 text-xs">
-              <RotateCcw className="h-3 w-3" />撤销
-            </button>
-          )}
-          <span className="ml-auto text-[10px] text-muted-foreground">{hint}</span>
-        </div>
-      </div>
+            <div className="px-3 pb-3 flex flex-col gap-2">
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="答复 / 补充说明…"
+                rows={2}
+                className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs focus:outline-none focus:border-primary resize-y"
+              />
+              <div className="flex items-center gap-1.5">
+                {item.state === 'accepted' ? (
+                  <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success/15 text-success text-xs font-medium">
+                    {icon('check', 'h-3 w-3')}已采纳
+                  </span>
+                ) : item.state === 'dismissed' ? (
+                  <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted text-muted-foreground text-xs font-medium">
+                    {icon('x', 'h-3 w-3')}已驳回
+                  </span>
+                ) : (
+                  <>
+                    <button onClick={() => post(next('answered'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-info hover:bg-info text-white text-xs">
+                      {icon('send', 'h-3 w-3')}{item.state === 'answered' ? '更新答复' : '答复'}
+                    </button>
+                    <button onClick={() => post(next('accepted'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-success hover:bg-success text-white text-xs">
+                      {icon('check', 'h-3 w-3')}采纳
+                    </button>
+                    <button onClick={() => post(next('dismissed'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted hover:bg-muted/70 text-xs">
+                      {icon('x', 'h-3 w-3')}驳回
+                    </button>
+                  </>
+                )}
+                {done && (
+                  <button onClick={() => post(next('open'))} className="inline-flex items-center gap-1 h-7 px-2.5 rounded bg-muted hover:bg-muted/70 text-xs">
+                    {icon('rotate-ccw', 'h-3 w-3')}撤销
+                  </button>
+                )}
+                <span className="ml-auto text-xs text-muted-foreground">{hint}</span>
+              </div>
+            </div>
     </div>
   );
 }
 
 export default function ReviewViewer() {
+  const { icon } = useIcons();
   const [data, setData] = useState<ReviewData | null>(null);
   const [docs, setDocs] = useState<string[]>([]);
   const [doc, setDoc] = useState<string | null>(null);
@@ -185,7 +185,7 @@ export default function ReviewViewer() {
 
   return (
     <div className="mx-auto h-full max-w-6xl bg-background border rounded-lg shadow-sm overflow-hidden flex">
-      <aside className="w-[240px] flex-none border-r bg-background overflow-auto">
+      <aside className="w-[var(--review-sidebar-w)] flex-none border-r bg-background overflow-auto">
         <div className="px-3 pt-3 pb-2 border-b">
           {(() => {
             const total = counts.all;
@@ -193,7 +193,7 @@ export default function ReviewViewer() {
             const p = total === 0 ? 0 : Math.round((processed / total) * 100);
             return (
               <>
-                <div className="flex items-center justify-between text-[11px] mb-1.5">
+                <div className="flex items-center justify-between text-sm mb-1.5">
                   <span className="text-muted-foreground">处理进度</span>
                   <span className="font-mono">{processed}/{total} · {p}%</span>
                 </div>
@@ -208,20 +208,20 @@ export default function ReviewViewer() {
           onChange={(v) => setFilter(v as ItemState | 'all')}
           ariaLabel="评审项筛选"
         />
-        <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">文档 · 评审项</div>
+        <div className="px-3 pb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">文档 · 评审项</div>
         {groups.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">无评审项</p>}
         {groups.map(g => (
           <div key={g.doc ?? '(none)'}>
-            <div className="px-3 py-1 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+            <div className="px-3 py-1 text-sm font-medium text-muted-foreground flex items-center gap-1.5">
               <span className="truncate">{g.label}</span>
-              <span className="ml-auto font-mono text-[10px]">{g.items.length}</span>
+              <span className="ml-auto font-mono text-xs">{g.items.length}</span>
             </div>
             {g.items.map(i => (
               <button key={i.id} onClick={() => selectItem(i)}
                 className={`w-full text-left px-3 py-1.5 text-xs border-l-2 flex items-center gap-1.5 hover:bg-muted ${currentId === i.id ? 'bg-muted font-medium border-primary' : 'border-transparent text-muted-foreground'}`}>
                 {i.severity && <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${SEV_COLOR[i.severity] ?? ''}`} />}
                 <span className="truncate">{i.question}</span>
-                <span className={`ml-auto shrink-0 text-[9px] px-1 rounded ${STATE_BADGE[i.state] ?? ''}`}>{STATE_TEXT[i.state]}</span>
+                <span className={`ml-auto shrink-0 text-xs px-1 rounded ${STATE_BADGE[i.state] ?? ''}`}>{STATE_TEXT[i.state]}</span>
               </button>
             ))}
           </div>
@@ -229,8 +229,8 @@ export default function ReviewViewer() {
       </aside>
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-none flex items-center gap-2 px-3.5 border-b bg-background">
-          {data && <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${STATUS_BADGE[data.status] ?? ''}`}>{STATUS_TEXT[data.status] ?? data.status}</span>}
-          {counts.open > 0 && <span className="text-[11px] text-muted-foreground">还有 {counts.open} 项待处理</span>}
+          {data && <span className={`px-2 py-0.5 rounded text-sm font-medium ${STATUS_BADGE[data.status] ?? ''}`}>{STATUS_TEXT[data.status] ?? data.status}</span>}
+          {counts.open > 0 && <span className="text-sm text-muted-foreground">还有 {counts.open} 项待处理</span>}
           <button onClick={pass} disabled={!data || data.status === 'passed' || counts.open > 0}
             className="ml-auto h-7 px-3 rounded bg-success hover:bg-success disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs">
             通过
@@ -242,7 +242,7 @@ export default function ReviewViewer() {
             <div className="flex-1 min-h-0 overflow-auto border-b bg-background relative">
               <button onClick={() => setDocOpen(false)} title="收起文档"
                 className="absolute right-2 top-2 z-10 h-6 px-2 rounded border border-border bg-background/80 text-xs hover:bg-muted">
-                <ChevronDown className="h-3.5 w-3.5" />
+                {icon('chevron-down', 'h-3.5 w-3.5')}
               </button>
               {doc ? <MdViewer path={doc} /> : <p className="p-6 text-sm text-muted-foreground">在左侧选择评审项</p>}
             </div>
@@ -251,7 +251,7 @@ export default function ReviewViewer() {
             {!docOpen && (
               <button onClick={() => setDocOpen(true)} title="展开文档"
                 className="self-start inline-flex items-center gap-1 h-6 px-2 rounded border border-border bg-background text-xs hover:bg-muted">
-                <ChevronUp className="h-3.5 w-3.5" />展开文档
+                {icon('chevron-up', 'h-3.5 w-3.5')}展开文档
               </button>
             )}
             {current ? <ItemCard key={current.id} item={current} token={token} onUpdated={setData} />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Tablet, Smartphone, SlidersHorizontal, ImageOff, Palette } from 'lucide-react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { FilterPills } from '../../web/components/FilterPills.js';
 import { designState } from './state.js';
 import { EmptyState } from '../../web/components/EmptyState.js';
+import { useIcons } from '../../web/lib/icons.js';
 
 type VpMode = 0 | 768 | 375 | 'custom';
 
@@ -63,23 +63,23 @@ function TokenViewer({ path }: { path: string }) {
         const hasFontItems  = sec.items.some(it => /font|family|type/i.test(it.name));
         return (
           <section key={sec.label}>
-            <div className="mb-3 text-[11px] font-semibold uppercase text-muted-foreground">{sec.label}</div>
+            <div className="mb-3 text-sm font-semibold uppercase text-muted-foreground">{sec.label}</div>
             {hasColorItems ? (
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(var(--token-card-min-w), 1fr))' }}>
                 {sec.items.filter(it => /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(it.value)).map(({ name, value }) => (
                   <div key={name} className="overflow-hidden rounded-lg border bg-background">
-                    <div className="h-[72px] border-b" style={{ background: value }} />
-                    <div className="px-2.5 pt-2 font-mono text-[11px] break-all">{name}</div>
+                    <div className="h-[var(--design-preview-h)] border-b" style={{ background: value }} />
+                    <div className="px-2.5 pt-2 font-mono text-sm break-all">{name}</div>
                     <div className="px-2.5 pb-2 text-xs text-muted-foreground">{value}</div>
                   </div>
                 ))}
               </div>
             ) : hasFontItems ? (
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(var(--token-card-min-w), 1fr))' }}>
                 {sec.items.map(({ name, value }) => (
                   <div key={name} className="overflow-hidden rounded-lg border bg-background">
-                    <div className="grid h-[72px] place-items-center text-2xl" style={{ fontFamily: value }}>Aa</div>
-                    <div className="px-2.5 font-mono text-[11px]">{name}</div>
+                    <div className="grid h-[var(--design-preview-h)] place-items-center text-2xl" style={{ fontFamily: value }}>Aa</div>
+                    <div className="px-2.5 font-mono text-sm">{name}</div>
                   </div>
                 ))}
               </div>
@@ -145,8 +145,9 @@ function FontViewer({ path }: { path: string }) {
 }
 
 function UnsupportedViewer({ path }: { path: string }) {
+  const { icon } = useIcons();
   return <div className="grid place-items-center h-full text-center text-muted-foreground">
-    <div><ImageOff className="h-10 w-10 mx-auto mb-3 opacity-50" /><p>该格式无法预览</p><p className="mt-1 font-mono text-xs break-all">{path}</p></div>
+    <div>{icon('image-off', 'h-10 w-10 mx-auto mb-3 opacity-50')}<p>该格式无法预览</p><p className="mt-1 font-mono text-xs break-all">{path}</p></div>
   </div>;
 }
 
@@ -163,13 +164,14 @@ function selectViewer(type: string): React.ComponentType<{ path: string }> {
 function Viewport({ mode, onMode, w, h, onW, onH }: {
   mode: VpMode; onMode: (m: VpMode) => void; w: number; h: number; onW: (n: number) => void; onH: (n: number) => void;
 }) {
+  const { icon } = useIcons();
   const btns: { v: VpMode; icon: React.ReactNode; label: string }[] = [
-    { v: 0, icon: <Monitor className="h-3.5 w-3.5" />, label: '桌面' },
-    { v: 768, icon: <Tablet className="h-3.5 w-3.5" />, label: '768' },
-    { v: 375, icon: <Smartphone className="h-3.5 w-3.5" />, label: '375' },
-    { v: 'custom', icon: <SlidersHorizontal className="h-3.5 w-3.5" />, label: '自定义' },
+    { v: 0, icon: icon('monitor', 'h-3.5 w-3.5'), label: '桌面' },
+    { v: 768, icon: icon('tablet', 'h-3.5 w-3.5'), label: '768' },
+    { v: 375, icon: icon('smartphone', 'h-3.5 w-3.5'), label: '375' },
+    { v: 'custom', icon: icon('sliders-horizontal', 'h-3.5 w-3.5'), label: '自定义' },
   ];
-  const inputCls = 'w-[50px] h-7 px-1 text-center text-xs rounded border border-border bg-background text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:outline-none focus:border-primary';
+  const inputCls = 'w-[var(--design-input-w)] h-7 px-1 text-center text-xs rounded border border-border bg-background text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:outline-none focus:border-primary';
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted">
@@ -184,13 +186,14 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
         <input type="number" value={w} min={280} max={3000} step={8} onChange={e => onW(Number(e.target.value))} aria-label="自定义宽度" className={inputCls} />
         <span className="text-muted-foreground/70">×</span>
         <input type="number" value={h} min={400} max={3000} step={8} onChange={e => onH(Number(e.target.value))} aria-label="自定义高度" className={inputCls} />
-        <span className="text-[11px] text-muted-foreground/70">px</span>
+        <span className="text-sm text-muted-foreground/70">px</span>
       </span>
     </div>
   );
 }
 
 export default function Workspace() {
+  const { icon } = useIcons();
   const [current, setCurrent] = useState(() => designState.get());
   const [mode, setMode] = useState<VpMode>(0);
   const [w, setW] = useState(1024);
@@ -205,7 +208,7 @@ export default function Workspace() {
     <div className="mx-auto h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
       {current && Viewer ? (
         <>
-          <div className="h-[38px] flex-none flex items-center justify-between px-3.5 border-b bg-background text-xs">
+          <div className="h-[var(--design-toolbar-h)] flex-none flex items-center justify-between px-3.5 border-b bg-background text-xs">
             <span className="font-mono truncate">{current.path}</span>
             <span className="text-muted-foreground ml-3 flex-none">{vpLabel}</span>
             <Viewport mode={mode} onMode={setMode} w={w} h={h} onW={setW} onH={setH} />
@@ -224,7 +227,7 @@ export default function Workspace() {
           </div>
         </>
       ) : (
-        <EmptyState icon={<Palette className="h-6 w-6" />} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" tone="primary" />
+        <EmptyState icon={icon('palette', 'h-6 w-6')} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" tone="primary" />
       )}
     </div>
   );

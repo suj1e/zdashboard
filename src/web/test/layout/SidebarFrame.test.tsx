@@ -46,7 +46,7 @@ describe('SidebarFrame', () => {
     const panel = container.firstElementChild!.firstElementChild as HTMLElement;
     expect(panel.className).toContain('sm:w-0');
     fireEvent.mouseEnter(hotzone);
-    expect(panel.className).toContain('sm:w-[280px]'); // 临时展开
+    expect(panel.className).toContain('sm:w-[var(--sidebar-w)]'); // 临时展开
     expect(storage['zd-sidebar-design']).toBe('0');    // 不写记忆
     fireEvent.mouseLeave(hotzone);
     expect(panel.className).toContain('sm:w-0');       // 移开收回

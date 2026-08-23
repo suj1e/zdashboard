@@ -1,13 +1,12 @@
-import { FolderGit2 } from 'lucide-react';
 import { EmptyState } from '../../web/components/EmptyState.js';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { FileText, FolderOpen, GitBranch } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useSSE } from '../../web/hooks/useSSE.js';
 import { Badge } from '../../web/components/ui/badge';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
 import { countTasks, parseTasks } from './parse-tasks.js';
 import remarkGfm from 'remark-gfm';
+import { useIcons } from '../../web/lib/icons.js';
 
 interface ChangeSummary {
   name: string;
@@ -65,12 +64,12 @@ function TaskList({ tasks }: { tasks: string }) {
         return (
           <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-warning/10 border-l-2 border-warning' : ''} ${t.checked ? 'text-foreground' : 'text-muted-foreground'}`}>
             {t.checked ? (
-              <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-success text-white flex items-center justify-center text-[8px]">✓</span>
+              <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-success text-white flex items-center justify-center text-xs">✓</span>
             ) : (
               <span className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border ${isNext ? 'border-warning' : 'border-muted-foreground/50'}`} />
             )}
             <span>{t.text}</span>
-            {isNext && <span className="ml-auto flex-none text-[10px] font-medium text-warning">← 下一步</span>}
+            {isNext && <span className="ml-auto flex-none text-xs font-medium text-warning">← 下一步</span>}
           </li>
         );
       })}
@@ -79,6 +78,7 @@ function TaskList({ tasks }: { tasks: string }) {
 }
 
 function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => void }) {
+  const { icon } = useIcons();
   return (
     <button
       type="button"
@@ -86,13 +86,13 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
       className="w-full text-left rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
     >
       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+        {icon('folder-open', 'h-4 w-4 text-muted-foreground')}
         <span className="text-sm font-medium font-mono truncate">{item.name}</span>
         <StatusPill done={item.done} total={item.total} />
         {item.inWorktree && <InWorktreeBadge />}
       </div>
         <ProgressBar value={pct(item.done, item.total)} className="h-1 mb-2" />
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className={item.hasProposal ? 'text-foreground' : ''}>proposal</span>
         <span className={item.hasDesign ? 'text-foreground' : ''}>design</span>
       </div>
@@ -101,6 +101,7 @@ function ChangeCard({ item, onSelect }: { item: ChangeSummary; onSelect: () => v
 }
 
 function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
+  const { icon } = useIcons();
   const [wts, setWts] = useState<{ name: string; branch: string; head: string }[]>([]);
 
   useEffect(() => {
@@ -114,12 +115,12 @@ function WorktreeOverview({ refreshKey }: { refreshKey: number }) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="text-[11px] text-muted-foreground mr-1">Worktree:</span>
+      {icon('git-branch', 'h-3.5 w-3.5 text-muted-foreground')}
+      <span className="text-sm text-muted-foreground mr-1">Worktree:</span>
       {wts.map((w) => (
         <span
           key={w.name}
-          className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-mono bg-info/10 text-info border-info/30"
+          className="inline-flex items-center px-1.5 py-0.5 rounded border text-xs font-mono bg-info/10 text-info border-info/30"
           title={w.head}
         >
           {w.name}@{w.branch || 'detached'}
@@ -134,6 +135,7 @@ interface ApplyViewerProps {
 }
 
 export function ApplyViewer({ navTarget }: ApplyViewerProps) {
+  const { icon } = useIcons();
   const [changes, setChanges] = useState<ChangeSummary[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const stoppedRef = useRef(false);
@@ -186,7 +188,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
         <div className="text-center">
-          <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-primary-foreground text-2xl font-bold animate-pulse">
+          <div className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-[var(--radius-lg)] bg-primary text-primary-foreground text-2xl font-bold animate-pulse">
             ⚙️
           </div>
           <p>加载执行进度…</p>
@@ -207,13 +209,13 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
     <div className="mx-auto h-full max-w-6xl flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
       <div className="flex-none px-4 py-3 border-b flex items-center gap-2">
         <span className="text-sm font-medium">OpenSpec 执行进度</span>
-        <span className="ml-auto text-[11px] text-muted-foreground">openspec/changes/</span>
+        <span className="ml-auto text-sm text-muted-foreground">openspec/changes/</span>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
         <WorktreeOverview refreshKey={refreshKey} />
 
         {!changes.length ? (
-          <EmptyState icon={<FolderGit2 className="h-6 w-6" />} title="没有进行中的 change" hint="在 openspec/changes/ 下创建 change 后会显示在这里" />
+          <EmptyState icon={icon('folder-git-2', 'h-6 w-6')} title="没有进行中的 change" hint="在 openspec/changes/ 下创建 change 后会显示在这里" />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {changes.map((c) => (
@@ -251,7 +253,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
             {selected.proposal && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                  <FileText className="h-3 w-3" /> proposal.md
+                  {icon('file-text', 'h-3 w-3')} proposal.md
                 </h4>
                 <div className="prose dark:prose-invert max-w-none text-xs border rounded-lg p-3 bg-card">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{selected.proposal}</ReactMarkdown>
@@ -261,7 +263,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
             {selected.design && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                  <FileText className="h-3 w-3" /> design.md
+                  {icon('file-text', 'h-3 w-3')} design.md
                 </h4>
                 <div className="prose dark:prose-invert max-w-none text-xs border rounded-lg p-3 bg-card">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{selected.design}</ReactMarkdown>
@@ -270,7 +272,7 @@ export function ApplyViewer({ navTarget }: ApplyViewerProps) {
             )}
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                <FileText className="h-3 w-3" /> tasks.md
+                {icon('file-text', 'h-3 w-3')} tasks.md
               </h4>
               <div className="border rounded-lg p-3 bg-card">
                 <TaskList tasks={selected.tasks} />

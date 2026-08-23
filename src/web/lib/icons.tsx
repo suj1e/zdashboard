@@ -67,7 +67,13 @@ type GenericKey =
   | 'git-branch' | 'folder-open' | 'play' | 'square'
   | 'rotate-cw' | 'eraser' | 'check' | 'palette'
   | 'moon' | 'sun' | 'package-open' | 'power'
-  | 'monitor';
+  | 'monitor'
+  | 'folder-git-2' | 'tablet' | 'smartphone' | 'sliders-horizontal' | 'image-off'
+  | 'bug' | 'external-link' | 'refresh-cw'
+  | 'clipboard-check' | 'chevron-down' | 'chevron-up' | 'rotate-ccw' | 'send' | 'x'
+  | 'bar-chart-3' | 'folder-tree' | 'git-pull-request'
+  | 'chevron-left' | 'file-question'
+  | 'chevron-right' | 'blocks' | 'type' | 'eye';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
@@ -129,6 +135,29 @@ export const ICON_MAP: Record<IconKey, string> = {
   'package-open': 'PackageOpen',
   'power': 'Power',
   'monitor': 'Monitor',
+  'folder-git-2': 'FolderGit2',
+  'tablet': 'Tablet',
+  'smartphone': 'Smartphone',
+  'sliders-horizontal': 'SlidersHorizontal',
+  'image-off': 'ImageOff',
+  'bug': 'Bug',
+  'external-link': 'ExternalLink',
+  'refresh-cw': 'RefreshCw',
+  'clipboard-check': 'ClipboardCheck',
+  'chevron-down': 'ChevronDown',
+  'chevron-up': 'ChevronUp',
+  'rotate-ccw': 'RotateCcw',
+  'send': 'Send',
+  'x': 'X',
+  'bar-chart-3': 'BarChart3',
+  'folder-tree': 'FolderTree',
+  'git-pull-request': 'GitPullRequest',
+  'chevron-left': 'ChevronLeft',
+  'file-question': 'FileQuestion',
+  'chevron-right': 'ChevronRight',
+  'blocks': 'Blocks',
+  'type': 'Type',
+  'eye': 'Eye',
 };
 
 // ---------------------------------------------------------------------------

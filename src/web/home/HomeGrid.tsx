@@ -29,7 +29,7 @@ export function HomeGrid({ plugins, detect, onSelect }: {
                   <div className="min-w-0">
                     <CardTitle className="text-sm flex items-center gap-1.5">
                       <span className="truncate">{p.label}</span>
-                      {p.external && <span className="flex-none text-10 px-1.5 py-0.5 rounded-[var(--radius-full)] bg-muted text-muted-foreground border">外部</span>}
+                      {p.external && <span className="flex-none text-xs px-1.5 py-0.5 rounded-[var(--radius-full)] bg-muted text-muted-foreground border">外部</span>}
                     </CardTitle>
                     <CardDescription className="truncate">{p.description ?? p.mode}</CardDescription>
                   </div>
@@ -39,7 +39,7 @@ export function HomeGrid({ plugins, detect, onSelect }: {
           </button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 text-11 text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         <span className="mr-1">探测</span>
         {DETECT_ITEMS.map(d => (
           <span key={d.key} className={`inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2 h-[var(--chip-h)] font-mono ${detect[d.key] ? 'border-success/30 bg-success/10 text-success' : 'border-border bg-muted/40 text-muted-foreground/70'}`}>

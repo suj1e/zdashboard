@@ -26,7 +26,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
     <div className="not-prose relative my-4 group">
       <button
         onClick={copy}
-        className="absolute right-2 top-2 z-10 px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-11 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-2 top-2 z-10 px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
       >
         {copied ? '已复制' : '复制'}
       </button>

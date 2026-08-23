@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, FileText, FolderTree, BookOpen, GitPullRequest } from 'lucide-react';
+import { useIcons } from '../../web/lib/icons.js';
 import { formatBytes } from '../../web/lib/utils.js';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
 
@@ -20,6 +20,7 @@ interface WorkspaceProps {
 }
 
 export default function Workspace(_props: WorkspaceProps) {
+  const { icon } = useIcons();
   const [data, setData] = useState<StatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +50,11 @@ export default function Workspace(_props: WorkspaceProps) {
   const max = Math.max(...data.byExt.map(e => e.count), 1);
 
   const cards = [
-    { label: '文件', value: data.files, icon: FileText, mode: null as string | null, filter: null as string | null },
-    { label: '目录', value: data.dirs, icon: FolderTree, mode: null as string | null, filter: null as string | null },
+    { label: '文件', value: data.files, icon: 'file-text', mode: null as string | null, filter: null as string | null },
+    { label: '目录', value: data.dirs, icon: 'folder-tree', mode: null as string | null, filter: null as string | null },
     { label: '总大小', value: formatBytes(data.totalSize), mode: null as string | null, filter: null as string | null },
-    { label: 'Markdown', value: data.markdown, icon: BookOpen, mode: 'view', filter: '.md' },
-    { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}`, icon: GitPullRequest, mode: 'apply', filter: null },
+    { label: 'Markdown', value: data.markdown, icon: 'book-open', mode: 'view', filter: '.md' },
+    { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}`, icon: 'git-pull-request', mode: 'apply', filter: null },
   ];
 
   const handleCardClick = (mode: string | null, filter: string | null) => {
@@ -63,7 +64,7 @@ export default function Workspace(_props: WorkspaceProps) {
 
   return (
     <div className="mx-auto h-full max-w-6xl overflow-auto rounded-lg border bg-background p-6 shadow-sm">
-      <h1 className="text-lg font-semibold mb-1 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />项目统计</h1>
+      <h1 className="text-lg font-semibold mb-1 flex items-center gap-2">{icon('bar-chart-3', 'h-5 w-5 text-primary')}项目统计</h1>
       <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新 · 点击卡片跳转</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
@@ -78,9 +79,9 @@ export default function Workspace(_props: WorkspaceProps) {
             >
               <div className="flex items-center justify-between">
                 <div className="text-xl font-bold">{card.value}</div>
-                {card.icon && <card.icon className="h-4 w-4 text-muted-foreground/50" />}
+                {card.icon && icon(card.icon as any, 'h-4 w-4 text-muted-foreground/50')}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">{card.label}</div>
+              <div className="text-sm text-muted-foreground mt-1">{card.label}</div>
             </button>
           ))}
         </div>

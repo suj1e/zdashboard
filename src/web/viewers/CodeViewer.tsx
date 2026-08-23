@@ -56,7 +56,7 @@ export function CodeViewer({ path }: { path: string }) {
         <span className="text-muted-foreground">{formatBytes(text?.length ?? 0)}</span>
         <button
           onClick={copy}
-          className="ml-auto px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-11 hover:bg-muted transition-colors"
+          className="ml-auto px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-sm hover:bg-muted transition-colors"
         >
           {copied ? '已复制' : '复制'}
         </button>

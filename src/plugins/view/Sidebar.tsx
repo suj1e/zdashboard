@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import {
-  ChevronRight, Folder, FolderOpen, GitBranch, type LucideIcon,
-} from 'lucide-react';
+import { useIcons } from '../../web/lib/icons.js';
 import { FileIcon } from '../../web/components/FileIcon.js';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
 import { useDebounce } from 'use-debounce';
-import { useIcons } from '../../web/lib/icons.js';
 
 interface WorktreeInfo {
   path: string;
@@ -35,20 +32,21 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
       {(() => {
         const groupMatch = node.name.match(/^([a-z]+)(?: \((\d+)\))?$/);
         const groupIconNode = groupMatch ? icon(groupMatch[1] as any) : undefined;
-        const DirIcon = expanded ? FolderOpen : Folder;
         return (
           <button
             onClick={() => setOpen(o => !o)}
-            className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-foreground hover:bg-muted rounded-md mx-1"
+            className="w-full flex items-center gap-1.5 px-2 py-1 text-sm text-foreground hover:bg-muted rounded-md mx-1"
             style={{ paddingLeft: 8 + depth * 14, width: 'calc(100% - 8px)' }}
           >
-            <ChevronRight className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`}>
+              {icon('chevron-right')}
+            </span>
             {groupIconNode
               ? <span className="h-3.5 w-3.5 shrink-0 inline-flex items-center justify-center text-muted-foreground">{groupIconNode}</span>
-              : <DirIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors" />}
+              : <span className="h-3.5 w-3.5 shrink-0 inline-flex items-center justify-center text-muted-foreground transition-colors">{icon(expanded ? 'folder-open' : 'folder')}</span>}
             <span className="font-medium truncate">{groupMatch ? groupMatch[1] : node.name}</span>
             {groupMatch?.[2] && (
-              <span className="ml-auto mr-1 shrink-0 rounded-full bg-muted px-1.5 text-[10px] font-mono text-muted-foreground">{groupMatch[2]}</span>
+              <span className="ml-auto mr-1 shrink-0 rounded-full bg-muted px-1.5 text-xs font-mono text-muted-foreground">{groupMatch[2]}</span>
             )}
           </button>
         );
@@ -60,7 +58,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
           <button
             key={c.path}
             onClick={() => c.path && onSelectFile(c.path)}
-            className={`w-full flex items-center gap-1.5 pr-2 py-1 text-xs hover:bg-muted rounded-md mx-1 ${current === c.path ? 'bg-primary/10 text-foreground font-medium' : 'text-muted-foreground'}`}
+            className={`w-full flex items-center gap-1.5 pr-2 py-1 text-sm hover:bg-muted rounded-md mx-1 ${current === c.path ? 'bg-primary/10 text-foreground font-medium' : 'text-muted-foreground'}`}
             style={{ paddingLeft: 20 + depth * 14, width: 'calc(100% - 8px)' }}
           >
             <FileIcon name={c.name} active={current === c.path} />
@@ -78,6 +76,7 @@ interface SidebarProps {
 
 function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
   const [open, setOpen] = useState(true);
+  const { icon } = useIcons();
   const handleNav = (wt: WorktreeInfo) => {
     window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode: 'apply', wt: wt.name } }));
   };
@@ -86,10 +85,12 @@ function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
     <div className="mb-1">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-muted-foreground tracking-wide hover:text-foreground"
+        className="w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-muted-foreground tracking-wide hover:text-foreground"
       >
-        <ChevronRight className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-        <GitBranch className="h-3 w-3" />
+        <span className={`h-3 w-3 inline-flex items-center justify-center transition-transform ${open ? 'rotate-90' : ''}`}>
+          {icon('chevron-right')}
+        </span>
+        <span className="h-3 w-3 inline-flex items-center justify-center">{icon('git-branch')}</span>
         <span>Worktrees ({worktrees.length})</span>
       </button>
       {open && worktrees.map((wt) => (
@@ -97,10 +98,10 @@ function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
           key={wt.name}
           onClick={() => handleNav(wt)}
           title={`${wt.branch}${wt.dirty ? ' · 有未提交变更' : ''}`}
-          className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-foreground hover:bg-muted border-l-2 border-transparent"
+          className="w-full flex items-center gap-1.5 px-2 py-1 text-sm text-foreground hover:bg-muted border-l-2 border-transparent"
           style={{ paddingLeft: 14 }}
         >
-          <span className="truncate font-mono text-[11px]">{wt.branch}</span>
+          <span className="truncate font-mono text-sm">{wt.branch}</span>
           <span className="text-muted-foreground truncate">/{wt.name}</span>
           {wt.dirty && <span className="ml-auto flex-none h-2 w-2 rounded-full bg-destructive shrink-0" title="有未提交变更" />}
         </button>
