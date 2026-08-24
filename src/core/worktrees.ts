@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Context } from 'cordis';
 
 export interface WorktreeInfo {
@@ -60,6 +62,23 @@ export async function listWorktrees(root: string): Promise<WorktreeInfo[]> {
       head: current.head ?? '',
       dirty: false,
     });
+  }
+
+  // fallback: 扫描文件系统 .zworktree/* 目录（兼容 demo/未注册 worktree）
+  const wtRoot = path.join(root, '.zworktree');
+  if (fs.existsSync(wtRoot)) {
+    try {
+      for (const ent of fs.readdirSync(wtRoot)) {
+        const full = path.join(wtRoot, ent);
+        if (!fs.statSync(full).isDirectory()) continue;
+        const already = entries.some(e => e.path === full);
+        if (!already) {
+          entries.push({ path: full, name: ent, branch: 'main', head: '', dirty: false });
+        }
+      }
+    } catch {
+      // ignore fs scan errors
+    }
   }
 
   // dirty detection: git status --porcelain 非空即 dirty（失败默认 false）
