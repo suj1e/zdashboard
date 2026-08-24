@@ -31,6 +31,14 @@ export interface ReviewDocument {
   parsedAt: string;
 }
 
+export interface ReviewCodebase {
+  id: string;
+  path: string;
+  title: string;
+  type: string;
+  summary: string;
+}
+
 export interface ReviewDiagram {
   path: string;
   title: string;
@@ -41,6 +49,7 @@ export interface ReviewData {
   status: ReviewStatus;
   summary: string;
   documents: ReviewDocument[];
+  codebases: ReviewCodebase[];
   diagrams: ReviewDiagram[];
   items: ReviewItem[];
 }
@@ -64,22 +73,23 @@ export class ReviewStore {
   read(): ReviewData {
     const fullPath = path.join(this.root, REVIEW_FILE);
     if (!fs.existsSync(fullPath)) {
-      return { status: 'draft', summary: '', documents: [], diagrams: [], items: [] };
+      return { status: 'draft', summary: '', documents: [], codebases: [], diagrams: [], items: [] };
     }
     try {
       const parsed = YAML.parse(fs.readFileSync(fullPath, 'utf8')) as ReviewData;
       if (!parsed || !Array.isArray(parsed.items)) {
-        return { status: 'draft', summary: parsed?.summary ?? '', documents: parsed?.documents ?? [], diagrams: parsed?.diagrams ?? [], items: [] };
+        return { status: 'draft', summary: parsed?.summary ?? '', documents: parsed?.documents ?? [], codebases: parsed?.codebases ?? [], diagrams: parsed?.diagrams ?? [], items: [] };
       }
       return {
         status: parsed.status ?? 'draft',
         summary: parsed.summary ?? '',
         documents: parsed.documents ?? [],
+        codebases: parsed.codebases ?? [],
         diagrams: parsed.diagrams ?? [],
         items: parsed.items,
       };
     } catch {
-      return { status: 'draft', summary: '', documents: [], diagrams: [], items: [] };
+      return { status: 'draft', summary: '', documents: [], codebases: [], diagrams: [], items: [] };
     }
   }
 

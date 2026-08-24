@@ -36,6 +36,14 @@ interface ReviewDocument {
   parsedAt: string;
 }
 
+interface ReviewCodebase {
+  id: string;
+  path: string;
+  title: string;
+  type: string;
+  summary: string;
+}
+
 interface ReviewDiagram {
   path: string;
   title: string;
@@ -46,6 +54,7 @@ interface ReviewData {
   status: string;
   summary: string;
   documents: ReviewDocument[];
+  codebases: ReviewCodebase[];
   diagrams: ReviewDiagram[];
   items: ReviewItem[];
 }
@@ -273,7 +282,7 @@ export default function ReviewViewer() {
   useSSE(() => {}, reload, stopped);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: 0, conflict: 0, gap: 0, ambiguity: 0, decomposition: 0, question: 0 };
+    const c: Record<string, number> = { all: 0, conflict: 0, gap: 0, ambiguity: 0, decomposition: 0, question: 0, codebases: 0 };
     const walk = (items: ReviewItem[]) => {
       for (const i of items) {
         c.all++;
@@ -282,6 +291,7 @@ export default function ReviewViewer() {
       }
     };
     if (data?.items) walk(data.items);
+    if (data?.codebases) c.codebases = data.codebases.length;
     return c;
   }, [data]);
 
@@ -531,6 +541,27 @@ export default function ReviewViewer() {
                 })}
               </div>
             </div>
+            {data?.codebases && data.codebases.length > 0 && (
+              <>
+                <Separator />
+                <div className="p-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">代码仓库 ({counts.codebases})</h3>
+                  <div className="space-y-1">
+                    {data.codebases.map((repo) => (
+                      <div key={repo.id} className="text-xs">
+                        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-muted transition-colors">
+                          <span>📦</span>
+                          <span className="font-medium truncate">{repo.title}</span>
+                        </div>
+                        {repo.summary && (
+                          <p className="px-2 py-1 text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{repo.summary}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
             {data?.diagrams && data.diagrams.length > 0 && (
               <>
                 <Separator />
