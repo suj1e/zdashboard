@@ -1,9 +1,17 @@
-# zdashboard-playground just recipes
+# zdashboard-playground just recipes（演示样例）
 
-# 模拟服务:持续输出彩色日志(Ctrl+C 退出)
-serve:
-    @echo "[serve] starting mock service..."
+# 启动 playground 内的 demo 辅助服务（mock 日志 + mock 禅道）
+serve: logs zentao
+
+# 仅启动 mock 日志服务（供 just 插件 / LogViewer 使用）
+logs:
+    @echo "[logs] starting mock log server..."
     @node scripts/serve.js
+
+# 仅启动 mock 禅道服务（供 bugs 插件使用）
+zentao:
+    @echo "[zentao] starting mock zentao on :4189..."
+    @node scripts/mock-zentao.cjs
 
 # 构建模拟:输出几行后正常退出
 build:
