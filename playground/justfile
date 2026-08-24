@@ -1,17 +1,22 @@
-# test-server · zview-dashboard 端到端测试夹具
-# 全命中三种探测:openspec/ + docs/ + justfile
+# zdashboard-playground just recipes
 
 # 模拟服务:持续输出彩色日志(Ctrl+C 退出)
 serve:
-    node scripts/serve.js
+    @echo "[serve] starting mock service..."
+    @node scripts/serve.js
 
 # 构建模拟:输出几行后正常退出
 build:
-    @echo "[build] compiling..." && sleep 1 && echo "[build] done in 1.2s"
+    @echo "[build] compiling TypeScript..."
+    @sleep 1
+    @echo "[build] bundling assets..."
+    @sleep 0.5
+    @echo "[build] done in 1.2s"
 
 # 失败模拟:exit 1
 fail:
-    @echo "[task] about to fail" && exit 1
+    @echo "[task] about to fail..."
+    @exit 1
 
 # 参数示例
 hello msg="world":
@@ -20,3 +25,39 @@ hello msg="world":
 # 多行输出模拟(空行/缩进/CRLF,复现用户截图模式)
 lines:
     @printf 'start\r\n  下一步,停止所有服务:\r\n\r\n      just stop\r\nend\n'
+
+# 清理缓存
+clean:
+    @echo "[clean] removing node_modules/.cache..."
+    @rm -rf node_modules/.cache .vite dist
+    @echo "[clean] done"
+
+# 运行测试
+test:
+    @echo "[test] running unit tests..."
+    @sleep 1
+    @echo "[test] 42 passed, 0 failed"
+
+# 部署模拟
+deploy env="staging":
+    @echo "[deploy] deploying to {{env}}..."
+    @sleep 1
+    @echo "[deploy] done"
+
+# 数据库迁移
+migrate:
+    @echo "[migrate] running migrations..."
+    @sleep 0.5
+    @echo "[migrate] applied 3 migrations"
+
+# 代码检查
+lint:
+    @echo "[lint] checking..."
+    @sleep 0.8
+    @echo "[lint] no errors"
+
+# 格式化代码
+fmt:
+    @echo "[fmt] formatting..."
+    @sleep 0.5
+    @echo "[fmt] done"
