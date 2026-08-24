@@ -73,7 +73,8 @@ type GenericKey =
   | 'clipboard-check' | 'chevron-down' | 'chevron-up' | 'rotate-ccw' | 'send' | 'x'
   | 'bar-chart-3' | 'folder-tree' | 'git-pull-request'
   | 'chevron-left' | 'file-question'
-  | 'chevron-right' | 'blocks' | 'type' | 'eye';
+  | 'chevron-right' | 'blocks' | 'type' | 'eye'
+  | 'file-text';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
@@ -159,6 +160,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   'blocks': 'Blocks',
   'type': 'Type',
   'eye': 'Eye',
+  'file-text': 'FileText',
 };
 
 // ---------------------------------------------------------------------------
@@ -166,7 +168,7 @@ export const ICON_MAP: Record<IconKey, string> = {
 // ---------------------------------------------------------------------------
 
 function defaultRenderer(name: string, className?: string): React.ReactNode {
-  const Cmp = (lucide as Record<string, React.ComponentType<{ className?: string }>>)[name];
+  const Cmp = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
   if (!Cmp) return null;
   return className ? <Cmp className={className} /> : <Cmp />;
 }
@@ -177,9 +179,9 @@ function defaultRenderer(name: string, className?: string): React.ReactNode {
 
 function pixelRenderer(name: string, className?: string): React.ReactNode {
   const pascal = toPascal(name);
-  const Cmp = (pixelReact as Record<string, React.ComponentType<{ className?: string }>>)[pascal];
+  const Cmp = (pixelReact as unknown as Record<string, React.ComponentType<{ className?: string }>>)[pascal];
   if (Cmp) return className ? <Cmp className={className} /> : <Cmp />;
-  const Fallback = (lucide as Record<string, React.ComponentType<{ className?: string }>>)[name];
+  const Fallback = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
   if (Fallback) return className ? <Fallback className={className} /> : <Fallback />;
   return null;
 }
@@ -188,18 +190,18 @@ function pixelRenderer(name: string, className?: string): React.ReactNode {
 // 渲染器：slate (phosphor regular + lucide fallback)
 // ---------------------------------------------------------------------------
 
-const phosphorMap: Record<string, React.ComponentType<{ className?: string; weight?: string }>> = {
+const phosphorMap = {
   GitBranch, FolderOpen, Play, Square, Eraser,
   Check, Palette, Moon, Sun,
   FileText, Code, Globe, Terminal, Image,
   ShieldCheck, BookOpen, Package,
   Monitor, Shapes, Video,
-};
+} as const satisfies Record<string, React.ComponentType<{ className?: string }>>;
 
 function slateRenderer(name: string, className?: string): React.ReactNode {
-  const Cmp = phosphorMap[name];
+  const Cmp = phosphorMap[name as keyof typeof phosphorMap];
   if (Cmp) return className ? <Cmp className={className} weight="regular" /> : <Cmp weight="regular" />;
-  const Fallback = (lucide as Record<string, React.ComponentType<{ className?: string }>>)[name];
+  const Fallback = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
   if (Fallback) return className ? <Fallback className={className} /> : <Fallback />;
   return null;
 }

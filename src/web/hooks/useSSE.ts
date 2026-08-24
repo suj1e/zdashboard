@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 export type ConnStatus = 'connecting' | 'live' | 'lost';
 
-type Handlers = { onReload: () => void; onFiles: () => void; onStatus: (s: ConnStatus) => void };
+type Handlers = { onReload: () => void; onFiles: () => void; onStatus: (s: ConnStatus) => void; onConfig?: (plugin: string) => void };
 
 /** 模块级 SSE 单例:整页只开一条 /__reload 连接,所有 useSSE 订阅者共享(避免多 EventSource 占满浏览器同域连接池) */
 const listeners = new Set<Handlers>();
@@ -29,6 +29,12 @@ function connect() {
   };
   conn.addEventListener('reload', () => listeners.forEach((h) => h.onReload()));
   conn.addEventListener('files', () => listeners.forEach((h) => h.onFiles()));
+  conn.addEventListener('config', (e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data || '{}');
+      if (data?.plugin) listeners.forEach((h) => h.onConfig?.(data.plugin));
+    } catch { /* ignore */ }
+  });
   conn.onerror = () => {
     // 不关闭连接,让 EventSource 原生重连机制生效
     setStatus('lost');
@@ -39,19 +45,22 @@ function ensure() {
   if (typeof window !== 'undefined' && listeners.size > 0 && !es) connect();
 }
 
-export function useSSE(onReload: () => void, onFiles: () => void, _stoppedRef?: React.MutableRefObject<boolean>) {
+export function useSSE(onReload: () => void, onFiles: () => void, _stoppedRef?: React.MutableRefObject<boolean>, onConfig?: (plugin: string) => void) {
   const [connStatus, setConnStatus] = useState<ConnStatus>(status);
   const onReloadRef = useRef(onReload);
   const onFilesRef = useRef(onFiles);
+  const onConfigRef = useRef(onConfig);
 
   useEffect(() => { onReloadRef.current = onReload; });
   useEffect(() => { onFilesRef.current = onFiles; });
+  useEffect(() => { onConfigRef.current = onConfig; });
 
   useEffect(() => {
     const handlers: Handlers = {
       onReload: () => onReloadRef.current(),
       onFiles: () => onFilesRef.current(),
       onStatus: setConnStatus,
+      onConfig: (plugin: string) => onConfigRef.current?.(plugin),
     };
     listeners.add(handlers);
     statusSubs.add(setConnStatus);

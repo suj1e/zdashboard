@@ -6,6 +6,7 @@ export interface InstanceRecord {
   port: number;
   root: string;
   startedAt: string;
+  plugins?: Record<string, Record<string, unknown>>;
 }
 
 export const RECORD_FILE = '.zdev/dashboard.json';
@@ -46,6 +47,31 @@ export function writeRecord(root: string, port: number): void {
     startedAt: new Date().toISOString(),
   };
   fs.writeFileSync(recordPath(root), JSON.stringify(rec, null, 2) + '\n');
+}
+
+export function readPluginsConfig(root: string): Record<string, Record<string, unknown>> {
+  try {
+    const rec = readRecord(root);
+    if (rec?.plugins && typeof rec.plugins === 'object') {
+      return rec.plugins as Record<string, Record<string, unknown>>;
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+
+export function writePluginsConfig(root: string, plugins: Record<string, Record<string, unknown>>): void {
+  const fp = recordPath(root);
+  let rec: InstanceRecord;
+  try {
+    const raw = fs.readFileSync(fp, 'utf-8');
+    rec = JSON.parse(raw) as InstanceRecord;
+  } catch {
+    rec = { pid: process.pid, port: 0, root, startedAt: new Date().toISOString() };
+  }
+  rec.plugins = plugins;
+  const tmp = fp + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(rec, null, 2) + '\n');
+  fs.renameSync(tmp, fp);
 }
 
 export function clearRecord(root: string): void {

@@ -4,6 +4,14 @@ import { FileIcon } from '../../web/components/FileIcon.js';
 import type { TreeNode } from '../../server/spec-scan.js';
 import { viewState } from './state.js';
 import { useDebounce } from 'use-debounce';
+import { usePluginConfig } from '../../web/hooks/usePluginConfig.js';
+import { ConfigField } from '../../web/components/ConfigField.js';
+
+const VIEW_CONFIG_SCHEMA = {
+  hiddenDirs: { type: 'string[]' as const, label: '隐藏目录', default: ['.git', 'node_modules', 'dist', 'build'] },
+  defaultExpandDepth: { type: 'number' as const, label: '默认展开深度', default: 2 },
+  showHidden: { type: 'boolean' as const, label: '显示隐藏文件', default: false },
+};
 
 interface WorktreeInfo {
   path: string;
@@ -116,6 +124,8 @@ export default function Sidebar({ navTarget }: SidebarProps) {
   const [filter, setFilter] = useState('');
   const [debouncedFilter] = useDebounce(filter, 150);
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
+  const [showConfig, setShowConfig] = useState(false);
+  const { config, save, saving } = usePluginConfig('view', VIEW_CONFIG_SCHEMA);
 
   // B2: pre-fill filter when navigated from stats drill-down
   // 无条件覆盖(不 gate 在 !filter):同 mode 导航/重挂载时,传入的新 filter 必须生效
@@ -163,6 +173,25 @@ export default function Sidebar({ navTarget }: SidebarProps) {
           ))}
         </div>
       )}
+      <div className="border-t border-border mt-2">
+        <button
+          onClick={() => setShowConfig(o => !o)}
+          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center transition-transform ${showConfig ? 'rotate-90' : ''}`}>
+            {useIcons().icon('chevron-right')}
+          </span>
+          ⚙️ 配置
+        </button>
+        {showConfig && (
+          <div className="px-3 pb-3 space-y-3">
+            <ConfigField key_="hiddenDirs" field={VIEW_CONFIG_SCHEMA.hiddenDirs} value={config.hiddenDirs} onChange={(k, v) => save({ ...config, [k]: v })} />
+            <ConfigField key_="defaultExpandDepth" field={VIEW_CONFIG_SCHEMA.defaultExpandDepth} value={config.defaultExpandDepth} onChange={(k, v) => save({ ...config, [k]: v })} />
+            <ConfigField key_="showHidden" field={VIEW_CONFIG_SCHEMA.showHidden} value={config.showHidden} onChange={(k, v) => save({ ...config, [k]: v })} />
+            <div className="text-xs text-muted-foreground">{saving ? '保存中…' : '配置已保存'}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

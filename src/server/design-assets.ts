@@ -31,12 +31,13 @@ export function categorize(rel: string, ext: string): AssetType | null {
 export interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
 export type ScanResult = Record<AssetType, AssetFile[]>;
 
-export function scanAssets(root: string): ScanResult {
+export function scanAssets(root: string, subDir = ''): ScanResult {
   const out: ScanResult = {} as ScanResult;
   const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font'];
   for (const k of keys) out[k] = [];
   const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
-  walkDir(root, { skip: SKIP, onFile: (abs, rel) => {
+  const scanRoot = subDir ? path.join(root, subDir) : root;
+  walkDir(scanRoot, { skip: SKIP, onFile: (abs, rel) => {
     const ext = path.extname(abs).toLowerCase();
     const t = categorize(rel, ext);
     if (t) out[t].push({ path: rel, name: path.basename(abs), ext, type: t });

@@ -6,9 +6,11 @@ import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import type { Context } from 'cordis';
 import type { DetectResult } from '../server/detect.js';
+import type { PluginManifest, ConfigField } from '../core/manifest.js';
 import { Service } from 'cordis';
-import { clearRecord } from './instance.js';
+import { clearRecord, readPluginsConfig, writePluginsConfig } from './instance.js';
 import { openUrl } from './open-url.js';
+import { readBody } from './read-body.js';
 import { execFile } from 'node:child_process';
 
 const VERSION = pkg.version;
@@ -109,7 +111,6 @@ export class ServerService extends Service {
     this.start(config.port);
   }
 
-
   route(path: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void) {
     this.routes.set(path, handler);
     this.ctx.effect(() => () => this.routes.delete(path));
@@ -123,6 +124,21 @@ export class ServerService extends Service {
   static(prefix: string, dir: string) {
     this.prefixStatic.set(prefix, dir);
     this.ctx.effect(() => () => this.prefixStatic.delete(prefix));
+  }
+
+  private pluginsConfig: Record<string, Record<string, unknown>> = {};
+
+  getPluginConfig(mode: string): Record<string, unknown> {
+    return this.pluginsConfig[mode] ?? {};
+  }
+
+  refreshPluginsConfig() {
+    this.pluginsConfig = readPluginsConfig(this.root);
+  }
+
+  savePluginConfig(merged: Record<string, Record<string, unknown>>) {
+    this.pluginsConfig = merged;
+    writePluginsConfig(this.root, merged);
   }
 
   private serveFile(filePath: string, req: http.IncomingMessage, res: http.ServerResponse, injectHtml: boolean) {

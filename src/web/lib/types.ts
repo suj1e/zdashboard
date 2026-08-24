@@ -14,14 +14,6 @@ export interface TreeNode {
   defaultCollapsed?: boolean;
 }
 
-export interface ZgoalConfig {
-  url: string;
-  account: string;
-  password?: string;
-  token?: string;
-  product: number;
-}
-
 export interface ZenBug {
   id: number;
   title: string;

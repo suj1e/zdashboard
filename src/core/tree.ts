@@ -4,7 +4,7 @@ import { detect } from '../server/detect.js';
 import type { DetectResult } from '../server/detect.js';
 
 export const apply = {
-  inject: ['server'] as const,
+  inject: ['server', 'dashboard'] as const,
   apply(ctx: Context, config: { root: string }) {
     let cached: { p: Promise<DetectResult>; v?: DetectResult } | null = null;
     const getDet = async (): Promise<DetectResult> => {
@@ -20,7 +20,12 @@ export const apply = {
       server.route('/__files', async (_req, res) => {
         try {
           const d = await getDet();
-          const tree = scanTree(config.root, d.hasOpenspec, d.hasDocs);
+          const viewCfg = ctx.dashboard.getConfig('view') as { hiddenDirs?: string[]; defaultExpandDepth?: number; showHidden?: boolean } | undefined;
+          const tree = scanTree(config.root, d.hasOpenspec, d.hasDocs, {
+            hiddenDirs: Array.isArray(viewCfg?.hiddenDirs) ? viewCfg.hiddenDirs : undefined,
+            defaultExpandDepth: typeof viewCfg?.defaultExpandDepth === 'number' ? viewCfg.defaultExpandDepth : undefined,
+            showHidden: typeof viewCfg?.showHidden === 'boolean' ? viewCfg.showHidden : undefined,
+          });
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
           res.end(JSON.stringify({ tree, ...d }));
         } catch {

@@ -11,7 +11,7 @@ export interface TreeNode {
   children?: TreeNode[];
 }
 
-function buildTree(paths: string[]): TreeNode[] {
+function buildTree(paths: string[], defaultExpandDepth = 2): TreeNode[] {
   const root: TreeNode[] = [];
   const map = new Map<string, TreeNode>();
 
@@ -24,11 +24,15 @@ function buildTree(paths: string[]): TreeNode[] {
       const part = parts[i];
       current = current ? `${current}/${part}` : part;
       const isLast = i === parts.length - 1;
+      const depth = i;
 
       if (!map.has(current)) {
+        const isDir = !isLast;
+        const collapsed = isDir && typeof defaultExpandDepth === 'number' && depth > defaultExpandDepth;
         const node: TreeNode = {
           name: part,
           kind: isLast ? 'file' : 'dir',
+          ...(collapsed ? { defaultCollapsed: true } : {}),
           ...(isLast ? { path: p } : { children: [] }),
         };
         map.set(current, node);
@@ -52,9 +56,16 @@ function buildTree(paths: string[]): TreeNode[] {
   return root;
 }
 
+export interface ScanTreeOptions {
+  hiddenDirs?: string[];
+  showHidden?: boolean;
+  defaultExpandDepth?: number;
+}
+
 /** 方案模式树形扫描:openspec 感知 + docs 聚合 + 其他兜底 */
-export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): TreeNode[] {
+export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean, opts?: ScanTreeOptions): TreeNode[] {
   const tree: TreeNode[] = [];
+  const defaultExpandDepth = typeof opts?.defaultExpandDepth === 'number' ? opts.defaultExpandDepth : 2;
   if (hasOpenspec && fs.existsSync(path.join(root, 'openspec', 'changes'))) {
     const changesDir = path.join(root, 'openspec', 'changes');
     const active: TreeNode[] = [];
@@ -63,8 +74,8 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
       if (!ent.isDirectory() || ent.name.startsWith('.') || ent.name === 'archive') continue;
       const relBase = `openspec/changes/${ent.name}`;
       const paths: string[] = [];
-      walkDir(path.join(changesDir, ent.name), { maxDepth: 4, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
-      const children = buildTree(paths).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
+      walkDir(path.join(changesDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
+      const children = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
       active.push({ name: ent.name, kind: 'dir', children });
     }
     active.sort((a, b) => a.name.localeCompare(b.name));
@@ -74,8 +85,8 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
         if (!ent.isDirectory() || ent.name.startsWith('.')) continue;
         const relBase = `openspec/changes/archive/${ent.name}`;
         const paths: string[] = [];
-        walkDir(path.join(archiveDir, ent.name), { maxDepth: 4, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
-        const children = buildTree(paths).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
+        walkDir(path.join(archiveDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
+        const children = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
         archived.push({ name: ent.name, kind: 'dir', children });
       }
       archived.sort((a, b) => b.name.localeCompare(a.name)); // 日期前缀倒序
@@ -85,23 +96,27 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
     const specsDir = path.join(root, 'openspec', 'specs');
     if (fs.existsSync(specsDir)) {
       const paths: string[] = [];
-      walkDir(specsDir, { maxDepth: 4, onFile: (_, rel) => paths.push(`openspec/specs/${rel}`) });
-      const specs = buildTree(paths).map((n) => ({ ...n, path: n.path ? `openspec/specs/${n.path}` : undefined }));
+      walkDir(specsDir, { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(`openspec/specs/${rel}`) });
+      const specs = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `openspec/specs/${n.path}` : undefined }));
       if (specs.length) tree.push({ name: 'specs', kind: 'dir', children: specs });
     }
   }
   if (hasDocs && fs.existsSync(path.join(root, 'docs'))) {
     const paths: string[] = [];
-    walkDir(path.join(root, 'docs'), { maxDepth: 4, onFile: (_, rel) => paths.push(`docs/${rel}`) });
-    const docs = buildTree(paths).map((n) => ({ ...n, path: n.path ? `docs/${n.path}` : undefined }));
+    walkDir(path.join(root, 'docs'), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(`docs/${rel}`) });
+    const docs = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `docs/${n.path}` : undefined }));
     if (docs.length) tree.push({ name: 'docs', kind: 'dir', children: docs });
   }
-  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'playground', '.zreview']); // .zworktree 以 . 开头已被点前缀过滤
+  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'playground', '.zreview']);
+  if (Array.isArray(opts?.hiddenDirs)) {
+    for (const d of opts.hiddenDirs) skip.add(d);
+  }
   // "其他"只收根目录的 md 文档(README/CLAUDE 等);构建配置(pom.xml/justfile 等)不收——对"方案+日志"定位是噪音
   const etc: TreeNode[] = [];
   try {
     for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-      if (ent.name.startsWith('.') || skip.has(ent.name)) continue;
+      if (!opts?.showHidden && ent.name.startsWith('.')) continue;
+      if (skip.has(ent.name)) continue;
       const ext = path.extname(ent.name).toLowerCase();
       if (ent.isFile() && (ext === '.md' || ext === '.markdown')) etc.push({ name: ent.name, kind: 'file', path: ent.name });
     }
