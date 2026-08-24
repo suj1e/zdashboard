@@ -9,7 +9,6 @@ const listeners = new Set<Handlers>();
 let es: EventSource | null = null;
 let status: ConnStatus = 'connecting';
 const statusSubs = new Set<(s: ConnStatus) => void>();
-let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
 function setStatus(s: ConnStatus) {
   status = s;
@@ -18,19 +17,21 @@ function setStatus(s: ConnStatus) {
 
 function connect() {
   if (es) return;
-  setStatus(status === 'lost' ? 'connecting' : status);
+  setStatus('connecting');
   const conn = new EventSource('/__reload');
   es = conn;
-  conn.onopen = () => setStatus('live');
+  conn.onopen = () => {
+    setStatus('live');
+    // 断线重连后静默刷新各 plugin 数据,不弹窗、不整页 reload
+    if (status === 'lost') {
+      listeners.forEach((h) => h.onFiles());
+    }
+  };
   conn.addEventListener('reload', () => listeners.forEach((h) => h.onReload()));
   conn.addEventListener('files', () => listeners.forEach((h) => h.onFiles()));
   conn.onerror = () => {
-    conn.close();
-    es = null;
+    // 不关闭连接,让 EventSource 原生重连机制生效
     setStatus('lost');
-    // 停服场景下不无限重连:dashboard 停止按钮触发前 stopped 标记由 useSSE 消费方控制,此处统一轻量重试
-    if (retryTimer) clearTimeout(retryTimer);
-    retryTimer = setTimeout(connect, 1500);
   };
 }
 
@@ -59,7 +60,10 @@ export function useSSE(onReload: () => void, onFiles: () => void, _stoppedRef?: 
     return () => {
       listeners.delete(handlers);
       statusSubs.delete(setConnStatus);
-      if (listeners.size === 0 && retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      if (listeners.size === 0 && es) {
+        es.close();
+        es = null;
+      }
     };
   }, []);
 

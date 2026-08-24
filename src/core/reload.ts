@@ -9,7 +9,7 @@ declare module 'cordis' {
   }
 }
 
-const WATCH_DEBOUNCE_MS = 150;
+const WATCH_DEBOUNCE_MS = 300;
 
 export class ReloadService extends Service {
   static inject = ['server'];
@@ -29,11 +29,13 @@ export class ReloadService extends Service {
     try {
       this.watcher = fs.watch(config.root, { recursive: true }, (eventType, filename) => {
         if (filename && /^(?:\.git|node_modules|dist|\.pnpm)(?:[/\\]|$)/.test(filename)) return;
+        if (filename && /\.(?:swp|tmp)$|~$|^\.DS_Store$|^Thumbs\.db$/i.test(filename)) return;
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
-          this.ctx.server.refreshGitInfo(); // 分支/脏数可能已变,先行刷新再广播
+          this.ctx.server.refreshGitInfo();
           this.broadcast('reload');
           this.broadcast('files');
+          this.timer = undefined;
         }, WATCH_DEBOUNCE_MS);
       });
     } catch {

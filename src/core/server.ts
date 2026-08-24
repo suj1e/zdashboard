@@ -59,7 +59,7 @@ const MIME: Record<string, string> = {
   '.map': 'application/json; charset=utf-8',
 };
 
-const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('reload',function(){location.reload();});es.onerror=function(){es.close();};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
+const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('files',function(){/* plugin 局部刷新由 useSSE 消费,此处不再整页 reload */});es.onerror=function(){/* EventSource 原生重连,静默处理 */};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
 
 export const PLUGIN_STATIC_PREFIX = '/__plugin/';
 

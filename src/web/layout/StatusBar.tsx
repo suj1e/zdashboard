@@ -23,7 +23,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
       .catch(() => {});
   }, [bump]);
 
-  const dot = status === 'live' ? 'bg-success animate-pulse' : status === 'lost' ? 'bg-destructive' : 'bg-muted-foreground';
+  const dot = status === 'live' ? 'bg-success animate-pulse' : 'bg-muted-foreground';
 
   return (
     <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-sm">
