@@ -1,5 +1,0 @@
-# 测试 fixture:指向本地 mock 禅道(见 scripts/mock-zentao.js)
-url: http://localhost:4189
-account: test
-password: test
-product: 3

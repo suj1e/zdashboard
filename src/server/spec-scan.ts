@@ -96,7 +96,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean): 
     const docs = buildTree(paths).map((n) => ({ ...n, path: n.path ? `docs/${n.path}` : undefined }));
     if (docs.length) tree.push({ name: 'docs', kind: 'dir', children: docs });
   }
-  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'test-server']); // .zworktree 以 . 开头已被点前缀过滤
+  const skip = new Set(['openspec', 'docs', 'node_modules', '.git', 'dist', 'playground']); // .zworktree 以 . 开头已被点前缀过滤
   // "其他"只收根目录的 md 文档(README/CLAUDE 等);构建配置(pom.xml/justfile 等)不收——对"方案+日志"定位是噪音
   const etc: TreeNode[] = [];
   try {
