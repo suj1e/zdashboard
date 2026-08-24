@@ -64,7 +64,7 @@ type RailKey = 'rail:home';
 
 // 通用图标（按钮/操作类）
 type GenericKey =
-  | 'git-branch' | 'folder-open' | 'play' | 'square'
+  | 'git-branch' | 'folder-open' | 'folder' | 'play' | 'square'
   | 'rotate-cw' | 'eraser' | 'check' | 'palette'
   | 'moon' | 'sun' | 'package-open' | 'power'
   | 'monitor'
@@ -124,6 +124,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   // 通用图标
   'git-branch': 'GitBranch',
   'folder-open': 'FolderOpen',
+  'folder': 'Folder',
   'play': 'Play',
   'square': 'Square',
   'rotate-cw': 'RotateCw',
