@@ -28,6 +28,7 @@ import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
 import { apply as viewApply } from './plugins/view/index.js';
 import { apply as statsApply } from './plugins/stats/index.js';
+import { apply as applyBatchApply } from './plugins/apply-batch/index.js';
 import YAML from 'yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -227,6 +228,7 @@ async function main() {
     { name: 'bugs', apply: bugsApply },
     { name: 'review', apply: reviewApply },
     { name: 'apply', apply: applyApply },
+    { name: 'apply-batch', apply: applyBatchApply },
     { name: 'design', apply: designApply },
     { name: 'view', apply: viewApply },
   ];
