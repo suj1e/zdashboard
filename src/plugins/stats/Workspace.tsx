@@ -13,6 +13,9 @@ interface StatsData {
   markdown: number;
   openspec: { active: number; archived: number };
   hasJust: boolean;
+  worktrees: number;
+  branch?: string;
+  dirty?: number;
 }
 
 interface WorkspaceProps {
@@ -53,8 +56,8 @@ export default function Workspace(_props: WorkspaceProps) {
     { label: '文件', value: data.files, icon: 'file-text', mode: null as string | null, filter: null as string | null },
     { label: '目录', value: data.dirs, icon: 'folder-tree', mode: null as string | null, filter: null as string | null },
     { label: '总大小', value: formatBytes(data.totalSize), mode: null as string | null, filter: null as string | null },
-    { label: 'Markdown', value: data.markdown, icon: 'book-open', mode: 'view', filter: '.md' },
-    { label: '变更 进行/归档', value: `${data.openspec.active}/${data.openspec.archived}`, icon: 'git-pull-request', mode: 'apply', filter: null },
+    { label: 'Worktree', value: data.worktrees, icon: 'git-branch', mode: null as string | null, filter: null as string | null },
+    { label: '未提交', value: data.dirty ?? 0, icon: 'alert-circle', mode: null as string | null, filter: null as string | null },
   ];
 
   const handleCardClick = (mode: string | null, filter: string | null) => {
@@ -101,6 +104,11 @@ export default function Workspace(_props: WorkspaceProps) {
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
             justfile {data.hasJust ? '✓' : '✗'}
           </span>
+          {typeof data.dirty === 'number' && (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.dirty ? 'text-warning border-warning/30 bg-warning/10' : 'text-success border-success/30 bg-success/10'}`}>
+              {data.dirty ? `${data.dirty} 未提交` : 'clean'}
+            </span>
+          )}
           <span className="text-muted-foreground">root: {data.root}</span>
         </div>
     </div>

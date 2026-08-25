@@ -82,74 +82,61 @@ interface SidebarProps {
   navTarget?: { mode?: string; filter?: string; wt?: string; navToken?: number };
 }
 
-function WorktreeGroup({ worktrees }: { worktrees: WorktreeInfo[] }) {
-  const [open, setOpen] = useState(true);
-  const { icon } = useIcons();
-  const handleNav = (wt: WorktreeInfo) => {
-    window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode: 'apply', wt: wt.name } }));
-  };
-
-  return (
-    <div className="mb-1">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-muted-foreground tracking-wide hover:text-foreground"
-      >
-        <span className={`h-3 w-3 inline-flex items-center justify-center transition-transform ${open ? 'rotate-90' : ''}`}>
-          {icon('chevron-right')}
-        </span>
-        <span className="h-3 w-3 inline-flex items-center justify-center">{icon('git-branch')}</span>
-        <span>Worktrees ({worktrees.length})</span>
-      </button>
-      {open && worktrees.map((wt) => (
-        <button
-          key={wt.name}
-          onClick={() => handleNav(wt)}
-          title={`${wt.branch}${wt.dirty ? ' · 有未提交变更' : ''}`}
-          className="w-full flex items-center gap-1.5 px-2 py-1 text-sm text-foreground hover:bg-muted border-l-2 border-transparent"
-          style={{ paddingLeft: 14 }}
-        >
-          <span className="truncate font-mono text-sm">{wt.branch}</span>
-          <span className="text-muted-foreground truncate">/{wt.name}</span>
-          {wt.dirty && <span className="ml-auto flex-none h-2 w-2 rounded-full bg-destructive shrink-0" title="有未提交变更" />}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function Sidebar({ navTarget }: SidebarProps) {
   const current = useSyncExternalStore(viewState.subscribe, viewState.get);
-  const [data, setData] = useState<TreeNode[] | null>(null);
+  const { icon } = useIcons();
   const [filter, setFilter] = useState('');
   const [debouncedFilter] = useDebounce(filter, 150);
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
+  const [wtTrees, setWtTrees] = useState<Record<string, TreeNode[]>>({});
+  const [rootTree, setRootTree] = useState<TreeNode[]>([]);
   const [showConfig, setShowConfig] = useState(false);
+  const [collapsedWt, setCollapsedWt] = useState<Set<string>>(new Set());
+  const [collapsedRoot, setCollapsedRoot] = useState(false);
   const { config, save, saving } = usePluginConfig('view', VIEW_CONFIG_SCHEMA);
 
-  // B2: pre-fill filter when navigated from stats drill-down
-  // 无条件覆盖(不 gate 在 !filter):同 mode 导航/重挂载时,传入的新 filter 必须生效
+  // pre-fill filter when navigated from stats drill-down
   useEffect(() => {
     if (navTarget?.filter) {
       setFilter(navTarget.filter);
     }
   }, [navTarget?.filter, navTarget?.navToken]);
 
-  useEffect(() => {
-    fetch('/__files', { cache: 'no-store' }).then(r => r.json()).then((d) => setData(d.tree ?? []));
-  }, []);
-
+  // fetch worktrees + each worktree's file tree + root tree (current branch)
   useEffect(() => {
     fetch('/__worktrees', { cache: 'no-store' })
       .then(r => r.json())
-      .then(setWorktrees)
+      .then(async (wts: WorktreeInfo[]) => {
+        setWorktrees(wts);
+        const trees: Record<string, TreeNode[]> = {};
+        await Promise.all(wts.map(async (wt) => {
+          try {
+            const r = await fetch(`/__files?wt=${encodeURIComponent(wt.path)}`, { cache: 'no-store' });
+            const d = await r.json();
+            trees[wt.path] = d.tree ?? [];
+          } catch { trees[wt.path] = []; }
+        }));
+        setWtTrees(trees);
+      })
       .catch(() => setWorktrees([]));
+
+    // root tree for current branch
+    fetch('/__files', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => setRootTree(d.tree ?? []))
+      .catch(() => setRootTree([]));
   }, []);
 
-  const tree = useMemo(() => {
-    if (!data) return [];
-    return data.filter((n) => matches(n, debouncedFilter));
-  }, [data, debouncedFilter]);
+  const toggleWt = (path: string) => {
+    setCollapsedWt(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const toggleRoot = () => setCollapsedRoot(prev => !prev);
 
   const showWorktrees = worktrees.length > 0;
 
@@ -161,25 +148,68 @@ export default function Sidebar({ navTarget }: SidebarProps) {
         placeholder="过滤…"
         className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:outline-none focus:border-primary"
       />
-      {!data ? (
-        <p className="p-3 text-xs text-muted-foreground">加载中…</p>
-      ) : !tree.length && !showWorktrees ? (
-        <p className="p-3 text-xs text-muted-foreground">无匹配</p>
-      ) : (
-        <div className="py-1">
-          {showWorktrees && <WorktreeGroup worktrees={worktrees} />}
-          {tree.map((n) => (
-            <TreeDir key={n.name} node={n} depth={0} filter={debouncedFilter} current={current} onSelectFile={(p) => viewState.set(p)} />
-          ))}
-        </div>
-      )}
+      <div className="py-1">
+        {showWorktrees && worktrees.map((wt) => {
+          const tree = wtTrees[wt.path] ?? [];
+          const filtered = tree.filter((n) => matches(n, debouncedFilter));
+          if (!filtered.length && debouncedFilter) return null;
+          return (
+            <div key={wt.path} className="mb-1">
+              <button
+                onClick={() => toggleWt(wt.path)}
+                className="w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              >
+                <span className="h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground transition-transform">
+                  {icon('chevron-right', collapsedWt.has(wt.path) ? '' : 'rotate-90')}
+                </span>
+                <span className="h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground">
+                  {icon('git-branch')}
+                </span>
+                <span className="truncate">{wt.branch}</span>
+                
+                {wt.dirty && <span className="ml-auto flex-none h-2 w-2 rounded-full bg-destructive shrink-0" title="有未提交变更" />}
+              </button>
+              {!collapsedWt.has(wt.path) && (
+                <div className="ml-2">
+                  {filtered.map((n) => (
+                    <TreeDir key={n.name} node={n} depth={1} filter={debouncedFilter} current={current} onSelectFile={(p) => viewState.set(p)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {rootTree.length > 0 && (
+          <div className="mb-1">
+            <button
+              onClick={toggleRoot}
+              className="w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+            >
+              <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground transition-transform ${!collapsedRoot ? 'rotate-90' : ''}`}>
+                {icon('chevron-right')}
+              </span>
+              <span className="h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground">
+                {icon('git-branch')}
+              </span>
+              <span>当前分支</span>
+            </button>
+            {!collapsedRoot && (
+              <div className="ml-2">
+                {rootTree.filter((n) => matches(n, debouncedFilter)).map((n) => (
+                  <TreeDir key={n.name} node={n} depth={1} filter={debouncedFilter} current={current} onSelectFile={(p) => viewState.set(p)} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <div className="border-t border-border mt-2">
         <button
           onClick={() => setShowConfig(o => !o)}
           className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center transition-transform ${showConfig ? 'rotate-90' : ''}`}>
-            {useIcons().icon('chevron-right')}
+            {icon('chevron-right')}
           </span>
           ⚙️ 配置
         </button>
