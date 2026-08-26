@@ -74,7 +74,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean, o
       if (!ent.isDirectory() || ent.name.startsWith('.') || ent.name === 'archive') continue;
       const relBase = `openspec/changes/${ent.name}`;
       const paths: string[] = [];
-      walkDir(path.join(changesDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
+      walkDir(path.join(changesDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${ent.name}/${rel}` : ent.name) });
       const children = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
       active.push({ name: ent.name, kind: 'dir', children });
     }
@@ -85,7 +85,7 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean, o
         if (!ent.isDirectory() || ent.name.startsWith('.')) continue;
         const relBase = `openspec/changes/archive/${ent.name}`;
         const paths: string[] = [];
-        walkDir(path.join(archiveDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${relBase}/${rel}` : relBase) });
+        walkDir(path.join(archiveDir, ent.name), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel ? `${ent.name}/${rel}` : ent.name) });
         const children = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `${relBase}/${n.path}` : undefined }));
         archived.push({ name: ent.name, kind: 'dir', children });
       }
@@ -96,14 +96,14 @@ export function scanTree(root: string, hasOpenspec: boolean, hasDocs: boolean, o
     const specsDir = path.join(root, 'openspec', 'specs');
     if (fs.existsSync(specsDir)) {
       const paths: string[] = [];
-      walkDir(specsDir, { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(`openspec/specs/${rel}`) });
+      walkDir(specsDir, { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel) });
       const specs = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `openspec/specs/${n.path}` : undefined }));
       if (specs.length) tree.push({ name: 'specs', kind: 'dir', children: specs });
     }
   }
   if (hasDocs && fs.existsSync(path.join(root, 'docs'))) {
     const paths: string[] = [];
-    walkDir(path.join(root, 'docs'), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(`docs/${rel}`) });
+    walkDir(path.join(root, 'docs'), { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel) });
     const docs = buildTree(paths, defaultExpandDepth).map((n) => ({ ...n, path: n.path ? `docs/${n.path}` : undefined }));
     if (docs.length) tree.push({ name: 'docs', kind: 'dir', children: docs });
   }

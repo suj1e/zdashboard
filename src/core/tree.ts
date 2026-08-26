@@ -17,11 +17,14 @@ export const apply = {
 
     const server = ctx.server;
     if (server?.route) {
-      server.route('/__files', async (_req, res) => {
+      server.route('/__files', async (req, res) => {
         try {
+          const url = new URL(req.url || '/', 'http://localhost');
+          const wt = url.searchParams.get('wt');
+          const scanRoot = wt ? decodeURIComponent(wt) : config.root;
           const d = await getDet();
           const viewCfg = ctx.dashboard.getConfig('view') as { hiddenDirs?: string[]; defaultExpandDepth?: number; showHidden?: boolean } | undefined;
-          const tree = scanTree(config.root, d.hasOpenspec, d.hasDocs, {
+          const tree = scanTree(scanRoot, d.hasOpenspec, d.hasDocs, {
             hiddenDirs: Array.isArray(viewCfg?.hiddenDirs) ? viewCfg.hiddenDirs : undefined,
             defaultExpandDepth: typeof viewCfg?.defaultExpandDepth === 'number' ? viewCfg.defaultExpandDepth : undefined,
             showHidden: typeof viewCfg?.showHidden === 'boolean' ? viewCfg.showHidden : undefined,

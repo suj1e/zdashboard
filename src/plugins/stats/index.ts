@@ -2,6 +2,8 @@ import type { Context } from 'cordis';
 import fs from 'node:fs';
 import path from 'node:path';
 import { walkDir } from '../../server/walk.js';
+import { listWorktrees } from '../../core/worktrees.js';
+import { execFile } from 'node:child_process';
 
 interface Stats {
   root: string;
@@ -12,9 +14,18 @@ interface Stats {
   markdown: number;
   openspec: { active: number; archived: number };
   hasJust: boolean;
+  worktrees: number;
+  branch?: string;
+  dirty?: number;
 }
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '.cache']);
+
+function execFilePromise(file: string, args: string[], opts: { cwd: string }): Promise<string> {
+  return new Promise((resolve) => {
+    execFile(file, args, opts, (err, stdout) => resolve(err ? '' : stdout));
+  });
+}
 
 function scan(root: string): Stats {
   const stats: Stats = {
@@ -26,6 +37,7 @@ function scan(root: string): Stats {
     markdown: 0,
     openspec: { active: 0, archived: 0 },
     hasJust: fs.existsSync(path.join(root, 'justfile')),
+    worktrees: 0,
   };
   const extMap = new Map<string, number>();
 
@@ -75,9 +87,24 @@ export const apply = {
         description: '项目文件统计 · 扫描生成',
       });
 
-      server.route('/__stats/data', (_req: unknown, res: import('node:http').ServerResponse) => {
+      server.route('/__stats/data', async (_req: unknown, res: import('node:http').ServerResponse) => {
+        const stats = scan(config.root);
+        try {
+          const wts = await listWorktrees(config.root);
+          stats.worktrees = wts.length;
+        } catch {
+          stats.worktrees = 0;
+        }
+        try {
+          const branchOut = await execFilePromise('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: config.root });
+          stats.branch = branchOut.trim() || undefined;
+        } catch { /* ignore */ }
+        try {
+          const statusOut = await execFilePromise('git', ['status', '--porcelain'], { cwd: config.root });
+          stats.dirty = statusOut.trim() ? statusOut.trim().split('\n').length : 0;
+        } catch { /* ignore */ }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-        res.end(JSON.stringify(scan(config.root)));
+        res.end(JSON.stringify(stats));
       });
     });
   },
