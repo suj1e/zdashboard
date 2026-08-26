@@ -1,4 +1,5 @@
 import type { Context } from 'cordis';
+import { readBody } from '../../core/read-body.js';
 import { ApplyBatchStore } from '../../server/apply-batch-store.js';
 
 export const apply = {

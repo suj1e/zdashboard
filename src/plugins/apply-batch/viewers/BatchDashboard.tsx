@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { lazy, Suspense } from 'react';
-import ApplyBatchStore from '../../server/apply-batch-store.js';
+import { ApplyBatchStore } from '../../../server/apply-batch-store.js';
+import type { BatchChange, BatchLog } from '../../../server/apply-batch-store.js';
 
 const DependencyGraph = lazy(() => import('./DependencyGraph.js'));
 const ApprovalPanel = lazy(() => import('./ApprovalPanel.js'));
@@ -59,7 +60,7 @@ export default function BatchDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-lg text-muted-foreground">加载中...</div>
       </div>
     );
@@ -67,20 +68,20 @@ export default function BatchDashboard() {
 
   if (!state) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-lg text-muted-foreground">暂无批量执行数据</div>
       </div>
     );
   }
 
-  const completed = state.changes.filter(c => c.status === 'completed').length;
-  const failed = state.changes.filter(c => c.status === 'failed').length;
-  const parked = state.changes.filter(c => c.status === 'parked').length;
-  const running = state.changes.filter(c => c.status === 'running').length;
+  const completed = state.changes.filter((c: BatchChange) => c.status === 'completed').length;
+  const failed = state.changes.filter((c: BatchChange) => c.status === 'failed').length;
+  const parked = state.changes.filter((c: BatchChange) => c.status === 'parked').length;
+  const running = state.changes.filter((c: BatchChange) => c.status === 'running').length;
   const total = state.changes.length;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div className="flex items-center gap-4">
@@ -180,7 +181,7 @@ export default function BatchDashboard() {
       {/* Footer Logs */}
       <footer className="border-t border-border px-6 py-2 max-h-32 overflow-y-auto">
         <div className="text-xs font-mono space-y-1">
-          {state.logs.slice(-20).reverse().map((log, i) => (
+          {state.logs.slice(-20).reverse().map((log: BatchLog, i: number) => (
             <div key={i} className={`${log.level === 'error' ? 'text-destructive' : log.level === 'warn' ? 'text-warning' : 'text-muted-foreground'}`}>
               <span className="text-muted-foreground/60">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
               {log.changeName && <span className="text-info ml-2">[{log.changeName}]</span>}
