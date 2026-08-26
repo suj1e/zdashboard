@@ -17,7 +17,7 @@ export function CodeViewer({ path }: { path: string }) {
     let alive = true;
     setText(null);
     setErr(null);
-    fetch('/' + encodeURI(path), { cache: 'no-store' })
+    fetch('/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();

@@ -6,11 +6,11 @@ import { viewState } from './state.js';
 import { useDebounce } from 'use-debounce';
 import { usePluginConfig } from '../../web/hooks/usePluginConfig.js';
 import { ConfigField } from '../../web/components/ConfigField.js';
+import { createPortal } from 'react-dom';
 
 const VIEW_CONFIG_SCHEMA = {
-  hiddenDirs: { type: 'string[]' as const, label: '隐藏目录', default: ['.git', 'node_modules', 'dist', 'build'] },
+  scanDirs: { type: 'string[]' as const, label: '扫描目录', default: ['openspec'] },
   defaultExpandDepth: { type: 'number' as const, label: '默认展开深度', default: 2 },
-  showHidden: { type: 'boolean' as const, label: '显示隐藏文件', default: false },
 };
 
 interface WorktreeInfo {
@@ -90,7 +90,8 @@ export default function Sidebar({ navTarget }: SidebarProps) {
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
   const [wtTrees, setWtTrees] = useState<Record<string, TreeNode[]>>({});
   const [rootTree, setRootTree] = useState<TreeNode[]>([]);
-  const [showConfig, setShowConfig] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [collapsedWt, setCollapsedWt] = useState<Set<string>>(new Set());
   const [collapsedRoot, setCollapsedRoot] = useState(false);
   const { config, save, saving } = usePluginConfig('view', VIEW_CONFIG_SCHEMA);
@@ -138,11 +139,51 @@ export default function Sidebar({ navTarget }: SidebarProps) {
 
   const toggleRoot = () => setCollapsedRoot(prev => !prev);
 
+  const hasDraft = Object.keys(draft).length > 0;
+  const draftSave = (key: string, value: unknown) => {
+    setDraft(prev => ({ ...prev, [key]: value }));
+  };
+
+  const loadTrees = async () => {
+    const [wtRes, rootRes] = await Promise.all([
+      fetch('/__worktrees', { cache: 'no-store' }).then(r => r.json()).catch(() => []),
+      fetch('/__files', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ tree: [] })),
+    ]);
+    setWorktrees(wtRes);
+    const trees: Record<string, TreeNode[]> = {};
+    await Promise.all((wtRes ?? []).map(async (wt: WorktreeInfo) => {
+      try {
+        const r = await fetch(`/__files?wt=${encodeURIComponent(wt.path)}`, { cache: 'no-store' });
+        const d = await r.json();
+        trees[wt.path] = d.tree ?? [];
+      } catch { trees[wt.path] = []; }
+    }));
+    setWtTrees(trees);
+    setRootTree(rootRes.tree ?? []);
+  };
+
+  const commitSave = async () => {
+    await save({ ...config, ...draft });
+    setDraft({});
+    await loadTrees();
+  };
+
   const showWorktrees = worktrees.length > 0;
 
   return (
-    <div className="p-2">
-      <input
+    <div className="p-2 flex flex-col h-full">
+      <div className="mb-2">
+        <button
+          onClick={() => setShowConfigModal(true)}
+          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
+        >
+          {icon('settings', 'h-3.5 w-3.5')}
+          <span>配置</span>
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0">
+        <input
         value={filter}
         onChange={e => setFilter(e.target.value.toLowerCase())}
         placeholder="过滤…"
@@ -203,25 +244,50 @@ export default function Sidebar({ navTarget }: SidebarProps) {
           </div>
         )}
       </div>
-      <div className="border-t border-border mt-2">
-        <button
-          onClick={() => setShowConfig(o => !o)}
-          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center transition-transform ${showConfig ? 'rotate-90' : ''}`}>
-            {icon('chevron-right')}
-          </span>
-          ⚙️ 配置
-        </button>
-        {showConfig && (
-          <div className="px-3 pb-3 space-y-3">
-            <ConfigField key_="hiddenDirs" field={VIEW_CONFIG_SCHEMA.hiddenDirs} value={config.hiddenDirs} onChange={(k, v) => save({ ...config, [k]: v })} />
-            <ConfigField key_="defaultExpandDepth" field={VIEW_CONFIG_SCHEMA.defaultExpandDepth} value={config.defaultExpandDepth} onChange={(k, v) => save({ ...config, [k]: v })} />
-            <ConfigField key_="showHidden" field={VIEW_CONFIG_SCHEMA.showHidden} value={config.showHidden} onChange={(k, v) => save({ ...config, [k]: v })} />
-            <div className="text-xs text-muted-foreground">{saving ? '保存中…' : '配置已保存'}</div>
-          </div>
-        )}
       </div>
+
+      {showConfigModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowConfigModal(false)}>
+          <div className="bg-background border rounded-lg shadow-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h3 className="text-base font-semibold">View 配置</h3>
+              <button onClick={() => setShowConfigModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                {icon('x', 'h-4 w-4')}
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <ConfigField key_="scanDirs" field={VIEW_CONFIG_SCHEMA.scanDirs} value={config.scanDirs} onChange={(k, v) => draftSave(k, v)} />
+                <ConfigField key_="defaultExpandDepth" field={VIEW_CONFIG_SCHEMA.defaultExpandDepth} value={config.defaultExpandDepth} onChange={(k, v) => draftSave(k, v)} />
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t">
+                <div className="text-xs">
+                  {hasDraft && <span className="text-muted-foreground">有未保存的更改</span>}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setDraft({});
+                      save({ scanDirs: ['openspec'], defaultExpandDepth: 2 });
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    重置默认
+                  </button>
+                  <button
+                    onClick={commitSave}
+                    disabled={!hasDraft}
+                    className="text-xs px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

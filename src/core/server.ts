@@ -97,6 +97,29 @@ export class ServerService extends Service {
       res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root, ...this.gitInfo }));
     });
 
+    this.route('/__file-content', async (req, res) => {
+      const url = new URL(req.url || '/', 'http://localhost');
+      const rawPath = url.pathname.replace(/^\/__file-content\/?/, '');
+      if (!rawPath || rawPath === '/') {
+        res.writeHead(400);
+        res.end('missing path');
+        return;
+      }
+      const filePath = path.join(this.root, decodeURIComponent(rawPath));
+      if (!filePath.startsWith(this.root + path.sep) && filePath !== this.root) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+      }
+      fs.stat(filePath, (err) => {
+        if (err) { res.writeHead(404); return res.end('Not found'); }
+        const ext = path.extname(filePath).toLowerCase();
+        const ct = MIME[ext] ?? 'application/octet-stream';
+        res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
+        fs.createReadStream(filePath).pipe(res);
+      });
+    });
+
     this.route('/__stop', async (req, res) => {
       if (req.headers['x-stop-token'] !== this.stopToken) {
         res.writeHead(403);
@@ -217,9 +240,12 @@ export class ServerService extends Service {
       const rawUrl = req.url || '/';
       const url = rawUrl.split('?')[0];
 
-      const rh = this.routes.get(url);
-      if (rh) { rh(req, res); return; }
-      const sh = this.sses.get(url);
+    const rh = this.routes.get(url);
+    if (rh) { rh(req, res); return; }
+    for (const [rp, rh2] of this.routes) {
+      if (url.startsWith(rp + '/')) { rh2(req, res); return; }
+    }
+    const sh = this.sses.get(url);
       if (sh) {
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
         res.write(': connected\n\n');

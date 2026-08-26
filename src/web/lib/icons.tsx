@@ -74,7 +74,7 @@ type GenericKey =
   | 'bar-chart-3' | 'folder-tree' | 'git-pull-request'
   | 'chevron-left' | 'file-question'
   | 'chevron-right' | 'blocks' | 'type' | 'eye'
-  | 'file-text';
+  | 'file-text' | 'settings';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
@@ -161,6 +161,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   'type': 'Type',
   'eye': 'Eye',
   'file-text': 'FileText',
+  'settings': 'Settings',
 };
 
 // ---------------------------------------------------------------------------

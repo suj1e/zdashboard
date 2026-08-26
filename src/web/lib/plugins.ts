@@ -68,5 +68,5 @@ export function usePlugins() {
     return () => { cancelled = true; };
   }, [plugins]);
 
-  return [...plugins, ...external];
+  return [...plugins, ...external].filter((p, i, arr) => arr.findIndex(q => q.mode === p.mode) === i);
 }

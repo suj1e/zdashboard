@@ -23,9 +23,8 @@ export const apply = {
           const wt = url.searchParams.get('wt');
           const scanRoot = wt ? decodeURIComponent(wt) : config.root;
           const d = await getDet();
-          const viewCfg = ctx.dashboard.getConfig('view') as { hiddenDirs?: string[]; defaultExpandDepth?: number; showHidden?: boolean } | undefined;
-          const tree = scanTree(scanRoot, d.hasOpenspec, d.hasDocs, {
-            hiddenDirs: Array.isArray(viewCfg?.hiddenDirs) ? viewCfg.hiddenDirs : undefined,
+          const viewCfg = ctx.dashboard.getConfig('view') as { scanDirs?: string[]; defaultExpandDepth?: number; showHidden?: boolean } | undefined;
+          const tree = scanTree(scanRoot, Array.isArray(viewCfg?.scanDirs) ? viewCfg.scanDirs : ['openspec'], {
             defaultExpandDepth: typeof viewCfg?.defaultExpandDepth === 'number' ? viewCfg.defaultExpandDepth : undefined,
             showHidden: typeof viewCfg?.showHidden === 'boolean' ? viewCfg.showHidden : undefined,
           });

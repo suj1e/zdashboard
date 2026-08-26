@@ -41,7 +41,7 @@ export function MdViewer({ path }: { path: string }) {
   const [text, setText] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    fetch('/' + encodeURI(path), { cache: 'no-store' })
+    fetch('/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((r) => r.text())
       .then((t) => { if (alive) setText(t); })
       .catch(() => { if (alive) setText(''); });
