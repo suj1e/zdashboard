@@ -65,6 +65,8 @@
         parent.postMessage(Object.assign({ source: BRIDGE_SOURCE }, payload), '*');
       }
 
+      var handlers = {};
+
       window.addEventListener('message', function (event) {
         if (event.source !== parent) return;               // 非宿主来源丢弃
         var m = event.data;
@@ -82,8 +84,6 @@
           // zd:ready 等宿主侧消息不归插件处理,静默丢弃
         }
       });
-
-      var handlers = {};
 
       function bridgeReady() { post({ type: 'zd:ready' }); }
       function bridgeFetch(path, init) {

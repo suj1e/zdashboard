@@ -32,12 +32,8 @@ export async function detect(root: string): Promise<DetectResult> {
   return { hasOpenspec, hasDocs, hasJust };
 }
 
-/** /__detect 的响应形状:三个真实探测位(bugs 期兼容字段已随清理 change 摘除) */
-export interface DetectResponse {
-  hasOpenspec: boolean;
-  hasDocs: boolean;
-  hasJust: boolean;
-}
+/** /__detect 的响应形状:与 DetectResult 同形(bugs 期兼容字段已随清理 change 摘除) */
+export type DetectResponse = DetectResult;
 
 /** 现场探测(每次请求重新跑),供 /__detect 独立路由使用 */
 export async function detectLiveShape(root: string): Promise<DetectResponse> {

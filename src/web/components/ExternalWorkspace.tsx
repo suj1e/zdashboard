@@ -74,7 +74,10 @@ export function ExternalWorkspace({ viewerUrl, label, mode, params }: ExternalWo
     bridgeRef.current = bridge;
     bridge.attach();
 
-    const mo = new MutationObserver(() => bridge.sendTheme(currentThemeSnapshot().theme, currentThemeSnapshot().mode));
+    const mo = new MutationObserver(() => {
+      const { theme, mode } = currentThemeSnapshot();
+      bridge.sendTheme(theme, mode);
+    });
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-mode'] });
 
     return () => {

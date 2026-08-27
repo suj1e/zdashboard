@@ -116,7 +116,7 @@ export interface HostBridgeOptions {
   getSnapshot: () => HostSnapshot;
   /** iframe 请求导航(宿主侧转 useRoute.navigate) */
   onNavigate: (params: Record<string, string>) => void;
-  /** zd:fetch 代理实现;缺省为同源 fetch(剥离 x-stop-token) */
+  /** zd:fetch 代理实现(init 已在边界剥离 x-stop-token);缺省为同源 fetch */
   proxyFetch?: (path: string, init?: BridgeFetchInit) => Promise<{ status: number; body: unknown }>;
 }
 
@@ -131,7 +131,7 @@ export interface HostBridge {
 }
 
 async function defaultProxyFetch(path: string, init?: BridgeFetchInit): Promise<{ status: number; body: unknown }> {
-  const res = await fetch(path, sanitizeFetchInit(init));
+  const res = await fetch(path, init);
   const text = await res.text();
   let body: unknown = text;
   try { body = JSON.parse(text); } catch { /* 非 JSON 保持文本 */ }
@@ -173,8 +173,7 @@ export function createHostBridge(opts: HostBridgeOptions): HostBridge {
     }
   };
 
-  const listener = (ev: MessageEvent) => handle(ev);
-  const attach = () => { if (typeof window !== 'undefined') window.addEventListener('message', listener); };
+  const attach = () => { if (typeof window !== 'undefined') window.addEventListener('message', handle); };
 
   return {
     handle,
@@ -184,7 +183,7 @@ export function createHostBridge(opts: HostBridgeOptions): HostBridge {
     sendConfig: (plugin, config) => post({ type: 'zd:config', plugin, config }),
     destroy: () => {
       destroyed = true;
-      if (typeof window !== 'undefined') window.removeEventListener('message', listener);
+      if (typeof window !== 'undefined') window.removeEventListener('message', handle);
     },
   };
 }
@@ -213,7 +212,7 @@ export function createPluginBridge(opts: PluginBridgeOptions = {}): PluginBridge
   const parent = opts.parent ?? (typeof window !== 'undefined' ? window.parent : null);
   let destroyed = false;
   let seq = 0;
-  const pending = new Map<string, { resolve: (r: { status: number; body: unknown }) => void }>();
+  const pending = new Map<string, (r: { status: number; body: unknown }) => void>();
 
   const post = (payload: Record<string, unknown>) => {
     if (destroyed || !parent) return;
@@ -238,17 +237,16 @@ export function createPluginBridge(opts: PluginBridgeOptions = {}): PluginBridge
         opts.onConfig?.({ plugin: msg.plugin, config: msg.config });
         break;
       case 'zd:fetch:result': {
-        const p = pending.get(msg.id);
-        if (!p) return; // 未知 id 丢弃
+        const resolve = pending.get(msg.id);
+        if (!resolve) return; // 未知 id 丢弃
         pending.delete(msg.id);
-        p.resolve({ status: msg.status, body: msg.body });
+        resolve({ status: msg.status, body: msg.body });
         break;
       }
     }
   };
 
-  const listener = (ev: MessageEvent) => handle(ev);
-  const attach = () => { if (typeof window !== 'undefined') window.addEventListener('message', listener); };
+  const attach = () => { if (typeof window !== 'undefined') window.addEventListener('message', handle); };
 
   return {
     handle,
@@ -257,12 +255,12 @@ export function createPluginBridge(opts: PluginBridgeOptions = {}): PluginBridge
     fetch: (path, init) =>
       new Promise((resolve) => {
         const id = `f${++seq}`;
-        pending.set(id, { resolve });
+        pending.set(id, resolve);
         post({ type: 'zd:fetch', id, path, init });
       }),
     destroy: () => {
       destroyed = true;
-      if (typeof window !== 'undefined') window.removeEventListener('message', listener);
+      if (typeof window !== 'undefined') window.removeEventListener('message', handle);
     },
   };
 }
