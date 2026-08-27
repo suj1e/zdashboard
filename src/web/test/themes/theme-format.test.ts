@@ -32,7 +32,7 @@ describe('theme css format guard', () => {
   for (const file of themeFiles) {
     it(`${file}: every hsl()-consumed color var is an HSL triplet`, () => {
       const css = readFileSync(path.join(themesDir, file), 'utf8');
-      const colorDecls = [...css.matchAll(/--([a-z-]+):\s*([^;]+);/g)]
+      const colorDecls = [...css.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)]
         .filter(([, name]) => hslColorVars.has(name));
       // 防止选择器/过滤条件失效导致空跑
       expect(colorDecls.length).toBeGreaterThan(0);

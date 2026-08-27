@@ -1,6 +1,6 @@
 # 任务:slate 主题色彩格式修复 + 明暗切换状态修复
 
-- [x] T1 slate.css 色彩格式修复:light/dark 两块主色 RGB 三元组按 design.md 换算表转 HSL(只修格式不改调性);--success/--warning/--info/--destructive/--terminal-* 等格式正确变量不动
+- [x] T1 slate.css 色彩格式修复:light/dark 两块主色 RGB 三元组按 design.md 换算表转 HSL(只修格式不改调性);--success/--warning/--info/--destructive/--terminal-* 等格式正确变量不动(terminal-* 后由 T5 修订转 HSL,见下)
   - 测试验收:主题格式守卫单测(见 design 测试策略)红→绿;浏览器 slate × 明暗无棕橙偏色
 - [x] T2 pixel.css audit:同规则检查,存在 RGB 三元组则一并修复,无则报告「无同类问题」
   - 测试验收:格式守卫单测覆盖 pixel.css(或有据豁免)
