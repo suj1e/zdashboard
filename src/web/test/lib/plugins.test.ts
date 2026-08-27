@@ -52,6 +52,16 @@ describe('normalizeWebExport — 旧形状兼容分支', () => {
     expect(normalizeWebExport({ label: 'x' })).toBeNull();
     expect(normalizeWebExport({ mode: 'x' })).toBeNull(); // 缺 Workspace
   });
+
+  it('回归:真实 React.lazy 的 Workspace 是 $$typeof 对象而非 function,必须被接受', () => {
+    const LazyWs = React.lazy(() => Promise.resolve({ default: noop }));
+    const p = normalizeWebExport({ mode: 'view', label: 'v', icon: 'i', Workspace: LazyWs });
+    expect(p).not.toBeNull();
+    expect(p!.mode).toBe('view');
+    const sdk = normalizeWebExport({ manifest: { mode: 's', label: 's', icon: 'i' }, workspace: LazyWs });
+    expect(sdk).not.toBeNull();
+    expect(sdk!.legacy).toBe(false);
+  });
 });
 
 describe('comparePlugins — manifest.order 排序', () => {

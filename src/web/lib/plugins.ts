@@ -23,6 +23,12 @@ export interface WebPlugin {
 
 type WebLoader = () => Promise<unknown>;
 
+/** React 组件判定:lazy()/forwardRef 是带 $$typeof 的对象,函数组件才是 function */
+function isReactComponentish(v: unknown): boolean {
+  if (typeof v === 'function') return true;
+  return !!v && typeof v === 'object' && '$$typeof' in (v as object);
+}
+
 /**
  * 归一化单条 web 入口导出:
  * - 新 SDK PlatformWebPlugin({ manifest, workspace, sidebar?, params? }) → 扁平 WebPlugin
@@ -34,7 +40,7 @@ export function normalizeWebExport(input: unknown): WebPlugin | null {
   const raw = input as Record<string, unknown>;
 
   // 新 SDK 形状:manifest + workspace(lazy)
-  if (raw.manifest && typeof raw.manifest === 'object' && typeof raw.workspace === 'function') {
+  if (raw.manifest && typeof raw.manifest === 'object' && isReactComponentish(raw.workspace)) {
     const m = raw.manifest as PluginManifest;
     if (!m.mode) return null;
     return {
@@ -53,7 +59,7 @@ export function normalizeWebExport(input: unknown): WebPlugin | null {
   }
 
   // 旧形状兼容分支:六内置插件迁移(plugin-platform-plugins)前继续可用
-  if (typeof raw.mode === 'string' && typeof raw.Workspace === 'function') {
+  if (typeof raw.mode === 'string' && isReactComponentish(raw.Workspace)) {
     return {
       mode: raw.mode,
       label: typeof raw.label === 'string' ? raw.label : raw.mode,

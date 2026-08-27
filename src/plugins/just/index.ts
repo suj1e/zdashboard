@@ -4,7 +4,7 @@ import { JustRunner } from '../../server/just-runner.js';
 import { readBody } from '../../core/read-body.js';
 
 export const apply = {
-  inject: ['server', 'dashboard'] as const,
+  inject: ['server', 'dashboard', 'reload'] as const,
   apply(ctx: Context, config: { root: string }) {
     const root = config.root;
 
@@ -28,6 +28,8 @@ export const apply = {
 
       ctx.server.sse('/__just/logs', (res) => {
         const unsub = runner.subscribe((ev) => {
+          // 插件频道镜像:type 即事件名(log/clear/state),供 usePluginData subscribe 失效
+          try { ctx.reload.broadcastPlugin('just', ev.type, ev); } catch { /* reload 未就绪 */ }
           res.write(`data: ${JSON.stringify(ev)}\n\n`);
         });
         return unsub;

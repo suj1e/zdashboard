@@ -12,7 +12,7 @@
   - 测试验收:vitest 三态边界渲染分支 + PageHeader/Toolbar/EmptyState 快照;三主题×明暗肉眼走查无样式破相
 - [x] T5 数据层:usePluginData(缓存/去重/subscribe 失效);ReloadService broadcastPlugin → `plugin:<mode>:<event>`;新增 `/__detect` 路由;HomeGrid 探测切 /__detect
   - 测试验收:vitest 缓存/去重/事件失效/error 态;curl /__detect 返回四探测位;just start/stop 触发 SSE 事件可在 DevTools EventSource 看到 plugin:just:*
-- [ ] T6 壳层接线:IconRail/HomeGrid 图标切 useIcons(mode→icon 映射);SidebarFrame props 收窄;App 挂 PluginPage 骨架(旧插件内容暂以兼容分支渲染)
+- [x] T6 壳层接线:IconRail/HomeGrid 图标切 useIcons(mode→icon 映射);SidebarFrame props 收窄;App 挂 PluginPage 骨架(旧插件内容暂以兼容分支渲染)
   - 测试验收:六旧插件页面打开无 console error;图标非 emoji;首页卡片排序与外部插件「外部」徽标正常
-- [ ] T7 收尾冒烟:build + test 全绿;手工冒烟清单(design.md 测试策略 §2)全过
+- [x] T7 收尾冒烟:build + test 全绿;手工冒烟清单(design.md 测试策略 §2)全过
   - 测试验收:六页面 + 首页 + 主题切换 + 深链接刷新/后退零 console error

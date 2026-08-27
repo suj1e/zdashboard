@@ -120,6 +120,11 @@ export class ServerService extends Service {
       json(res, shape);
     });
 
+    // 应用级静态文件(index.html 引用但不在 /assets/ 下),避免落到项目目录 404
+    this.route('/favicon.svg', (req, res) => {
+      this.serveFile(path.join(this.appDir, 'favicon.svg'), req, res, false);
+    });
+
     this.route('/__file-content', async (req, res) => {
       const url = new URL(req.url || '/', 'http://localhost');
       const rawPath = url.pathname.replace(/^\/__file-content\/?/, '');
