@@ -7,7 +7,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { Context } from 'cordis';
 import { ServerService } from '../server.js';
-import type { DetectResult } from '../../server/detect.js';
 
 /** jsdom 环境无 Node fetch 的部分全局,直接用 node:http 请求 */
 import http from 'node:http';
@@ -23,7 +22,7 @@ function startServer(appDir: string): Promise<{ port: number; dispose: () => voi
       port: 0,
       open: false,
       page: null,
-      detect: { hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false } as DetectResult,
+      detect: { hasOpenspec: false, hasDocs: false, hasJust: false },
       onListen: (port: number) => resolve({ port, dispose: () => { try { ctx.root.fiber.dispose(); } catch { /* ignore */ } } }),
     });
     setTimeout(() => reject(new Error('server did not start')), 5000);

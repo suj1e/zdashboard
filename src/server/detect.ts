@@ -6,7 +6,6 @@ export interface DetectResult {
   hasOpenspec: boolean;
   hasDocs: boolean;
   hasJust: boolean;
-  hasBugs: boolean;
 }
 
 /** --list 主探测超时(与迁移前一致) */
@@ -26,36 +25,21 @@ function justAvailable(cwd: string): Promise<boolean> {
     .then((ok) => (ok ? true : probe(['--version'], JUST_FALLBACK_TIMEOUT_MS)));
 }
 
-function hasBugsConfig(root: string): boolean {
-  const dashboardPath = path.join(root, '.zdev', 'dashboard.json');
-  if (!fs.existsSync(dashboardPath)) return false;
-  try {
-    const raw = fs.readFileSync(dashboardPath, 'utf-8');
-    const rec = JSON.parse(raw) as { plugins?: { bugs?: Record<string, unknown> } };
-    const bugs = rec.plugins?.bugs;
-    if (bugs && typeof bugs === 'object' && bugs.url && bugs.product) return true;
-  } catch { /* ignore */ }
-  return false;
-}
-
 export async function detect(root: string): Promise<DetectResult> {
   const hasOpenspec = fs.existsSync(path.join(root, 'openspec'));
   const hasDocs = fs.existsSync(path.join(root, 'docs'));
   const hasJust = await justAvailable(root);
-  const hasBugs = hasBugsConfig(root);
-  return { hasOpenspec, hasDocs, hasJust, hasBugs };
+  return { hasOpenspec, hasDocs, hasJust };
 }
 
-/** /__detect 的响应形状:bugs 探测位随 bugs 插件移除而固定为 false(一个版本期后由清理 change 摘除) */
+/** /__detect 的响应形状:三个真实探测位(bugs 期兼容字段已随清理 change 摘除) */
 export interface DetectResponse {
   hasOpenspec: boolean;
   hasDocs: boolean;
   hasJust: boolean;
-  hasJustbugs: false;
 }
 
 /** 现场探测(每次请求重新跑),供 /__detect 独立路由使用 */
 export async function detectLiveShape(root: string): Promise<DetectResponse> {
-  const d = await detect(root);
-  return { hasOpenspec: d.hasOpenspec, hasDocs: d.hasDocs, hasJust: d.hasJust, hasJustbugs: false };
+  return detect(root);
 }

@@ -43,13 +43,12 @@ describe('ReloadService.broadcastPlugin', () => {
 });
 
 describe('detectLiveShape — /__detect 响应形状', () => {
-  it('固定返回四个探测位,justbugs 恒为 false 且不含 hasBugs', async () => {
+  it('形状收敛为三个真实探测位(openspec/docs/just),无 bugs 期残留字段', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-detect-test-'));
     try {
       const shape = await detectLiveShape(tmp);
-      expect(Object.keys(shape).sort()).toEqual(['hasDocs', 'hasJust', 'hasJustbugs', 'hasOpenspec']);
-      expect(shape.hasJustbugs).toBe(false);
-      expect((shape as unknown as Record<string, unknown>).hasBugs).toBeUndefined();
+      // 键集合全等即排除一切残留字段(bugs 期兼容位)
+      expect(Object.keys(shape).sort()).toEqual(['hasDocs', 'hasJust', 'hasOpenspec']);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
