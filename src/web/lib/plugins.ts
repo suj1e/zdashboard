@@ -7,12 +7,9 @@ import type { ParamSchema } from '../../sdk/shared.js';
 
 /**
  * 宿主渲染插件工作区/侧栏时可注入的统一 props:
- * - navTarget 兼容旧形状;params 为当前页 URL search params(含 p),宿主从 route 注入。
- * - 非 legacy(SDK defineWebPlugin)插件的 PluginWorkspaceProps.params 为必选,
- *   宿主恒注入;legacy 组件声明未含该键,忽略即可。
+ * params 为当前页 URL search params(含 p),宿主从 route 注入。
  */
 export interface WorkspaceHostProps {
-  navTarget?: unknown;
   params?: URLSearchParams;
 }
 
@@ -26,8 +23,6 @@ export interface WebPlugin {
   order?: number;
   manifest?: PluginManifest;
   params?: ParamSchema;
-  /** true = 旧 web.tsx 形状(兼容分支),plugin-platform-plugins 迁移后删除 */
-  legacy: boolean;
   Workspace: React.ComponentType<WorkspaceHostProps> | React.LazyExoticComponent<React.ComponentType<WorkspaceHostProps>>;
   Sidebar?: React.LazyExoticComponent<React.ComponentType<WorkspaceHostProps>>;
 }
@@ -41,16 +36,13 @@ function isReactComponentish(v: unknown): boolean {
 }
 
 /**
- * 归一化单条 web 入口导出:
- * - 新 SDK PlatformWebPlugin({ manifest, workspace, sidebar?, params? }) → 扁平 WebPlugin
- * - 旧 default export WebPlugin(mode/label/icon/Workspace)→ 兼容分支原样通过(legacy=true)
- * 不合法导出返回 null,由注册表跳过。
+ * 归一化单条 web 入口导出(SDK defineWebPlugin:{ manifest, workspace, sidebar?, params? })。
+ * 旧 default export 形状已随 plugin-platform-plugins T7 删除;不合法导出返回 null 由注册表跳过。
  */
 export function normalizeWebExport(input: unknown): WebPlugin | null {
   if (!input || typeof input !== 'object') return null;
   const raw = input as Record<string, unknown>;
 
-  // 新 SDK 形状:manifest + workspace(lazy)
   if (raw.manifest && typeof raw.manifest === 'object' && isReactComponentish(raw.workspace)) {
     const m = raw.manifest as PluginManifest;
     if (!m.mode) return null;
@@ -63,25 +55,8 @@ export function normalizeWebExport(input: unknown): WebPlugin | null {
       order: m.order,
       manifest: m,
       params: (raw.params ?? undefined) as ParamSchema | undefined,
-      legacy: false,
       Workspace: raw.workspace as WebPlugin['Workspace'],
       Sidebar: raw.sidebar as WebPlugin['Sidebar'],
-    };
-  }
-
-  // 旧形状兼容分支:六内置插件迁移(plugin-platform-plugins)前继续可用
-  if (typeof raw.mode === 'string' && isReactComponentish(raw.Workspace)) {
-    return {
-      mode: raw.mode,
-      label: typeof raw.label === 'string' ? raw.label : raw.mode,
-      icon: typeof raw.icon === 'string' ? raw.icon : '',
-      description: typeof raw.description === 'string' ? raw.description : undefined,
-      external: !!raw.external,
-      order: typeof raw.order === 'number' ? raw.order : undefined,
-      params: (raw.params ?? undefined) as ParamSchema | undefined,
-      legacy: true,
-      Workspace: raw.Workspace as WebPlugin['Workspace'],
-      Sidebar: raw.Sidebar as WebPlugin['Sidebar'],
     };
   }
 
@@ -98,19 +73,20 @@ export function comparePlugins(a: Pick<WebPlugin, 'mode' | 'order'>, b: Pick<Web
   return a.mode.localeCompare(b.mode);
 }
 
-/** 收集 import.meta.glob 装载器,失败模块跳过不阻塞其余插件 */
+/** 收集 import.meta.glob 装载器(并行加载),失败模块跳过不阻塞其余插件 */
 export async function collectPlugins(entries: Iterable<[string, WebLoader]>): Promise<WebPlugin[]> {
-  const loaded: WebPlugin[] = [];
-  for (const [path, loader] of entries) {
-    try {
-      const mod = await loader();
-      const p = normalizeWebExport((mod as { default?: unknown } | null | undefined)?.default);
-      if (p) loaded.push(p);
-    } catch (e) {
-      console.error(`[zdashboard] failed to load web plugin (${path}):`, e);
-    }
-  }
-  return loaded.sort(comparePlugins);
+  const loaded = await Promise.all(
+    Array.from(entries, async ([path, loader]) => {
+      try {
+        const mod = await loader();
+        return normalizeWebExport((mod as { default?: unknown } | null | undefined)?.default);
+      } catch (e) {
+        console.error(`[zdashboard] failed to load web plugin (${path}):`, e);
+        return null;
+      }
+    }),
+  );
+  return (loaded.filter((p): p is WebPlugin => p !== null)).sort(comparePlugins);
 }
 
 export function usePlugins() {
@@ -135,11 +111,12 @@ export function usePlugins() {
         const data = await r.json();
         if (!cancelled) {
           // 外部插件工作区统一壳:有 viewerUrl 走 iframe,缺省落占位页
-          const mapped = (data.plugins ?? []).map((p: any) => {
-            const Workspace = p.viewerUrl
-              ? () => React.createElement(ExternalWorkspace, { viewerUrl: p.viewerUrl, label: p.label })
+          const mapped = (data.plugins ?? []).map((p: PluginManifest) => {
+            const viewerUrl = p.viewerUrl ?? '';
+            const Workspace = viewerUrl
+              ? () => React.createElement(ExternalWorkspace, { viewerUrl, label: p.label })
               : () => React.createElement(PlaceholderWorkspace, { label: p.label });
-            return { ...p, Workspace, legacy: true } as WebPlugin;
+            return { ...p, Workspace } as WebPlugin;
           });
           setExternal(mapped.filter((p: WebPlugin) => !plugins.some((b) => b.mode === p.mode)));
         }

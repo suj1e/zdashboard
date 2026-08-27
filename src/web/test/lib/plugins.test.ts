@@ -9,14 +9,13 @@ import {
 
 const noop = () => null;
 
-/** 旧 web.tsx 形状(default export 直接是 WebPlugin 对象) */
-function legacyExport(mode: string, extra: Partial<WebPlugin> = {}): unknown {
+/** 旧 web.tsx 形状(plugin-platform-plugins T7 起不再接受) */
+function legacyExport(mode: string): unknown {
   return {
     mode,
     label: `${mode} label`,
     icon: '✳',
     Workspace: noop,
-    ...extra,
   };
 }
 
@@ -27,14 +26,9 @@ function sdkExport(mode: string, order?: number): unknown {
   return { manifest, workspace: noop };
 }
 
-describe('normalizeWebExport — 旧形状兼容分支', () => {
-  it('旧 default export(mode/label/icon/Workspace)原样通过', () => {
-    const p = normalizeWebExport(legacyExport('stats'));
-    expect(p).not.toBeNull();
-    expect(p!.mode).toBe('stats');
-    expect(p!.label).toBe('stats label');
-    expect(p!.Workspace).toBe(noop);
-    expect(p!.legacy).toBe(true);
+describe('normalizeWebExport — 仅接受 SDK defineWebPlugin 形状', () => {
+  it('T7:旧 default export(mode/label/icon/Workspace)被拒(兼容分支已删除)', () => {
+    expect(normalizeWebExport(legacyExport('stats'))).toBeNull();
   });
 
   it('新 SDK 导出(manifest+workspace)展开为扁平 WebPlugin', () => {
@@ -44,7 +38,6 @@ describe('normalizeWebExport — 旧形状兼容分支', () => {
     expect(p!.icon).toBe('▣');
     expect(p!.order).toBe(20);
     expect(p!.Workspace).toBe(noop);
-    expect(p!.legacy).toBe(false);
   });
 
   it('非法导出(null/缺 mode)返回 null 由注册表跳过', () => {
@@ -55,12 +48,9 @@ describe('normalizeWebExport — 旧形状兼容分支', () => {
 
   it('回归:真实 React.lazy 的 Workspace 是 $$typeof 对象而非 function,必须被接受', () => {
     const LazyWs = React.lazy(() => Promise.resolve({ default: noop }));
-    const p = normalizeWebExport({ mode: 'view', label: 'v', icon: 'i', Workspace: LazyWs });
-    expect(p).not.toBeNull();
-    expect(p!.mode).toBe('view');
     const sdk = normalizeWebExport({ manifest: { mode: 's', label: 's', icon: 'i' }, workspace: LazyWs });
     expect(sdk).not.toBeNull();
-    expect(sdk!.legacy).toBe(false);
+    expect(sdk!.mode).toBe('s');
   });
 });
 
@@ -90,7 +80,7 @@ describe('collectPlugins — glob 收集与排序', () => {
   it('按模块路径收集、跳过失败加载器并输出排好序的列表', async () => {
     const loaders: [string, () => Promise<unknown>][] = [
       ['/plugins/view/web.tsx', () => Promise.resolve({ default: sdkExport('view', 20) })],
-      ['/plugins/stats/web.tsx', () => Promise.resolve({ default: legacyExport('stats') })],
+      ['/plugins/stats/web.tsx', () => Promise.resolve({ default: sdkExport('stats') })],
       ['/plugins/design/web.tsx', () => Promise.reject(new Error('boom'))],
       ['/plugins/apply-batch/web.tsx', () => Promise.resolve({ default: sdkExport('apply-batch', 45) })],
       ['/plugins/broken/web.tsx', () => Promise.resolve({})],
@@ -101,7 +91,23 @@ describe('collectPlugins — glob 收集与排序', () => {
     // design 加载失败被跳过,broken 非法导出被跳过
     // view(20) < apply-batch(45) 有序在前;stats 缺 order 排尾
     expect(list.map((p) => p.mode)).toEqual(['view', 'apply-batch', 'stats']);
-    expect((list[2] as WebPlugin).legacy).toBe(true);        // stats 走旧形状兼容分支
-    expect((list[0] as WebPlugin).order).toBe(20);           // view 来自 manifest.order
+    expect(list[0].order).toBe(20); // view 来自 manifest.order
+  });
+
+  it('T7:并行加载——总耗时接近最慢单个加载器而非串行累加', async () => {
+    const delay = (ms: number) => () => new Promise((r) => setTimeout(r, ms));
+    const loaders: [string, () => Promise<unknown>][] = [
+      ['/plugins/slow/web.tsx', () => delay(60)().then(() => ({ default: sdkExport('slow', 1) }))],
+      ['/plugins/fast/web.tsx', () => delay(10)().then(() => ({ default: sdkExport('fast', 2) }))],
+      ['/plugins/mid/web.tsx', () => delay(30)().then(() => ({ default: sdkExport('mid', 3) }))],
+    ];
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const start = Date.now();
+    const list = await collectPlugins(loaders);
+    const elapsed = Date.now() - start;
+    spy.mockRestore();
+    expect(list.map((p) => p.mode)).toEqual(['slow', 'fast', 'mid']);
+    // 串行需 ≥100ms;并行应 ≈60ms(留出裕量)
+    expect(elapsed).toBeLessThan(95);
   });
 });

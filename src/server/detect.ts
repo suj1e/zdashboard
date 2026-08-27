@@ -10,12 +10,14 @@ export interface DetectResult {
 }
 
 function justAvailable(cwd: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const child = execFile('just', ['--list', '--unsupported'], { cwd, timeout: 5000 }, (err) => {
-      resolve(!err);
-    });
+  /** 探测一次:进程正常退出即视为可用 */
+  const probe = (args: string[], timeout: number) => new Promise<boolean>((resolve) => {
+    const child = execFile('just', args, { cwd, timeout }, (err) => resolve(!err));
     if (child.killed) resolve(false);
   });
+  // 旧版以 --list --unsupported 判定;新版 just 移除该旗标会报错(hasJust 恒 false),
+  // 回退 --version 探测二进制本身可用
+  return probe(['--list', '--unsupported'], 5000).then((ok) => (ok ? true : probe(['--version'], 3000)));
 }
 
 function hasBugsConfig(root: string): boolean {

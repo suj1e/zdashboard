@@ -14,5 +14,5 @@
   - 测试验收:并发 2 recipe 侧栏双条目、日志独立;单测日志按 taskId 隔离
 - [x] T6 apply-batch 迁移:十条路由迁 SDK(写操作全 guardedRoute);store 变更 broadcast('state') + 500ms 节流;前端切 usePluginData subscribe、删 2s 轮询、store 改 import type;三视图套模板
   - 测试验收:未带 token POST /approve 403;store 变更 <1s UI 更新且 DevTools 无轮询;SSE 节流单测过
-- [ ] T7 收尾:删除 foundation 兼容分支(web/lib/plugins.ts);全量手工走查六插件 + 三主题×明暗 + 全部深链接;build + test 全绿
+- [x] T7 收尾:删除 foundation 兼容分支(web/lib/plugins.ts);全量手工走查六插件 + 三主题×明暗 + 全部深链接;build + test 全绿
   - 测试验收:grep 兼容分支无结果;走查清单零 console error

@@ -309,14 +309,17 @@ export class ServerService extends Service {
       } else throw err;
     });
     this.server.listen(port, '127.0.0.1', () => {
-      const u = `http://localhost:${port}`;
+      // port=0(测试/随机端口)时上报实际绑定端口
+      const addr = this.server?.address();
+      const bound = typeof addr === 'object' && addr ? addr.port : port;
+      const u = `http://localhost:${bound}`;
       const target = this.page ? `${u}#${this.page}` : u;
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
       if (this.dataDir) console.log(`[zdashboard] data      -> ${this.dataDir}`);
       if (this.open) openUrl(target);
-      this.onListen?.(port);
+      this.onListen?.(bound);
     });
   }
 
