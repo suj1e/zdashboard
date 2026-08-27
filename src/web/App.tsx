@@ -8,7 +8,7 @@ import { usePlugins } from './lib/plugins';
 import { useRoute } from './router';
 import { useSSE } from './hooks/useSSE';
 
-interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
+interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
 
 export default function App() {
   const plugins = usePlugins();
@@ -16,7 +16,7 @@ export default function App() {
   const requestedMode = route.plugin;
   const [projectPath, setProjectPath] = useState('');
   const stoppedRef = useRef(false);
-  const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false, hasBugs: false });
+  const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false });
 
   const status = useSSE(
     () => { window.location.reload(); },
@@ -43,9 +43,9 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch('/__files', { cache: 'no-store' });
+        const r = await fetch('/__detect', { cache: 'no-store' });
         const data = await r.json();
-        if (!cancelled) setDetect({ hasOpenspec: data.hasOpenspec, hasDocs: data.hasDocs, hasJust: data.hasJust, hasBugs: data.hasBugs });
+        if (!cancelled) setDetect({ hasOpenspec: !!data.hasOpenspec, hasDocs: !!data.hasDocs, hasJust: !!data.hasJust });
       } catch {
         // ignore
       }

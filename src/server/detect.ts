@@ -37,3 +37,17 @@ export async function detect(root: string): Promise<DetectResult> {
   const hasBugs = hasBugsConfig(root);
   return { hasOpenspec, hasDocs, hasJust, hasBugs };
 }
+
+/** /__detect 的响应形状:bugs 探测位随 bugs 插件移除而固定为 false(一个版本期后由清理 change 摘除) */
+export interface DetectResponse {
+  hasOpenspec: boolean;
+  hasDocs: boolean;
+  hasJust: boolean;
+  hasJustbugs: false;
+}
+
+/** 现场探测(每次请求重新跑),供 /__detect 独立路由使用 */
+export async function detectLiveShape(root: string): Promise<DetectResponse> {
+  const d = await detect(root);
+  return { hasOpenspec: d.hasOpenspec, hasDocs: d.hasDocs, hasJust: d.hasJust, hasJustbugs: false };
+}

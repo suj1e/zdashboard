@@ -1,13 +1,12 @@
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import type { WebPlugin } from '../lib/plugins';
 
-interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean; hasBugs: boolean }
+interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
 
 const DETECT_ITEMS: { key: keyof Detects; label: string }[] = [
   { key: 'hasOpenspec', label: 'openspec' },
   { key: 'hasDocs', label: 'docs' },
   { key: 'hasJust', label: 'just' },
-  { key: 'hasBugs', label: 'bugs' },
 ];
 
 export function HomeGrid({ plugins, detect, onSelect }: {

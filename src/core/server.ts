@@ -5,7 +5,8 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 import type { Context } from 'cordis';
-import type { DetectResult } from '../server/detect.js';
+import type { DetectResult, DetectResponse } from '../server/detect.js';
+import { detectLiveShape } from '../server/detect.js';
 import type { PluginManifest, ConfigField } from '../core/manifest.js';
 import { Service } from 'cordis';
 import { clearRecord, readPluginsConfig, writePluginsConfig } from './instance.js';
@@ -111,6 +112,12 @@ export class ServerService extends Service {
     this.route('/__config', (_req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
       res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root, ...this.gitInfo }));
+    });
+
+    // 独立探测接口(轻量,替代 HomeGrid 借道 /__files 全量树)
+    this.route('/__detect', async (_req, res) => {
+      const shape: DetectResponse = await detectLiveShape(this.root);
+      json(res, shape);
     });
 
     this.route('/__file-content', async (req, res) => {

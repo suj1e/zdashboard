@@ -78,3 +78,22 @@ export function useSSE(onReload: () => void, onFiles: () => void, _stoppedRef?: 
 
   return connStatus;
 }
+
+/**
+ * 订阅任意具名 SSE 事件(如插件频道 plugin:<mode>:<event>),复用共享 /__reload 连接。
+ * 与 useSSE 主订阅解耦:动态频道随 hook 生命周期挂/摘。
+ */
+export function useSSEEvent(event: string, handler: (data: string) => void) {
+  const ref = useRef(handler);
+  useEffect(() => { ref.current = handler; });
+
+  useEffect(() => {
+    if (!event || typeof globalThis.EventSource === 'undefined') return;
+    if (!es) connect();
+    const conn = es;
+    if (!conn) return;
+    const fn = (e: MessageEvent) => ref.current(e.data);
+    conn.addEventListener(event, fn as EventListener);
+    return () => { conn.removeEventListener(event, fn as EventListener); };
+  }, [event]);
+}

@@ -50,6 +50,11 @@ export class ReloadService extends Service {
     }
   }
 
+  /** 插件专用频道:plugin:<mode>:<event>,客户端 usePluginData subscribe 消费 */
+  broadcastPlugin(mode: string, event: string, data: unknown = '') {
+    this.broadcast(`plugin:${mode}:${event}`, data);
+  }
+
   dispose() {
     if (this.watcher) { try { this.watcher.close(); } catch {} }
     if (this.timer) { clearTimeout(this.timer); }
