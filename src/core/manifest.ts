@@ -68,7 +68,7 @@ export class DashboardService extends Service {
         }
         try {
           const body = JSON.parse(await readBody(req));
-          const merged = {};
+          const merged: Record<string, Record<string, unknown>> = {};
           for (const mode of Object.keys(body)) {
             merged[mode] = body[mode] ?? {};
           }

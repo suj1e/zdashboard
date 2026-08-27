@@ -21,9 +21,11 @@ function connect() {
   const conn = new EventSource('/__reload');
   es = conn;
   conn.onopen = () => {
+    // 先取进入 live 前的状态再翻转,否则断线恢复分支恒不可达
+    const wasLost = status === 'lost';
     setStatus('live');
     // 断线重连后静默刷新各 plugin 数据,不弹窗、不整页 reload
-    if (status === 'lost') {
+    if (wasLost) {
       listeners.forEach((h) => h.onFiles());
     }
   };

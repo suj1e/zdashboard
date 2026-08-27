@@ -5,6 +5,17 @@ import { PlaceholderWorkspace } from '../components/PlaceholderWorkspace';
 import type { PluginManifest } from '../../core/manifest.js';
 import type { ParamSchema } from '../../sdk/shared.js';
 
+/**
+ * 宿主渲染插件工作区/侧栏时可注入的统一 props:
+ * - navTarget 兼容旧形状;params 为当前页 URL search params(含 p),宿主从 route 注入。
+ * - 非 legacy(SDK defineWebPlugin)插件的 PluginWorkspaceProps.params 为必选,
+ *   宿主恒注入;legacy 组件声明未含该键,忽略即可。
+ */
+export interface WorkspaceHostProps {
+  navTarget?: unknown;
+  params?: URLSearchParams;
+}
+
 export interface WebPlugin {
   mode: string;
   label: string;
@@ -17,8 +28,8 @@ export interface WebPlugin {
   params?: ParamSchema;
   /** true = 旧 web.tsx 形状(兼容分支),plugin-platform-plugins 迁移后删除 */
   legacy: boolean;
-  Workspace: React.ComponentType<{ navTarget?: unknown }> | React.LazyExoticComponent<React.ComponentType<{ navTarget?: unknown }>>;
-  Sidebar?: React.LazyExoticComponent<React.ComponentType<{ navTarget?: unknown }>>;
+  Workspace: React.ComponentType<WorkspaceHostProps> | React.LazyExoticComponent<React.ComponentType<WorkspaceHostProps>>;
+  Sidebar?: React.LazyExoticComponent<React.ComponentType<WorkspaceHostProps>>;
 }
 
 type WebLoader = () => Promise<unknown>;

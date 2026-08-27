@@ -61,16 +61,26 @@ describe('usePluginData', () => {
   });
 
   it('error 态:data 为 null,error 为消息,reload 可恢复', async () => {
-    const errFetcher = vi.fn().mockRejectedValue(new Error('boom'));
-    const { result } = renderHook(() => usePluginData('err-key', errFetcher));
+    const errFetcher = vi.fn(async () => { throw new Error('boom'); });
+    const { result, rerender } = renderHook(({ fetcher }) => usePluginData('err-key', fetcher), {
+      initialProps: { fetcher: errFetcher },
+    });
     await waitFor(() => expect(result.current.error).toBe('boom'));
     expect(result.current.data).toBeNull();
 
-    const okFetcher = vi.fn().mockResolvedValue('fine');
+    // 错误态下 reload:先进入 loading 且错误清空(S3)
     act(() => { result.current.reload(); });
-    // 重载替换 fetcher 场景通常由闭包更新驱动;此处直接验证手动 reload 清错误
-    renderHook(() => usePluginData('ok-key', okFetcher));
-    await waitFor(() => expect(okFetcher).toHaveBeenCalled());
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error).toBeNull();
+
+    // 新 fetcher(closure 经 rerender 替换)resolve 后:error 保持 null,data 更新为新值
+    const okFetcher = vi.fn().mockResolvedValue('fine');
+    rerender({ fetcher: okFetcher });
+    await waitFor(() => expect(result.current.data).toBe('fine'));
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(okFetcher).toHaveBeenCalledTimes(1);
+    expect(errFetcher).toHaveBeenCalledTimes(1);
   });
 });
 

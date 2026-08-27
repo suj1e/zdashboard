@@ -81,7 +81,7 @@ export default function App() {
             {known && plugin ? (
               <PluginPageShell mode={known} label={plugin.label} description={plugin.description} icon={plugin.icon}>
                 <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
-                  <plugin.Workspace />
+                  <plugin.Workspace params={route.params} />
                 </Suspense>
               </PluginPageShell>
             ) : (

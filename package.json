@@ -19,6 +19,7 @@
     "build:node": "tsup",
     "start": "node dist/cli.js",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview"
   },
