@@ -1,9 +1,14 @@
-import type { Context } from 'cordis';
+/**
+ * stats server 侧:definePlugin 接入(manifest 单源)。
+ * /__stats/data 响应形状与迁移前保持一致。
+ */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
 import { walkDir } from '../../server/walk.js';
 import { listWorktrees } from '../../core/worktrees.js';
-import { execFile } from 'node:child_process';
+import { defineBuiltin } from '../builtin.js';
+import { manifest } from './manifest.js';
 
 interface Stats {
   root: string;
@@ -72,40 +77,26 @@ function scan(root: string): Stats {
   return stats;
 }
 
-export const apply = {
-  inject: ['server', 'dashboard'] as const,
-  apply(ctx: Context, config: { root: string }) {
-    ctx.inject(['server', 'dashboard'], () => {
-      const server = (ctx as any).server;
-      const dashboard = (ctx as any).dashboard;
-      if (!server?.route || !dashboard?.register) return;
-
-      dashboard.register({
-        mode: 'stats',
-        label: '项目统计',
-        icon: '📊',
-        description: '项目文件统计 · 扫描生成',
-      });
-
-      server.route('/__stats/data', async (_req: unknown, res: import('node:http').ServerResponse) => {
-        const stats = scan(config.root);
-        try {
-          const wts = await listWorktrees(config.root);
-          stats.worktrees = wts.length;
-        } catch {
-          stats.worktrees = 0;
-        }
-        try {
-          const branchOut = await execFilePromise('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: config.root });
-          stats.branch = branchOut.trim() || undefined;
-        } catch { /* ignore */ }
-        try {
-          const statusOut = await execFilePromise('git', ['status', '--porcelain'], { cwd: config.root });
-          stats.dirty = statusOut.trim() ? statusOut.trim().split('\n').length : 0;
-        } catch { /* ignore */ }
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-        res.end(JSON.stringify(stats));
-      });
+export const apply = defineBuiltin({
+  manifest,
+  setup(ctx, root) {
+    ctx.route('/__stats/data', async () => {
+      const stats = scan(root);
+      try {
+        const wts = await listWorktrees(root);
+        stats.worktrees = wts.length;
+      } catch {
+        stats.worktrees = 0;
+      }
+      try {
+        const branchOut = await execFilePromise('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root });
+        stats.branch = branchOut.trim() || undefined;
+      } catch { /* ignore */ }
+      try {
+        const statusOut = await execFilePromise('git', ['status', '--porcelain'], { cwd: root });
+        stats.dirty = statusOut.trim() ? statusOut.trim().split('\n').length : 0;
+      } catch { /* ignore */ }
+      return stats;
     });
   },
-};
+});

@@ -1,0 +1,68 @@
+/**
+ * 六插件 manifest 契约(design.md「URL 参数契约」表驱动):
+ * 每插件 manifest.ts 单源 —— manifest 字段完整 + params schema 与契约表一致。
+ * 一例数据断言全部六插件;新增插件须在此表登记。
+ */
+import { describe, it, expect } from 'vitest';
+import type { PluginManifest } from '../../core/manifest.js';
+import type { ParamSchema } from '../../sdk/shared.js';
+
+import { manifest as statsManifest, params as statsParams } from '../stats/manifest.js';
+import { manifest as viewManifest, params as viewParams } from '../view/manifest.js';
+import { manifest as applyManifest, params as applyParams } from '../apply/manifest.js';
+import { manifest as designManifest, params as designParams } from '../design/manifest.js';
+import { manifest as justManifest, params as justParams } from '../just/manifest.js';
+import { manifest as applyBatchManifest, params as applyBatchParams } from '../apply-batch/manifest.js';
+
+/** design.md 契约表:mode → 参数名(有序) */
+const CONTRACT: Record<string, { manifest: PluginManifest; params: ParamSchema; order: number }> = {
+  stats: { manifest: statsManifest, params: statsParams, order: 10 },
+  view: { manifest: viewManifest, params: viewParams, order: 20 },
+  design: { manifest: designManifest, params: designParams, order: 30 },
+  apply: { manifest: applyManifest, params: applyParams, order: 40 },
+  just: { manifest: justManifest, params: justParams, order: 50 },
+  'apply-batch': { manifest: applyBatchManifest, params: applyBatchParams, order: 60 },
+};
+
+describe('六插件 manifest 单源契约', () => {
+  it('字段完整:mode/label/icon/description/order 齐备且与契约表一致', () => {
+    for (const [mode, entry] of Object.entries(CONTRACT)) {
+      expect(entry.manifest.mode, mode).toBe(mode);
+      expect(entry.manifest.label.length, `${mode}.label`).toBeGreaterThan(0);
+      expect(entry.manifest.icon.length, `${mode}.icon`).toBeGreaterThan(0);
+      expect(entry.manifest.description?.length, `${mode}.description`).toBeGreaterThan(0);
+      expect(entry.manifest.order, `${mode}.order`).toBe(entry.order);
+    }
+  });
+
+  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,apply=change,apply-batch=view/sel,just=recipe/task,design=type/asset/folder,stats=card)', () => {
+    expect(names(statsParams)).toEqual(['card']);
+    expect(names(viewParams)).toEqual(['wt', 'file', 'filter']);
+    expect(names(applyParams)).toEqual(['change']);
+    expect(names(applyBatchParams)).toEqual(['view', 'sel']);
+    expect(names(justParams)).toEqual(['recipe', 'task']);
+    expect(names(designParams)).toEqual(['type', 'asset', 'folder']);
+  });
+
+  it('params 字段类型均为 string 且带 label 便于 UI 提示', () => {
+    for (const entry of Object.values(CONTRACT)) {
+      for (const p of entry.params) {
+        expect(p.type ?? 'string', `${entry.manifest.mode}.${p.name}.type`).toBe('string');
+        expect(p.label?.length, `${entry.manifest.mode}.${p.name}.label`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('design 多文件夹配置在 manifest.config 单源声明(folders)', () => {
+    expect(designManifest.config?.folders).toMatchObject({ type: 'string[]' });
+    expect(designManifest.config?.folders?.default).toEqual([]);
+  });
+
+  it('view 的树配置在 manifest.config 单源声明', () => {
+    expect(Object.keys(viewManifest.config ?? {}).sort()).toEqual(['defaultExpandDepth', 'hiddenDirs', 'showHidden']);
+  });
+});
+
+function names(params: ParamSchema): string[] {
+  return params.map((p) => p.name);
+}

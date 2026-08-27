@@ -79,11 +79,21 @@ export default function App() {
         <section className="flex-1 min-h-0 dot-grid">
           <div className="h-full p-6">
             {known && plugin ? (
-              <PluginPageShell mode={known} label={plugin.label} description={plugin.description} icon={plugin.icon}>
+              plugin.manifest ? (
+                // SDK 插件:Workspace 自持 PluginPage(manifest 单源),宿主只做分包边界
                 <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
-                  <plugin.Workspace params={route.params} />
+                  <div key={known} className="h-full animate-in fade-in duration-200">
+                    <plugin.Workspace params={route.params} />
+                  </div>
                 </Suspense>
-              </PluginPageShell>
+              ) : (
+                // 兼容壳:legacy/外部插件(无 manifest)仍由宿主套 PluginPage
+                <PluginPageShell mode={known} label={plugin.label} description={plugin.description} icon={plugin.icon}>
+                  <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
+                    <plugin.Workspace params={route.params} />
+                  </Suspense>
+                </PluginPageShell>
+              )
             ) : (
               <HomeGrid plugins={plugins} detect={detect} onSelect={handleSelect} />
             )}

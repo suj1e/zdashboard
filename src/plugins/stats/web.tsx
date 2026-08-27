@@ -1,12 +1,10 @@
+/** stats web 侧:defineWebPlugin(manifest 单源),SDK lazy 分包 */
 import { lazy } from 'react';
+import { defineWebPlugin } from '../../sdk/client.js';
+import { manifest, params } from './manifest.js';
 
-const plugin = {
-  mode: 'stats',
-  label: '项目统计',
-  icon: '📊',
-  description: '项目文件统计 · 扫描生成',
-  order: 10,
-  Workspace: lazy(() => import('./Workspace.js')),
-} as const;
-
-export default plugin;
+export default defineWebPlugin({
+  manifest,
+  params,
+  workspace: lazy(() => import('./Workspace.js')),
+});

@@ -2,7 +2,7 @@
 
 > 前置:plugin-platform-foundation 已合入。顺序即执行序;每项完成后 `pnpm build && pnpm test` 保持绿。
 
-- [ ] T1 stats 迁移:manifest.ts 单源 + definePlugin/defineWebPlugin;页面套 PluginPage(5 卡片 + Top10 + 探测区);钻取 navigate 做实;探测切 /__detect;删 (ctx as any) 与死 navTarget 代码
+- [x] T1 stats 迁移:manifest.ts 单源 + definePlugin/defineWebPlugin;页面套 PluginPage(5 卡片 + Top10 + 探测区);钻取 navigate 做实;探测切 /__detect;删 (ctx as any) 与死 navTarget 代码
   - 测试验收:页面冒烟零 console error;点 Worktree 卡 → ?p=view 打开;点未提交卡 → view 高亮 dirty;manifest 参数表驱动单测过
 - [ ] T2 view 迁移:wt/file/filter 入 URL(ParamSchema);worktree 分组树 + 折叠 + OutlineNav 保留;预览器套 kit;面包屑 PageHeader
   - 测试验收:深链接 ?p=view&wt=…&file=… 刷新直达;分组折叠/过滤正常;树滚动位置在 params 变化时保持

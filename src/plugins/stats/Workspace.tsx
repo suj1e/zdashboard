@@ -1,7 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useIcons } from '../../web/lib/icons.js';
+/**
+ * stats 工作区:PluginPage 模板(5 卡片 + Top10 + 探测区)。
+ * 钻取经 router.navigate 做实(Worktree→view、未提交→view 高亮 dirty);探测区读 /__detect。
+ */
+import { useIcons, useModeIcon, type IconKey } from '../../web/lib/icons.js';
 import { formatBytes } from '../../web/lib/utils.js';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
+import { PluginPage } from '../../web/kit/index.js';
+import { usePluginData } from '../../web/hooks/usePluginData.js';
+import { useRoute } from '../../web/router.js';
+import type { PluginWorkspaceProps } from '../../sdk/client.js';
+import { manifest } from './manifest.js';
 
 interface ExtCount { ext: string; count: number }
 interface StatsData {
@@ -18,71 +26,61 @@ interface StatsData {
   dirty?: number;
 }
 
-interface WorkspaceProps {
-  navTarget?: { mode?: string; filter?: string; wt?: string };
+interface DetectData {
+  hasOpenspec: boolean;
+  hasDocs: boolean;
+  hasJust: boolean;
+  hasJustbugs: boolean;
 }
 
-export default function Workspace(_props: WorkspaceProps) {
+export default function Workspace(_props: PluginWorkspaceProps) {
   const { icon } = useIcons();
-  const [data, setData] = useState<StatsData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const themed = useModeIcon(manifest.mode, 'h-5 w-5');
+  const route = useRoute();
+  const stats = usePluginData<StatsData>('stats:/__stats/data', () =>
+    fetch('/__stats/data', { cache: 'no-store' }).then(r => r.json() as Promise<StatsData>), { subscribe: 'files' });
+  const detect = usePluginData<DetectData>('stats:/__detect', () =>
+    fetch('/__detect', { cache: 'no-store' }).then(r => r.json() as Promise<DetectData>));
 
-  useEffect(() => {
-    fetch('/__stats/data', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(setData)
-      .catch(e => setError(e.message));
-  }, []);
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center text-destructive">
-        <p>加载失败: {error}</p>
-      </div>
-    );
+  if (stats.error) {
+    return <div className="flex h-full items-center justify-center text-destructive"><p>加载失败: {stats.error}</p></div>;
   }
-
-  if (!data) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p>加载中…</p>
-      </div>
-    );
+  if (!stats.data) {
+    return <div className="flex h-full items-center justify-center text-muted-foreground"><p>加载中…</p></div>;
   }
+  const data = stats.data;
 
   const max = Math.max(...data.byExt.map(e => e.count), 1);
 
-  const cards = [
-    { label: '文件', value: data.files, icon: 'file-text', mode: null as string | null, filter: null as string | null },
-    { label: '目录', value: data.dirs, icon: 'folder-tree', mode: null as string | null, filter: null as string | null },
-    { label: '总大小', value: formatBytes(data.totalSize), mode: null as string | null, filter: null as string | null },
-    { label: 'Worktree', value: data.worktrees, icon: 'git-branch', mode: null as string | null, filter: null as string | null },
-    { label: '未提交', value: data.dirty ?? 0, icon: 'alert-circle', mode: null as string | null, filter: null as string | null },
+  /** drill 非空 → 卡片可钻取:navigate 到 view 并携带 card 来源 */
+  const cards: { label: string; value: string; iconName: IconKey | null; drill: string | null }[] = [
+    { label: '文件', value: String(data.files), iconName: 'file-text', drill: null },
+    { label: '目录', value: String(data.dirs), iconName: 'folder-tree', drill: null },
+    { label: '总大小', value: formatBytes(data.totalSize), iconName: null, drill: null },
+    { label: 'Worktree', value: String(data.worktrees), iconName: 'git-branch', drill: 'worktree' },
+    { label: '未提交', value: String(data.dirty ?? 0), iconName: null, drill: 'dirty' },
   ];
 
-  const handleCardClick = (mode: string | null, filter: string | null) => {
-    if (!mode) return;
-    window.dispatchEvent(new CustomEvent('zd-dashboard-nav', { detail: { mode, ...(filter ? { filter } : {}) } }));
-  };
+  const drillTo = (card: string) => route.navigate({ p: 'view', card });
 
   return (
-    <div className="mx-auto h-full max-w-6xl overflow-auto rounded-lg border bg-background p-6 shadow-sm">
-      <h1 className="text-lg font-semibold mb-1 flex items-center gap-2">{icon('bar-chart-3', 'h-5 w-5 text-primary')}项目统计</h1>
-      <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新 · 点击卡片跳转</p>
+    <PluginPage manifest={manifest} icon={themed} breadcrumb={['插件', manifest.mode]}>
+      <div className="mx-auto h-full max-w-6xl overflow-auto rounded-lg border bg-background p-6 shadow-sm">
+        <p className="text-xs text-muted-foreground mb-5">后端 fs 扫描 + 前端渲染 · 改文件即时刷新 · 点击卡片跳转</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
           {cards.map(card => (
             <button
               key={card.label}
               type="button"
-              onClick={() => handleCardClick(card.mode, card.filter)}
-              disabled={!card.mode}
-              title={card.mode ? `点击跳转至 ${card.label}` : undefined}
-              className={`rounded-lg border bg-background p-4 text-left transition-colors ${card.mode ? 'hover:bg-muted/70 cursor-pointer' : 'cursor-default opacity-80'}`}
+              onClick={() => card.drill && drillTo(card.drill)}
+              disabled={!card.drill}
+              title={card.drill ? `点击跳转至 ${card.label}` : undefined}
+              className={`rounded-lg border bg-background p-4 text-left transition-colors ${card.drill ? 'hover:bg-muted/70 cursor-pointer' : 'cursor-default opacity-80'}`}
             >
               <div className="flex items-center justify-between">
                 <div className="text-xl font-bold">{card.value}</div>
-                {card.icon && icon(card.icon as any, 'h-4 w-4 text-muted-foreground/50')}
+                {card.iconName && icon(card.iconName, 'h-4 w-4 text-muted-foreground/50')}
               </div>
               <div className="text-sm text-muted-foreground mt-1">{card.label}</div>
             </button>
@@ -101,8 +99,8 @@ export default function Workspace(_props: WorkspaceProps) {
         </div>
 
         <div className="mt-5 flex items-center gap-2 text-xs">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
-            justfile {data.hasJust ? '✓' : '✗'}
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${detect.data?.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
+            justfile {detect.data?.hasJust ? '✓' : '✗'}
           </span>
           {typeof data.dirty === 'number' && (
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.dirty ? 'text-warning border-warning/30 bg-warning/10' : 'text-success border-success/30 bg-success/10'}`}>
@@ -111,6 +109,7 @@ export default function Workspace(_props: WorkspaceProps) {
           )}
           <span className="text-muted-foreground">root: {data.root}</span>
         </div>
-    </div>
+      </div>
+    </PluginPage>
   );
 }
