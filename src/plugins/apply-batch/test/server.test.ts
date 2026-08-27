@@ -70,7 +70,7 @@ function reqWithRaw(raw: string, headers: Record<string, string> = { 'x-stop-tok
 }
 
 function makeRes() {
-  return { headersSent: false, statusCode: 0, headers: undefined as unknown, body: '' as unknown, writeHead(s: number, h?: unknown) { this.headersSent = true; this.statusCode = s; return this; }, end(b?: unknown) { this.body = b ?? ''; } } as import('node:http').ServerResponse & { body: unknown; statusCode: number };
+  return { headersSent: false, statusCode: 0, headers: undefined as unknown, body: '' as unknown, writeHead(s: number, h?: unknown) { this.headersSent = true; this.statusCode = s; return this; }, end(b?: unknown) { this.body = b ?? ''; } };
 }
 
 beforeEach(() => { vi.useFakeTimers(); });
@@ -158,7 +158,7 @@ describe('apply-batch 写路由错误形状(与迁移前一致:400 + {error})', 
     try {
       const { routes } = await setup(root);
       const res = makeRes();
-      routes.get(path)!(reqWithRaw('not-json{{'), res);
+      routes.get(path)!(reqWithRaw('not-json{{'), res as never);
       await vi.advanceTimersByTimeAsync(0);
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(String(res.body))).toHaveProperty('error');
@@ -173,7 +173,7 @@ describe('apply-batch 写路由错误形状(与迁移前一致:400 + {error})', 
     try {
       const { routes } = await setup(root);
       const res = makeRes();
-      routes.get('/__apply-batch/retry')!(reqWithBody({}, { 'x-stop-token': 'tok-123' }), res);
+      routes.get('/__apply-batch/retry')!(reqWithBody({}, { 'x-stop-token': 'tok-123' }), res as never);
       await vi.advanceTimersByTimeAsync(0);
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(String(res.body))).toEqual({ error: 'missing name' });
@@ -187,7 +187,7 @@ describe('apply-batch 写路由错误形状(与迁移前一致:400 + {error})', 
     try {
       const { routes } = await setup(root);
       const res = makeRes();
-      routes.get('/__apply-batch/retry')!(reqWithBody({ name: 'ghost' }, { 'x-stop-token': 'tok-123' }), res);
+      routes.get('/__apply-batch/retry')!(reqWithBody({ name: 'ghost' }, { 'x-stop-token': 'tok-123' }), res as never);
       await vi.advanceTimersByTimeAsync(0);
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(String(res.body))).toEqual({ error: 'change not found' });

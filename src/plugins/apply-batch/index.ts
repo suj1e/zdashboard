@@ -15,7 +15,8 @@ import { manifest } from './manifest.js';
 export const APPLY_BATCH_BROADCAST_THROTTLE_MS = 500;
 
 type BatchWriteBody = {
-  status?: BatchState['status'];
+  /** 迁移前自 JSON.parse(any) 无校验透传 updateStatus,undefined 亦原样赋值,类型上保持必填以对齐 */
+  status: BatchState['status'];
   parallelism?: number;
   skipChanges?: string[];
   name?: string;
