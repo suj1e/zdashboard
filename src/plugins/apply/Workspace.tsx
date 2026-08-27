@@ -42,6 +42,21 @@ function DependencyChip({ name, pending }: { name: string; pending: boolean }) {
   return <Badge variant={variant}>{pending ? `${name} · 等待前置` : name}</Badge>;
 }
 
+/** proposal.md / design.md 共用的 Markdown 文档区块 */
+function MarkdownDoc({ label, content }: { label: string; content: string }) {
+  const { icon } = useIcons();
+  return (
+    <div>
+      <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+        {icon('file-text', 'h-3 w-3')} {label}
+      </h4>
+      <div className="prose dark:prose-invert max-w-none text-xs border rounded-lg p-3 bg-card">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      </div>
+    </div>
+  );
+}
+
 function TaskList({ tasks }: { tasks: string }) {
   const items = parseTasks(tasks);
   if (!items.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
@@ -178,26 +193,8 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
                   </div>
                 )}
 
-                {selected.proposal && (
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                      {icon('file-text', 'h-3 w-3')} proposal.md
-                    </h4>
-                    <div className="prose dark:prose-invert max-w-none text-xs border rounded-lg p-3 bg-card">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{selected.proposal}</ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-                {selected.design && (
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                      {icon('file-text', 'h-3 w-3')} design.md
-                    </h4>
-                    <div className="prose dark:prose-invert max-w-none text-xs border rounded-lg p-3 bg-card">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{selected.design}</ReactMarkdown>
-                    </div>
-                  </div>
-                )}
+                {selected.proposal && <MarkdownDoc label="proposal.md" content={selected.proposal} />}
+                {selected.design && <MarkdownDoc label="design.md" content={selected.design} />}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                     {icon('file-text', 'h-3 w-3')} tasks.md

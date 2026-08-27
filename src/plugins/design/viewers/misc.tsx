@@ -1,9 +1,10 @@
 /** design 资产查看器:媒体/字体/未支持(自 foundation Workspace 拆出的杂项) */
 import { useEffect, useState } from 'react';
-import { MdViewer } from '../../../web/viewers/MdViewer.js';
-import { ImageViewer } from '../../../web/viewers/ImageViewer.js';
-import { CodeViewer } from '../../../web/viewers/CodeViewer.js';
 import { useIcons } from '../../../web/lib/icons.js';
+
+export { MdViewer } from '../../../web/viewers/MdViewer.js';
+export { ImageViewer } from '../../../web/viewers/ImageViewer.js';
+export { CodeViewer } from '../../../web/viewers/CodeViewer.js';
 
 export function VideoViewer({ path }: { path: string }) {
   return <div className="grid place-items-center p-8"><video src={'/' + encodeURI(path)} controls className="max-w-full max-h-[80vh] rounded border" /></div>;
@@ -55,5 +56,3 @@ export function UnsupportedViewer({ path }: { path: string }) {
     <div>{icon('image-off', 'h-10 w-10 mx-auto mb-3 opacity-50')}<p>该格式无法预览</p><p className="mt-1 font-mono text-xs break-all">{path}</p></div>
   </div>;
 }
-
-export { MdViewer, ImageViewer, CodeViewer };

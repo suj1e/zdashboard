@@ -19,8 +19,17 @@ const CheckpointViewer = lazy(() => import('./viewers/CheckpointViewer.js'));
 const VIEWS = ['graph', 'approval', 'checkpoint'] as const;
 type ViewKey = (typeof VIEWS)[number];
 
+const VIEW_LABEL: Record<ViewKey, string> = { graph: '依赖图', approval: '确认', checkpoint: '进度' };
+
 function asView(v: string | null): ViewKey {
   return (VIEWS as readonly string[]).includes(v ?? '') ? (v as ViewKey) : 'graph';
+}
+
+/** 日志级别着色(与迁前一致:error/warn 高亮,其余弱化) */
+function logLevelClass(level: BatchLog['level']): string {
+  if (level === 'error') return 'text-destructive';
+  if (level === 'warn') return 'text-warning';
+  return 'text-muted-foreground';
 }
 
 export default function Workspace(_props: PluginWorkspaceProps) {
@@ -93,7 +102,7 @@ export default function Workspace(_props: PluginWorkspaceProps) {
               onClick={() => setView(v)}
               className={`px-3 py-1.5 text-sm rounded-md ${view === v ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-accent'}`}
             >
-              {v === 'graph' ? '依赖图' : v === 'approval' ? '确认' : '进度'}
+              {VIEW_LABEL[v]}
             </button>
           ))}
         </>
@@ -162,7 +171,7 @@ export default function Workspace(_props: PluginWorkspaceProps) {
         <footer className="border-t border-border px-6 py-2 max-h-32 overflow-y-auto">
           <div className="text-xs font-mono space-y-1">
             {state.logs.slice(-20).reverse().map((log: BatchLog, i: number) => (
-              <div key={i} className={`${log.level === 'error' ? 'text-destructive' : log.level === 'warn' ? 'text-warning' : 'text-muted-foreground'}`}>
+              <div key={i} className={logLevelClass(log.level)}>
                 <span className="text-muted-foreground/60">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
                 {log.changeName && <span className="text-info ml-2">[{log.changeName}]</span>}
                 <span className="ml-2">{log.message}</span>

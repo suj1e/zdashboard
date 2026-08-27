@@ -8,6 +8,7 @@
  * start/restart/stop/clear 走 guardedRoute(x-stop-token);
  * /__just/tasks 为活跃任务侧栏新增只读路由。
  */
+import type http from 'node:http';
 import { JustRunner } from '../../server/just-runner.js';
 import { readBody } from '../../core/read-body.js';
 import { defineBuiltin } from '../builtin.js';
@@ -40,7 +41,7 @@ export const apply = defineBuiltin({
     });
 
     /** start/restart 须带合法 recipe(同名 start 即重启);stop 可带单个 recipe 或省略(停全部);clear 清日志 */
-    const handleAction = async (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, act: 'start' | 'stop' | 'restart' | 'clear') => {
+    const handleAction = async (req: http.IncomingMessage, res: http.ServerResponse, act: 'start' | 'stop' | 'restart' | 'clear') => {
       const body = await readBody(req);
       let recipe: string | undefined;
       try { recipe = JSON.parse(body || '{}').recipe; } catch { /* ignore */ }

@@ -137,14 +137,10 @@ export default function Sidebar() {
     setDraft(prev => ({ ...prev, [key]: value }));
   };
 
-  const loadTrees = async () => {
-    setDraft({});
-    trees.reload();
-  };
-
   const commitSave = async () => {
     await save({ ...config, ...draft });
-    await loadTrees();
+    setDraft({});
+    trees.reload();
   };
 
   const setFilter = (v: string) => {

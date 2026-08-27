@@ -6,6 +6,11 @@ interface TokenSection {
   items: { name: string; value: string }[];
 }
 
+/** 值呈颜色字面量(#/rgb/hsl/oklch/…,渲染分区判定用) */
+const LOOKS_COLOR_VALUE = /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i;
+/** 变量名呈字体语义(font/family/type) */
+const FONT_NAME = /font|family|type/i;
+
 export default function TokenViewer({ path }: { path: string }) {
   const [sections, setSections] = useState<TokenSection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +33,11 @@ export default function TokenViewer({ path }: { path: string }) {
         };
         // 分类基于「值」而非整条声明(修正:名称含 -- 前缀,按整串判定会使配色区永不命中)
         const isColorValue = (v: string) => /^(#([0-9a-fA-F]{3,8})\b|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(v);
+        const isFontName = (name: string) => FONT_NAME.test(name);
         const parsed = vars.map(parseVal);
         const colors = parsed.filter(p => isColorValue(p.value));
-        const fonts  = parsed.filter(p => !isColorValue(p.value) && /font|family|type/.test(p.name.toLowerCase()));
-        const rest   = parsed.filter(p => !colors.includes(p) && !fonts.includes(p));
+        const fonts  = parsed.filter(p => !isColorValue(p.value) && isFontName(p.name));
+        const rest   = parsed.filter(p => !isColorValue(p.value) && !isFontName(p.name));
         const result: TokenSection[] = [];
         if (colors.length) result.push({ label: `配色 · ${colors.length}`, items: colors });
         if (fonts.length)  result.push({ label: `字体 · ${fonts.length}`,  items: fonts });
@@ -49,14 +55,14 @@ export default function TokenViewer({ path }: { path: string }) {
   return (
     <div className="p-8 flex flex-col gap-7">
       {sections.map(sec => {
-        const hasColorItems = sec.items.some(it => /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(it.value));
-        const hasFontItems  = sec.items.some(it => /font|family|type/i.test(it.name));
+        const hasColorItems = sec.items.some(it => LOOKS_COLOR_VALUE.test(it.value));
+        const hasFontItems  = sec.items.some(it => FONT_NAME.test(it.name));
         return (
           <section key={sec.label}>
             <div className="mb-3 text-sm font-semibold uppercase text-muted-foreground">{sec.label}</div>
             {hasColorItems ? (
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(var(--token-card-min-w), 1fr))' }}>
-                {sec.items.filter(it => /^(#|rgb|rgba|hsl|hsla|oklch|oklab|color\()/i.test(it.value)).map(({ name, value }) => (
+                {sec.items.filter(it => LOOKS_COLOR_VALUE.test(it.value)).map(({ name, value }) => (
                   <div key={name} className="overflow-hidden rounded-lg border bg-background">
                     <div className="h-[var(--design-preview-h)] border-b" style={{ background: value }} />
                     <div className="px-2.5 pt-2 font-mono text-sm break-all">{name}</div>

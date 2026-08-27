@@ -65,11 +65,7 @@ export default function Sidebar() {
 
   return (
     <div>
-      <div className="p-3 flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="text-xs text-muted-foreground truncate">设计资产</div>
-        </div>
-      </div>
+      <div className="p-3 text-xs text-muted-foreground truncate">设计资产</div>
       {groups.map(g => (
         <GroupSection
           key={g.key}
