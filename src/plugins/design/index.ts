@@ -37,7 +37,9 @@ export const apply = {
         const folders = Array.isArray(designConfig?.folders) ? designConfig.folders : [];
 
         if (folders.length === 0) {
-          res.end(JSON.stringify(scanAssets(root)));
+          // 契约默认目录:zdesign 等 skill 统一产出到 <root>/.zdev/design/(walkDir 跳过点目录,扫根看不见)
+          const designRoot = path.join(root, '.zdev', 'design');
+          res.end(JSON.stringify(fs.existsSync(designRoot) ? scanAssets(designRoot) : scanAssets(root)));
           return;
         }
 
