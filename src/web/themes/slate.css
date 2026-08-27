@@ -8,8 +8,8 @@
 
 /* Slate light mode */
 [data-theme="slate"] {
-  --terminal-bg: 15 23 42;
-  --terminal-fg: 241 245 249;
+  --terminal-bg: 222 47% 11%;
+  --terminal-fg: 210 40% 96%;
 
   --success: 142 76% 36%;
   --success-foreground: 0 0% 100%;
@@ -65,8 +65,8 @@
 
 /* Slate dark mode */
 [data-theme="slate"][data-mode="dark"] {
-  --terminal-bg: 2 6 23;
-  --terminal-fg: 248 250 252;
+  --terminal-bg: 222 84% 5%;
+  --terminal-fg: 210 40% 98%;
 
   --success: 134 61% 64%;
   --success-foreground: 0 0% 100%;

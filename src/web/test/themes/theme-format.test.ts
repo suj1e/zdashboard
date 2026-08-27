@@ -10,8 +10,8 @@ const projectRoot = process.cwd();
 // 防止再写入 RGB 十进制三元组(见 openspec/changes/fix-slate-dark-and-mode-toggle/design.md 测试策略)。
 const HSL_TRIPLET = /^\d{1,3} \d{1,3}(\.\d+)?% \d{1,3}(\.\d+)?%$/;
 
-// 白名单:虽被 tailwind 经 hsl() 消费、但约定保持 RGB 三元组的终端色(design.md 边界,不动)
-const RGB_CONSUMED_VARS = new Set(['terminal-bg', 'terminal-fg']);
+// terminal 系实测亦经 tailwind.config.ts hsl(var(--terminal-bg/fg)) 消费,
+// 实施期修订(T5)一并纳入 HSL 守卫,不再豁免(design.md 修订版)。
 
 // 从 tailwind.config.ts 提取 hsl(var(--x)) 消费的颜色变量名,保证守卫集合与实际消费同步
 const tailwindConfigPath = path.join(projectRoot, 'tailwind.config.ts');
@@ -33,7 +33,7 @@ describe('theme css format guard', () => {
     it(`${file}: every hsl()-consumed color var is an HSL triplet`, () => {
       const css = readFileSync(path.join(themesDir, file), 'utf8');
       const colorDecls = [...css.matchAll(/--([a-z-]+):\s*([^;]+);/g)]
-        .filter(([, name]) => hslColorVars.has(name) && !RGB_CONSUMED_VARS.has(name));
+        .filter(([, name]) => hslColorVars.has(name));
       // 防止选择器/过滤条件失效导致空跑
       expect(colorDecls.length).toBeGreaterThan(0);
 

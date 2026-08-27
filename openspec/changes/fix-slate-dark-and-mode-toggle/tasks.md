@@ -10,3 +10,6 @@
 - [x] T4 收尾:主题格式守卫测试纳入套件;`pnpm test` + `pnpm typecheck` + `pnpm build` 全绿;手工冒烟三主题 × 明暗
   - 测试验收:全绿 + 冒烟通过
   - 结果:test 36 文件 224/224(基线 217 + 新增 7),typecheck 零错,build 通过;冒烟:slate×明暗背景冷灰蓝无棕橙(slate-50/slate-900 computed 值正确),真实按钮连点 10 次严格交替、偶数次回初态、localStorage 同步,default/pixel 回归不受影响
+- [x] T5 (实施期追加)terminal 令牌转 HSL:实际经 tailwind.config.ts `hsl(var(--terminal-bg/fg))` 消费,RGB 三元组被 hsl() 语义渲染成暗棕——globals.css/slate.css 全部 terminal 值转 HSL 三元组;守卫测试取消 terminal 白名单纳入守卫
+  - 测试验收:取消白名单瞬间守卫红(slate 4 个 RGB terminal 声明)→ 转换后绿;终端区背景为正确深色
+  - pixel.css audit 结论:无 `--terminal-bg/fg` 声明(default terminal token 落在 globals.css,已转),无同类问题,零改动
