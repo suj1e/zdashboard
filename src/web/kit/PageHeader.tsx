@@ -21,9 +21,9 @@ export function PageHeader({ icon, title, breadcrumb, status, actions }: {
       )}
       <div className="min-w-0 flex-1">
         <h2 className="text-lg font-bold tracking-tight text-foreground truncate">{title}</h2>
-        {(breadcrumb?.length ?? 0) > 0 && (
+        {breadcrumb && breadcrumb.length > 0 && (
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {breadcrumb!.join(' / ')}
+            {breadcrumb.join(' / ')}
           </p>
         )}
       </div>

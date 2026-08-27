@@ -3,14 +3,22 @@ import { Topbar } from './components/Topbar';
 import { IconRail } from './layout/IconRail';
 import { SidebarFrame } from './layout/SidebarFrame';
 import { StatusBar } from './layout/StatusBar';
-import { HomeGrid } from './home/HomeGrid';
+import { HomeGrid, type Detects } from './home/HomeGrid';
 import { usePlugins } from './lib/plugins';
 import { useRoute } from './router';
 import { useSSE } from './hooks/useSSE';
 import { useModeIcon } from './lib/icons';
 import { PluginPage, Skeleton } from './kit';
 
-interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
+/** 一次性拉取 JSON;失败返回 null,由调用方保持默认状态 */
+async function fetchJson<T>(url: string): Promise<T | null> {
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
   const plugins = usePlugins();
@@ -28,37 +36,25 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch('/__config', { cache: 'no-store' });
-        const cfg = await r.json();
-        if (cancelled) return;
-        setProjectPath(cfg.root ?? '');
-      } catch {
-        // ignore
-      }
-    })();
+    void fetchJson<{ root?: string }>('/__config').then((cfg) => {
+      if (!cancelled && cfg) setProjectPath(cfg.root ?? '');
+    });
     return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch('/__detect', { cache: 'no-store' });
-        const data = await r.json();
-        if (!cancelled) setDetect({ hasOpenspec: !!data.hasOpenspec, hasDocs: !!data.hasDocs, hasJust: !!data.hasJust });
-      } catch {
-        // ignore
-      }
-    })();
+    void fetchJson<Detects>('/__detect').then((data) => {
+      if (!cancelled && data) setDetect({ hasOpenspec: !!data.hasOpenspec, hasDocs: !!data.hasDocs, hasJust: !!data.hasJust });
+    });
     return () => { cancelled = true; };
   }, []);
 
   // 非法 ?p=xxx(注册表中不存在)回落首页;插件列表加载完成前先尊重 URL 值避免闪烁
-  const known = plugins.length === 0 || !requestedMode
-    ? requestedMode
-    : (plugins.some((p) => p.mode === requestedMode) ? requestedMode : null);
+  const known =
+    requestedMode && plugins.length > 0 && !plugins.some((p) => p.mode === requestedMode)
+      ? null
+      : requestedMode;
   const plugin = known ? plugins.find((p) => p.mode === known)! : null;
 
   // 唯一导航出口:URL params(p 键增删即进/出插件)

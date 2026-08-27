@@ -25,11 +25,6 @@ export interface PlatformWebPlugin {
  * @param def.manifest 与 server definePlugin import 的同一份常量(SSOT)
  * @param def.workspace 必须为 lazy(() => import(...)),否则类型不通过
  */
-export function defineWebPlugin(def: {
-  manifest: PluginManifest;
-  workspace: React.LazyExoticComponent<React.ComponentType<PluginWorkspaceProps>>;
-  sidebar?: React.LazyExoticComponent<React.ComponentType<Record<string, unknown>>>;
-  params?: ParamSchema;
-}): PlatformWebPlugin {
+export function defineWebPlugin(def: PlatformWebPlugin): PlatformWebPlugin {
   return { manifest: def.manifest, workspace: def.workspace, sidebar: def.sidebar, params: def.params };
 }

@@ -123,13 +123,12 @@ export function usePlugins() {
         const r = await fetch('/__plugins', { cache: 'no-store' });
         const data = await r.json();
         if (!cancelled) {
+          // 外部插件工作区统一壳:有 viewerUrl 走 iframe,缺省落占位页
           const mapped = (data.plugins ?? []).map((p: any) => {
-            if (p.viewerUrl) {
-              const Wrapper = () => React.createElement(ExternalWorkspace, { viewerUrl: p.viewerUrl, label: p.label });
-              return { ...p, Workspace: Wrapper, legacy: true } as WebPlugin;
-            }
-            const Placeholder = () => React.createElement(PlaceholderWorkspace, { label: p.label });
-            return { ...p, Workspace: Placeholder, legacy: true } as WebPlugin;
+            const Workspace = p.viewerUrl
+              ? () => React.createElement(ExternalWorkspace, { viewerUrl: p.viewerUrl, label: p.label })
+              : () => React.createElement(PlaceholderWorkspace, { label: p.label });
+            return { ...p, Workspace, legacy: true } as WebPlugin;
           });
           setExternal(mapped.filter((p: WebPlugin) => !plugins.some((b) => b.mode === p.mode)));
         }

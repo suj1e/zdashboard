@@ -165,16 +165,15 @@ async function main() {
   ctx.plugin(worktreesApply, { root });
   ctx.plugin(DashboardService);
 
-  // built-in plugins:统一 BUILTIN_PLUGINS.map 注册(未来迁移为 definePlugin 产出后无需改动此处)
+  // built-in plugins:统一数组注册(未来迁移为 definePlugin 产出后无需改动此处)
   const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, applyBatchApply, designApply, viewApply];
-  BUILTIN_PLUGINS.map((p) => {
+  for (const apply of BUILTIN_PLUGINS) {
     try {
-      return ctx.plugin(p, { root });
+      ctx.plugin(apply, { root });
     } catch (e) {
       console.error('[zdashboard] builtin plugin failed:', e);
-      return null;
     }
-  });
+  }
 
   // external plugins
   if (args.plugins) {

@@ -80,11 +80,10 @@ export function definePlugin(def: {
         config<T extends Record<string, unknown> = Record<string, unknown>>(): T {
           const schema = manifest.config ?? {};
           const stored = ctx.server.getPluginConfig(manifest.mode) ?? {};
-          const merged: Record<string, unknown> = {};
-          for (const [key, field] of Object.entries(schema)) {
-            merged[key] = key in stored ? stored[key] : field.default;
-          }
-          return { ...merged, ...stored } as T;
+          const defaults = Object.fromEntries(
+            Object.entries(schema).map(([key, field]) => [key, field.default]),
+          );
+          return { ...defaults, ...stored } as T;
         },
         route(path: string, handler: RouteHandler): void {
           ctx.server.route(path, respondWith(handler));

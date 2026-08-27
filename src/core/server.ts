@@ -110,8 +110,7 @@ export class ServerService extends Service {
 
     this.refreshGitInfo();
     this.route('/__config', (_req, res) => {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(JSON.stringify({ stopToken: this.stopToken, version: VERSION, root: this.root, ...this.gitInfo }));
+      json(res, { stopToken: this.stopToken, version: VERSION, root: this.root, ...this.gitInfo });
     });
 
     // 独立探测接口(轻量,替代 HomeGrid 借道 /__files 全量树)
@@ -149,13 +148,8 @@ export class ServerService extends Service {
     });
 
     this.route('/__stop', async (req, res) => {
-      if (req.headers['x-stop-token'] !== this.stopToken) {
-        res.writeHead(403);
-        res.end('forbidden');
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end('{"ok":true}');
+      if (!guarded(req, res, this.stopToken)) return;
+      json(res, { ok: true });
       this.stop();
     });
 

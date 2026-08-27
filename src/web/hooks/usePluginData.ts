@@ -94,7 +94,7 @@ export function usePluginData<T>(
         if (inflight.get(key) === p) inflight.delete(key);
       });
     }
-    setState((s) => ({ ...s, loading: s.loading || force ? true : s.loading, error: null }));
+    setState((s) => ({ ...s, loading: s.loading || force, error: null }));
     void p.then(
       (v) => setState({ data: v as T, error: null, loading: false }),
       (e) => setState({ data: null, error: errorMessage(e), loading: false }),

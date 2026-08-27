@@ -5,7 +5,8 @@ import { useModeIcon } from '../lib/icons.js';
 /** 卡片所需的最小结构(props 面收窄) */
 export type HomeCardItem = Pick<WebPlugin, 'mode' | 'label' | 'icon'> & Partial<Pick<WebPlugin, 'description' | 'external'>>;
 
-interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
+/** 首页探测位(openspec/docs/just) */
+export interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
 
 const DETECT_ITEMS: { key: keyof Detects; label: string }[] = [
   { key: 'hasOpenspec', label: 'openspec' },
