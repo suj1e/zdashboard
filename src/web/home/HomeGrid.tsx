@@ -1,5 +1,9 @@
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import type { WebPlugin } from '../lib/plugins';
+import { useModeIcon } from '../lib/icons.js';
+
+/** 卡片所需的最小结构(props 面收窄) */
+export type HomeCardItem = Pick<WebPlugin, 'mode' | 'label' | 'icon'> & Partial<Pick<WebPlugin, 'description' | 'external'>>;
 
 interface Detects { hasOpenspec: boolean; hasDocs: boolean; hasJust: boolean }
 
@@ -10,32 +14,13 @@ const DETECT_ITEMS: { key: keyof Detects; label: string }[] = [
 ];
 
 export function HomeGrid({ plugins, detect, onSelect }: {
-  plugins: WebPlugin[]; detect: Detects; onSelect: (mode: string) => void;
+  plugins: HomeCardItem[]; detect: Detects; onSelect: (mode: string) => void;
 }) {
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {plugins.map((p) => (
-          <button
-            key={p.mode}
-            onClick={() => onSelect(p.mode)}
-            className="text-left group rounded-[var(--radius-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-muted-foreground/30">
-              <CardHeader>
-                <div className="flex items-center gap-2.5">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-lg leading-none group-hover:bg-primary/10 transition-colors">{p.icon}</span>
-                  <div className="min-w-0">
-                    <CardTitle className="text-sm flex items-center gap-1.5">
-                      <span className="truncate">{p.label}</span>
-                      {p.external && <span className="flex-none text-xs px-1.5 py-0.5 rounded-[var(--radius-full)] bg-muted text-muted-foreground border">外部</span>}
-                    </CardTitle>
-                    <CardDescription className="truncate">{p.description ?? p.mode}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          </button>
+          <GridCard key={p.mode} plugin={p} onSelect={onSelect} />
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -48,5 +33,32 @@ export function HomeGrid({ plugins, detect, onSelect }: {
         ))}
       </div>
     </div>
+  );
+}
+
+function GridCard({ plugin, onSelect }: { plugin: HomeCardItem; onSelect: (mode: string) => void }) {
+  const themed = useModeIcon(plugin.mode, 'h-[18px] w-[18px]');
+  return (
+    <button
+      onClick={() => onSelect(plugin.mode)}
+      className="text-left group rounded-[var(--radius-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-muted-foreground/30">
+        <CardHeader>
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted leading-none group-hover:bg-primary/10 transition-colors">
+              {themed ?? plugin.icon}
+            </span>
+            <div className="min-w-0">
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <span className="truncate">{plugin.label}</span>
+                {plugin.external && <span className="flex-none text-xs px-1.5 py-0.5 rounded-[var(--radius-full)] bg-muted text-muted-foreground border">外部</span>}
+              </CardTitle>
+              <CardDescription className="truncate">{plugin.description ?? plugin.mode}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    </button>
   );
 }

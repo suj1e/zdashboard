@@ -9,7 +9,7 @@ const STORAGE_PREFIX = 'zd-sidebar-';
  * 移动端 fixed 抽屉 + 遮罩。单实例面板，桌面/移动仅切换定位方式。
  * 无侧栏内容的插件（hasContent=false）整体动画收起——容器常驻保证宽度始终可过渡。
  */
-export function SidebarFrame({ mode, hasContent = true, children, className }: { mode: string; hasContent?: boolean; children: ReactNode; className?: string }) {
+export function SidebarFrame({ mode, hasContent = true, children }: { mode: string; hasContent?: boolean; children: ReactNode }) {
   const { icon } = useIcons();
   const [open, setOpen] = useLocalStorage(`${STORAGE_PREFIX}${mode}`, true);
   const [hovered, setHovered] = useState(false);
@@ -19,7 +19,7 @@ export function SidebarFrame({ mode, hasContent = true, children, className }: {
   const show = hasContent && (open || hovered);
 
   return (
-    <div className={`relative flex-none ${className ?? ''}`}>
+    <div className="relative flex-none">
       {/* 面板：<sm 为 fixed 抽屉(show 控制 translate)；sm+ 始终 in-flow——折叠是纯宽度过渡(w-280→w-0)，
           不切换布局模式才能动画连续；仅 hover 临时展开用 absolute overlay 浮出(不推挤内容区) */}
       <div

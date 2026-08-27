@@ -10,7 +10,7 @@
   - 测试验收:vitest navigate merge/null 删键/replace/popstate/重定向;手测 ?p=view 直开、刷新保持、后退回首页、旧 #view 链接跳转正常
 - [x] T4 kit 组件库 + PluginPage:PageHeader/Toolbar/SectionCard/EmptyState/ErrorState/Skeleton/Chip/IconButton/DataList/KeyValue + PluginPage + AsyncBoundary;全接现有 CSS 变量 token
   - 测试验收:vitest 三态边界渲染分支 + PageHeader/Toolbar/EmptyState 快照;三主题×明暗肉眼走查无样式破相
-- [ ] T5 数据层:usePluginData(缓存/去重/subscribe 失效);ReloadService broadcastPlugin → `plugin:<mode>:<event>`;新增 `/__detect` 路由;HomeGrid 探测切 /__detect
+- [x] T5 数据层:usePluginData(缓存/去重/subscribe 失效);ReloadService broadcastPlugin → `plugin:<mode>:<event>`;新增 `/__detect` 路由;HomeGrid 探测切 /__detect
   - 测试验收:vitest 缓存/去重/事件失效/error 态;curl /__detect 返回四探测位;just start/stop 触发 SSE 事件可在 DevTools EventSource 看到 plugin:just:*
 - [ ] T6 壳层接线:IconRail/HomeGrid 图标切 useIcons(mode→icon 映射);SidebarFrame props 收窄;App 挂 PluginPage 骨架(旧插件内容暂以兼容分支渲染)
   - 测试验收:六旧插件页面打开无 console error;图标非 emoji;首页卡片排序与外部插件「外部」徽标正常

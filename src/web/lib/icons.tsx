@@ -74,9 +74,19 @@ type GenericKey =
   | 'bar-chart-3' | 'folder-tree' | 'git-pull-request'
   | 'chevron-left' | 'file-question'
   | 'chevron-right' | 'blocks' | 'type' | 'eye'
-  | 'file-text' | 'settings';
+  | 'file-text' | 'settings' | 'terminal';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
+
+/** 平台维护的 mode→icon 映射(manifest.icon 仅作未命中 fallback) */
+export const MODE_ICON_MAP: Record<string, IconKey> = {
+  stats: 'bar-chart-3',
+  view: 'folder-tree',
+  design: 'palette',
+  apply: 'clipboard-check',
+  'apply-batch': 'blocks',
+  just: 'terminal',
+};
 
 // ---------------------------------------------------------------------------
 // 语义映射（只定义一次）
@@ -162,6 +172,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   'eye': 'Eye',
   'file-text': 'FileText',
   'settings': 'Settings',
+  'terminal': 'Terminal',
 };
 
 // ---------------------------------------------------------------------------
@@ -251,4 +262,12 @@ export function useIcons() {
       return defaultRenderer(name, className);
     },
   };
+}
+
+/** mode→图标主题节点;未注册映射返回 null(调用方以 manifest.icon 字面值兜底) */
+export function useModeIcon(mode: string, className = 'h-4 w-4'): React.ReactNode {
+  const { icon } = useIcons();
+  const key = MODE_ICON_MAP[mode];
+  if (!key) return null;
+  return icon(key, className);
 }
