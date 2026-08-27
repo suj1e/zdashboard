@@ -5,6 +5,7 @@ import { FilterPills, type FilterItem } from './FilterPills.js';
 import { toast } from 'sonner';
 import { intervalToDuration } from 'date-fns';
 import { useIcons } from '../lib/icons.js';
+import { usePluginData } from '../hooks/usePluginData.js';
 
 interface Recipe { name: string; description: string; }
 type TaskStatus = 'running' | 'exited';
@@ -13,6 +14,12 @@ type Ev =
   | { type: 'log'; recipe: string; text: string }
   | { type: 'clear'; recipe: string }
   | { type: 'state'; recipe: string; state: TaskStatus; code: number | null; startedAt?: number; signal?: string };
+
+interface LogViewerProps {
+  /** 受控选中 recipe(URL 驱动);缺省时组件内部自治(兼容独立使用) */
+  selected?: string | null;
+  onSelect?: (recipe: string | null) => void;
+}
 
 /** 无 ANSI 色码的行按日志级别着色(maven/构建工具在非 tty 下不输出颜色,前端补齐) */
 function levelClass(t: string) {
@@ -33,11 +40,19 @@ function fmtElapsed(ms: number) {
   return `${h}h${m}m`;
 }
 
-export function LogViewer() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) {
+  const controlled = typeof onSelect === 'function';
+  const [internalSelected, setInternalSelected] = useState<string | null>(null);
+  const selected = controlled ? selectedProp ?? null : internalSelected;
+  const setSelected = (r: string | null) => {
+    if (controlled) onSelect(r);
+    else setInternalSelected(r);
+  };
+  const recipes = usePluginData<Recipe[]>('just:/__just/recipes', () =>
+    fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'plugin:just:state' });
+  const recipeList = recipes.data ?? [];
   const [tasks, setTasks] = useState<Record<string, TaskState>>({});
   const [logs, setLogs] = useState<Record<string, string[]>>({});
-  const [selected, setSelected] = useState<string | null>(null);
   const tokenRef = useRef('');
   const [, forceTick] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,7 +60,6 @@ export function LogViewer() {
   const { icon } = useIcons();
 
   useEffect(() => {
-    fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()).then(setRecipes).catch(() => setRecipes([]));
     fetch('/__config').then(r => r.json()).then(c => { tokenRef.current = c.stopToken ?? ''; }).catch(() => {});
     const es = new EventSource('/__just/logs');
     let firstOpen = true;
@@ -70,7 +84,8 @@ export function LogViewer() {
             ...prev,
             [ev.recipe]: { state: ev.state, code: ev.code, signal: ev.signal, startedAt: ev.startedAt ?? prev[ev.recipe]?.startedAt ?? Date.now() },
           }));
-          if (ev.state === 'running') setSelected(ev.recipe); // 新任务自动聚焦
+          // 新任务自动聚焦:仅非受控模式(URL 驱动时不擅自改 URL)
+          if (ev.state === 'running' && !controlled) setSelected(ev.recipe);
         }
       } catch { /* ignore */ }
     };
@@ -92,7 +107,7 @@ export function LogViewer() {
   };
 
   // selected=null → 总控台视图;string → 聚焦该任务
-  const rows = recipes.map(r => ({ ...r, task: tasks[r.name] }));
+  const rows = recipeList.map(r => ({ ...r, task: tasks[r.name] }));
   const runningCount = rows.filter(r => r.task?.state === 'running').length;
   const selTask = selected ? tasks[selected] : undefined;
   const selRunning = selTask?.state === 'running';
@@ -115,7 +130,7 @@ export function LogViewer() {
     ),
   };
 
-  const recipeItems: FilterItem[] = recipes.map(r => {
+  const recipeItems: FilterItem[] = recipeList.map(r => {
     const t = tasks[r.name];
     const running = t?.state === 'running';
     const exited = t?.state === 'exited';

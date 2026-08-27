@@ -1,14 +1,11 @@
+/** just web 侧:defineWebPlugin(manifest 单源),SDK lazy 分包 */
 import { lazy } from 'react';
-import JustWorkspace from './Workspace.js';
+import { defineWebPlugin } from '../../sdk/client.js';
+import { manifest, params } from './manifest.js';
 
-const plugin = {
-  mode: 'just',
-  label: 'Just Runner',
-  icon: '📜',
-  description: 'Just 任务日志与执行',
-  order: 50,
-  Workspace: lazy(() => import('./Workspace.js')),
-} as const;
-
-export default plugin;
-export { JustWorkspace };
+export default defineWebPlugin({
+  manifest,
+  params,
+  workspace: lazy(() => import('./Workspace.js')),
+  sidebar: lazy(() => import('./Sidebar.js')),
+});
