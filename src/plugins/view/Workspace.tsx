@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+/**
+ * view 工作区:左预览右 OutlineNav,文件由 URL ?file= 驱动(深链接直达)。
+ * 面包屑 PageHeader 携带 worktree/路径;空态走 kit EmptyState。
+ */
+import { useRef } from 'react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
-import { viewState } from './state.js';
 import OutlineNav from './OutlineNav.js';
-import { EmptyState } from '../../web/components/EmptyState.js';
-import { useIcons } from '../../web/lib/icons.js';
+import { EmptyState, PluginPage } from '../../web/kit/index.js';
+import { useIcons, useModeIcon } from '../../web/lib/icons.js';
+import type { PluginWorkspaceProps } from '../../sdk/client.js';
+import { manifest } from './manifest.js';
 
 function viewerFor(path: string) {
   const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
@@ -18,30 +23,32 @@ function viewerFor(path: string) {
   return UnsupportedViewer;
 }
 
-interface WorkspaceProps {
-  navTarget?: { wt?: string; filter?: string };
-}
-
-export default function Workspace(_props: WorkspaceProps) {
+export default function Workspace({ params }: PluginWorkspaceProps) {
   const { icon } = useIcons();
-  const [current, setCurrent] = useState<string | null>(() => viewState.get());
+  const themed = useModeIcon(manifest.mode, 'h-5 w-5');
+  const file = params.get('file');
+  const wt = params.get('wt');
   const contentRef = useRef<HTMLDivElement>(null);
-  const Viewer = current ? viewerFor(current) : null;
-
-  useEffect(() => viewState.subscribe(setCurrent), []);
+  const Viewer = file ? viewerFor(file) : null;
 
   return (
-    <div className="mx-auto h-full max-w-5xl bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
-      {current && Viewer ? (
-        <div className="flex-1 min-h-0 flex overflow-hidden">
-          <div ref={contentRef} className="flex-1 min-h-0 overflow-auto">
-            <Viewer path={current} />
+    <PluginPage
+      manifest={manifest}
+      icon={themed}
+      breadcrumb={['插件', wt ?? '当前分支', ...(file ? [file] : [])]}
+    >
+      <div className="mx-auto h-full max-w-5xl bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        {file && Viewer ? (
+          <div className="flex-1 min-h-0 flex overflow-hidden">
+            <div ref={contentRef} className="flex-1 min-h-0 overflow-auto">
+              <Viewer path={file} />
+            </div>
+            <OutlineNav containerRef={contentRef} />
           </div>
-          <OutlineNav containerRef={contentRef} />
-        </div>
-      ) : (
-        <EmptyState icon={icon('eye', 'h-6 w-6')} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" tone="primary" />
-      )}
-    </div>
+        ) : (
+          <EmptyState icon={icon('eye', 'h-6 w-6')} title="从左侧选择文件预览" hint="支持 Markdown、图片、代码等格式" />
+        )}
+      </div>
+    </PluginPage>
   );
 }

@@ -1,16 +1,11 @@
+/** view web 侧:defineWebPlugin(manifest 单源),SDK lazy 分包 */
 import { lazy } from 'react';
-import ViewWorkspace from './Workspace.js';
-import ViewSidebar from './Sidebar.js';
+import { defineWebPlugin } from '../../sdk/client.js';
+import { manifest, params } from './manifest.js';
 
-const plugin = {
-  mode: 'view',
-  label: '项目浏览',
-  icon: '👁️',
-  description: 'openspec / docs / 文档预览',
-  order: 20,
-  Sidebar: lazy(() => import('./Sidebar.js')),
-  Workspace: lazy(() => import('./Workspace.js')),
-} as const;
-
-export default plugin;
-export { ViewWorkspace, ViewSidebar };
+export default defineWebPlugin({
+  manifest,
+  params,
+  workspace: lazy(() => import('./Workspace.js')),
+  sidebar: lazy(() => import('./Sidebar.js')),
+});

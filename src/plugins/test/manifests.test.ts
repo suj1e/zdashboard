@@ -58,8 +58,8 @@ describe('六插件 manifest 单源契约', () => {
     expect(designManifest.config?.folders?.default).toEqual([]);
   });
 
-  it('view 的树配置在 manifest.config 单源声明', () => {
-    expect(Object.keys(viewManifest.config ?? {}).sort()).toEqual(['defaultExpandDepth', 'hiddenDirs', 'showHidden']);
+  it('view 的树配置在 manifest.config 单源声明(与 core/tree.ts 消费面一致)', () => {
+    expect(Object.keys(viewManifest.config ?? {}).sort()).toEqual(['defaultExpandDepth', 'scanDirs', 'showHidden']);
   });
 });
 

@@ -1,18 +1,11 @@
-import type { Context } from 'cordis';
+/**
+ * view server 侧:definePlugin 接入(manifest 单源)。
+ * 文件树路由 /__files 由 core/tree.ts 宿主服务提供(读 view 插件配置),此处仅注册 manifest。
+ */
+import { defineBuiltin } from '../builtin.js';
+import { manifest } from './manifest.js';
 
-export const apply = {
-  inject: ['dashboard'] as const,
-  apply(ctx: Context) {
-    ctx.dashboard.register({
-      mode: 'view',
-      label: '项目浏览',
-      icon: '👁️',
-      description: 'openspec / docs / 文档预览',
-      config: {
-        hiddenDirs: { type: 'string[]', label: '隐藏目录', default: ['.git', 'node_modules', 'dist', 'build'] },
-        defaultExpandDepth: { type: 'number', label: '默认展开深度', default: 2 },
-        showHidden: { type: 'boolean', label: '显示隐藏文件', default: false },
-      },
-    });
-  },
-};
+export const apply = defineBuiltin({
+  manifest,
+  setup() { /* 路由由 core/tree.ts 承载 */ },
+});

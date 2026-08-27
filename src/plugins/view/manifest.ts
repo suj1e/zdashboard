@@ -9,7 +9,7 @@ export const manifest: PluginManifest = {
   description: 'openspec / docs / 文档预览',
   order: 20,
   config: {
-    hiddenDirs: { type: 'string[]', label: '隐藏目录', default: ['.git', 'node_modules', 'dist', 'build'] },
+    scanDirs: { type: 'string[]', label: '扫描目录', default: ['openspec'] },
     defaultExpandDepth: { type: 'number', label: '默认展开深度', default: 2 },
     showHidden: { type: 'boolean', label: '显示隐藏文件', default: false },
   },
