@@ -54,6 +54,25 @@ function reqWithBody(body: unknown, headers: Record<string, string> = {}) {
   return req as unknown as import('node:http').IncomingMessage;
 }
 
+/** 原样字符串体(用于非法 JSON 用例) */
+function reqWithRaw(raw: string, headers: Record<string, string> = { 'x-stop-token': 'tok-123' }) {
+  const req = {
+    headers,
+    url: '/x',
+    on(event: string, cb: (chunk?: string) => void) {
+      if (event === 'data' && raw) cb(raw);
+      if (event === 'end') cb();
+      return req;
+    },
+    resume() {},
+  };
+  return req as unknown as import('node:http').IncomingMessage;
+}
+
+function makeRes() {
+  return { headersSent: false, statusCode: 0, headers: undefined as unknown, body: '' as unknown, writeHead(s: number, h?: unknown) { this.headersSent = true; this.statusCode = s; return this; }, end(b?: unknown) { this.body = b ?? ''; } } as import('node:http').ServerResponse & { body: unknown; statusCode: number };
+}
+
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); });
 
@@ -122,6 +141,56 @@ describe('apply-batch 路由鉴权', () => {
       expect(broadcasts.filter((b) => b.event === 'plugin:apply-batch:state')).toHaveLength(1); // leading
       vi.advanceTimersByTime(500);
       expect(broadcasts.filter((b) => b.event === 'plugin:apply-batch:state')).toHaveLength(2); // trailing 合并
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('apply-batch 写路由错误形状(与迁移前一致:400 + {error})', () => {
+  it.each([
+    ['/__apply-batch/status'],
+    ['/__apply-batch/approve'],
+    ['/__apply-batch/adjust'],
+    ['/__apply-batch/retry'],
+  ])('POST %s 非法 JSON → 400 + {error}(非 SDK 兜底 500 internal)', async (path) => {
+    const root = makeRoot(STATE);
+    try {
+      const { routes } = await setup(root);
+      const res = makeRes();
+      routes.get(path)!(reqWithRaw('not-json{{'), res);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(String(res.body))).toHaveProperty('error');
+      expect(JSON.parse(String(res.body)).error).not.toBe('internal');
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('POST /__apply-batch/retry 缺 name → 400 + {error:"missing name"}', async () => {
+    const root = makeRoot(STATE);
+    try {
+      const { routes } = await setup(root);
+      const res = makeRes();
+      routes.get('/__apply-batch/retry')!(reqWithBody({}, { 'x-stop-token': 'tok-123' }), res);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(String(res.body))).toEqual({ error: 'missing name' });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('POST /__apply-batch/retry change 不存在 → 400 + {error:"change not found"}', async () => {
+    const root = makeRoot(STATE);
+    try {
+      const { routes } = await setup(root);
+      const res = makeRes();
+      routes.get('/__apply-batch/retry')!(reqWithBody({ name: 'ghost' }, { 'x-stop-token': 'tok-123' }), res);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(String(res.body))).toEqual({ error: 'change not found' });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
