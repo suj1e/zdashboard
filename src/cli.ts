@@ -22,14 +22,11 @@ import {
 } from './core/instance.js';
 import { openUrl } from './core/open-url.js';
 import { apply as justApply } from './plugins/just/index.js';
-import { apply as bugsApply } from './plugins/bugs/index.js';
-import { apply as reviewApply } from './plugins/review/index.js';
 import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
 import { apply as viewApply } from './plugins/view/index.js';
 import { apply as statsApply } from './plugins/stats/index.js';
 import { apply as applyBatchApply } from './plugins/apply-batch/index.js';
-import YAML from 'yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -63,57 +60,6 @@ function parseArgs() {
 
 async function pathExists(p: string): Promise<boolean> {
   try { await access(p); return true; } catch { return false; }
-}
-
-function migrateLegacyBugsConfig(root: string): void {
-  const zgoalConfigYaml = path.join(root, '.zgoal', 'config.yaml');
-  const zdevConfigYaml = path.join(root, '.zdev', 'config.yaml');
-
-  if (fs.existsSync(zgoalConfigYaml)) {
-    try { fs.unlinkSync(zgoalConfigYaml); } catch { /* ignore */ }
-  }
-
-  if (!fs.existsSync(zdevConfigYaml)) return;
-
-  const pluginsConfig = readPluginsConfig(root);
-  if ('bugs' in pluginsConfig) {
-    try { fs.unlinkSync(zdevConfigYaml); } catch { /* ignore */ }
-    return;
-  }
-
-  let yamlContent: string;
-  try {
-    yamlContent = fs.readFileSync(zdevConfigYaml, 'utf8');
-  } catch {
-    return;
-  }
-
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = YAML.parse(yamlContent) as Record<string, unknown>;
-  } catch {
-    console.warn('[zdashboard] 无效的 .zdev/config.yaml，已忽略并删除');
-    try { fs.unlinkSync(zdevConfigYaml); } catch { /* ignore */ }
-    return;
-  }
-
-  if (!parsed || typeof parsed !== 'object' || !parsed.url || !parsed.product) {
-    console.warn('[zdashboard] .zdev/config.yaml 缺少必要字段，已忽略并删除');
-    try { fs.unlinkSync(zdevConfigYaml); } catch { /* ignore */ }
-    return;
-  }
-
-  const bugsConfig: Record<string, unknown> = {
-    url: String(parsed.url).replace(/\/+$/, ''),
-    account: typeof parsed.account === 'string' ? parsed.account : '',
-    token: typeof parsed.token === 'string' ? parsed.token : (typeof parsed.password === 'string' ? parsed.password : ''),
-    product: Number(parsed.product),
-  };
-
-  pluginsConfig.bugs = bugsConfig;
-  writePluginsConfig(root, pluginsConfig);
-
-  try { fs.unlinkSync(zdevConfigYaml); } catch { /* ignore */ }
 }
 
 async function loadExternal(ctx: Context, dir: string, root: string) {
@@ -201,8 +147,6 @@ async function main() {
 
   const det = await detect(root);
 
-  migrateLegacyBugsConfig(root);
-
   const ctx = new Context();
 
   // core services
@@ -225,8 +169,6 @@ async function main() {
   const plugins = [
     { name: 'stats', apply: statsApply },
     { name: 'just', apply: justApply },
-    { name: 'bugs', apply: bugsApply },
-    { name: 'review', apply: reviewApply },
     { name: 'apply', apply: applyApply },
     { name: 'apply-batch', apply: applyBatchApply },
     { name: 'design', apply: designApply },
