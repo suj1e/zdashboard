@@ -6,6 +6,7 @@ const plugin = {
   label: '执行进度',
   icon: '⚙️',
   description: 'OpenSpec change 执行进度 · zapply',
+  order: 40,
   Workspace: lazy(() => import('./Workspace.js')),
 } as const;
 

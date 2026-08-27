@@ -4,7 +4,7 @@
 
 - [x] T1 core route 助手 + SDK server 侧:core/server.ts 导出 json()/guarded();新建 `src/sdk/server.ts`(definePlugin/PluginContext);cli.ts 内置注册改 BUILTIN_PLUGINS.map
   - 测试验收:vitest 覆盖 register manifest、route json 包装、guardedRoute 无 token 403、onDispose;`pnpm test` 绿
-- [ ] T2 SDK client 侧 + 注册表改造:`src/sdk/client.tsx`(defineWebPlugin,lazy 类型强制)+ `src/sdk/shared.ts`(ParamSchema);web/lib/plugins.ts ORDER→manifest.order、删 bugs/review 残留项、旧 web.tsx 兼容分支
+- [x] T2 SDK client 侧 + 注册表改造:`src/sdk/client.tsx`(defineWebPlugin,lazy 类型强制)+ `src/sdk/shared.ts`(ParamSchema);web/lib/plugins.ts ORDER→manifest.order、删 bugs/review 残留项、旧 web.tsx 兼容分支
   - 测试验收:六旧插件经兼容分支在 /__plugins 与页面可见;排序按 order 字段
 - [ ] T3 URL 路由:`src/web/router.ts`(useRoute/navigate/pushState/popstate);App.tsx 接线;删 hash 路由、navTarget、navToken、zd-dashboard-nav;`#mode` 旧深链接重定向
   - 测试验收:vitest navigate merge/null 删键/replace/popstate/重定向;手测 ?p=view 直开、刷新保持、后退回首页、旧 #view 链接跳转正常

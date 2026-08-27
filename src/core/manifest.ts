@@ -15,6 +15,7 @@ export interface PluginManifest {
   description?: string;
   viewerUrl?: string;      // 同源 URL，前端 iframe 渲染
   external?: boolean;
+  order?: number;          // 排序权重(小在前);缺省按字母序
   config?: Record<string, ConfigField>;
 }
 

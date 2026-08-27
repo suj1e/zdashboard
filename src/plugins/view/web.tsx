@@ -7,6 +7,7 @@ const plugin = {
   label: '项目浏览',
   icon: '👁️',
   description: 'openspec / docs / 文档预览',
+  order: 20,
   Sidebar: lazy(() => import('./Sidebar.js')),
   Workspace: lazy(() => import('./Workspace.js')),
 } as const;

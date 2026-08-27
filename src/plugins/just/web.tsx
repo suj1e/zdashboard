@@ -6,6 +6,7 @@ const plugin = {
   label: 'Just Runner',
   icon: '📜',
   description: 'Just 任务日志与执行',
+  order: 50,
   Workspace: lazy(() => import('./Workspace.js')),
 } as const;
 
