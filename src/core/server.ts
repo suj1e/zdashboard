@@ -62,7 +62,10 @@ const MIME: Record<string, string> = {
   '.map': 'application/json; charset=utf-8',
 };
 
-const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.addEventListener('files',function(){/* plugin 局部刷新由 useSSE 消费,此处不再整页 reload */});es.onerror=function(){/* EventSource 原生重连,静默处理 */};}catch(e){}document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
+// 静态 HTML 注入脚本:仅保留 _self 链接补丁(文件预览页内跳转留在当前窗口)。
+// 旧 EventSource('/__reload') 注入已随沙箱收紧移除——sandbox=allow-scripts 下 iframe
+// 为不透明源,/__reload 属跨域请求,只会制造 console error 且其处理器本已为空。
+const INJECT = `<script>(function(){document.addEventListener('click',function(e){var t=e.target;if(t&&t.closest){var a=t.closest('a[target]');if(a&&a.target!=='_self'){a.target='_self';}}},true);})();</script>`;
 
 export const PLUGIN_STATIC_PREFIX = '/__plugin/';
 
@@ -316,7 +319,7 @@ export class ServerService extends Service {
       const target = this.page ? `${u}#${this.page}` : u;
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
-      console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust} bugs:${this.det.hasBugs}`);
+      console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust}`);
       if (this.dataDir) console.log(`[zdashboard] data      -> ${this.dataDir}`);
       if (this.open) openUrl(target);
       this.onListen?.(bound);

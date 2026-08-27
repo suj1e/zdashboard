@@ -110,11 +110,11 @@ export function usePlugins() {
         const r = await fetch('/__plugins', { cache: 'no-store' });
         const data = await r.json();
         if (!cancelled) {
-          // 外部插件工作区统一壳:有 viewerUrl 走 iframe,缺省落占位页
+          // 外部插件工作区统一壳:有 viewerUrl 走 iframe(桥接线),缺省落占位页
           const mapped = (data.plugins ?? []).map((p: PluginManifest) => {
             const viewerUrl = p.viewerUrl ?? '';
             const Workspace = viewerUrl
-              ? () => React.createElement(ExternalWorkspace, { viewerUrl, label: p.label })
+              ? (props: WorkspaceHostProps) => React.createElement(ExternalWorkspace, { viewerUrl, label: p.label, mode: p.mode, params: props.params })
               : () => React.createElement(PlaceholderWorkspace, { label: p.label });
             return { ...p, Workspace } as WebPlugin;
           });
