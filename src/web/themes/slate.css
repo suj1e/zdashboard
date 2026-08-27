@@ -1,4 +1,10 @@
-/* Slate palette — 冷灰蓝色调 */
+/* Slate palette — 冷灰蓝色调
+   颜色 token 约定为 HSL 三元组(消费端 hsl(var(--x)),见 tailwind.config.ts / globals.css)。
+   各值取自 Tailwind 官方 slate/blue 色板的 HSL 表示:
+   slate-50=210 40% 98% / slate-100=210 40% 96% / slate-200=214 32% 91%
+   slate-400=215 20% 65% / slate-500=215 16% 47% / slate-600=215 19% 35%
+   slate-700=215 25% 27% / slate-800=217 33% 17% / slate-900=222 47% 11%
+   blue-500=217 91% 60% / blue-400=213 94% 68% */
 
 /* Slate light mode */
 [data-theme="slate"] {
@@ -12,25 +18,25 @@
   --info: 199 89% 48%;
   --info-foreground: 0 0% 100%;
 
-  --background: 248 250 252;
-  --foreground: 15 23 42;
-  --card: 248 250 252;
-  --card-foreground: 15 23 42;
-  --popover: 248 250 252;
-  --popover-foreground: 15 23 42;
-  --primary: 59 130 246;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 210 40% 98%;
+  --card-foreground: 222 47% 11%;
+  --popover: 210 40% 98%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 217 91% 60%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 241 245 249;
-  --secondary-foreground: 15 23 42;
-  --muted: 241 245 249;
-  --muted-foreground: 100 116 139;
-  --accent: 241 245 249;
-  --accent-foreground: 15 23 42;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 100%;
-  --border: 226 232 240;
-  --input: 226 232 240;
-  --ring: 59 130 246;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%;
 
   /* text overrides */
   --text-xs: 0.8rem;
@@ -69,25 +75,25 @@
   --info: 199 89% 48%;
   --info-foreground: 0 0% 100%;
 
-  --background: 15 23 42;
-  --foreground: 248 250 252;
-  --card: 15 23 42;
-  --card-foreground: 248 250 252;
-  --popover: 15 23 42;
-  --popover-foreground: 248 250 252;
-  --primary: 96 165 250;
-  --primary-foreground: 15 23 42;
-  --secondary: 30 41 59;
-  --secondary-foreground: 248 250 252;
-  --muted: 30 41 59;
-  --muted-foreground: 148 163 184;
-  --accent: 30 41 59;
-  --accent-foreground: 248 250 252;
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 213 94% 68%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
-  --border: 30 41 59;
-  --input: 30 41 59;
-  --ring: 96 165 250;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 213 94% 68%;
 
   /* text overrides */
   --text-xs: 0.8rem;
