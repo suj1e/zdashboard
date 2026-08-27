@@ -165,22 +165,16 @@ async function main() {
   ctx.plugin(worktreesApply, { root });
   ctx.plugin(DashboardService);
 
-  // built-in plugins
-  const plugins = [
-    { name: 'stats', apply: statsApply },
-    { name: 'just', apply: justApply },
-    { name: 'apply', apply: applyApply },
-    { name: 'apply-batch', apply: applyBatchApply },
-    { name: 'design', apply: designApply },
-    { name: 'view', apply: viewApply },
-  ];
-  for (const p of plugins) {
+  // built-in plugins:统一 BUILTIN_PLUGINS.map 注册(未来迁移为 definePlugin 产出后无需改动此处)
+  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, applyBatchApply, designApply, viewApply];
+  BUILTIN_PLUGINS.map((p) => {
     try {
-      ctx.plugin(p.apply, { root });
+      return ctx.plugin(p, { root });
     } catch (e) {
-      console.error(`[zdashboard] plugin ${p.name} failed:`, e);
+      console.error('[zdashboard] builtin plugin failed:', e);
+      return null;
     }
-  }
+  });
 
   // external plugins
   if (args.plugins) {

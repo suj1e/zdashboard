@@ -18,6 +18,8 @@
     "build:web": "vite build",
     "build:node": "tsup",
     "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview"
   },
   "dependencies": {

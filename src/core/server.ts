@@ -65,6 +65,22 @@ const INJECT = `<script>(function(){try{var es=new EventSource('/__reload');es.a
 
 export const PLUGIN_STATIC_PREFIX = '/__plugin/';
 
+/** json 响应助手:统一 Content-Type/缓存头与序列化,消灭 writeHead 样板 */
+export function json(res: http.ServerResponse, data: unknown, status = 200): void {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+  res.end(JSON.stringify(data));
+}
+
+/** x-stop-token 鉴权助手:通过返回 true;未通过时已写 403 响应并返回 false */
+export function guarded(req: http.IncomingMessage, res: http.ServerResponse, token: string): boolean {
+  if (req.headers['x-stop-token'] !== token) {
+    res.writeHead(403);
+    res.end('forbidden');
+    return false;
+  }
+  return true;
+}
+
 export class ServerService extends Service {
   stopToken: string;
   private root: string;
