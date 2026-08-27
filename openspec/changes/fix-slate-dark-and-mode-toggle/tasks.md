@@ -7,5 +7,6 @@
   - audit 结论:pixel.css light/dark 两块所有 hsl() 消费颜色变量本就为 HSL 三元组,无同类问题,零改动(守卫单测覆盖 pixel.css 且通过)
 - [x] T3 ThemeToggle 状态化:mode 改 React state 源,toggle 同步 dataset/localStorage/setMode
   - 测试验收:连点 3 次 dataset 与奇偶一致(红→绿);单次点击图标翻转
-- [ ] T4 收尾:主题格式守卫测试纳入套件;`pnpm test` + `pnpm typecheck` + `pnpm build` 全绿;手工冒烟三主题 × 明暗
+- [x] T4 收尾:主题格式守卫测试纳入套件;`pnpm test` + `pnpm typecheck` + `pnpm build` 全绿;手工冒烟三主题 × 明暗
   - 测试验收:全绿 + 冒烟通过
+  - 结果:test 36 文件 224/224(基线 217 + 新增 7),typecheck 零错,build 通过;冒烟:slate×明暗背景冷灰蓝无棕橙(slate-50/slate-900 computed 值正确),真实按钮连点 10 次严格交替、偶数次回初态、localStorage 同步,default/pixel 回归不受影响
