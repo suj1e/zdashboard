@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PluginPage 页面模板</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+      letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Nested Containment · Diagram Design</p>
+    <h1>PluginPage 页面模板</h1>
+
+    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="zdpage-title zdpage-desc">
+      <title id="zdpage-title">PluginPage 页面模板</title>
+      <desc id="zdpage-desc">每个插件页面由 SDK 的 PluginPage 包裹:顶部 PageHeader,其下 AsyncBoundary 三态边界接管加载、错误与空态,正常态渲染插件的 Content 两栏。</desc>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Ring 1: PluginPage -->
+      <rect x="120" y="64" width="760" height="408" rx="8" fill="#ffffff" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="136" y="56" width="220" height="16" rx="2" fill="#f5f5f5"/>
+      <text x="246" y="68" fill="rgba(45,49,66,0.40)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">PLUGINPAGE · SDK 模板</text>
+
+      <!-- PageHeader bar -->
+      <rect x="152" y="96" width="696" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="152" y="96" width="696" height="64" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="184" y="124" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">PageHeader</text>
+      <text x="184" y="144" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">图标 · 标题/面包屑 · 动作区 · 状态 chip</text>
+
+      <!-- Ring 2: AsyncBoundary (focal) -->
+      <rect x="152" y="184" width="696" height="264" rx="8" fill="rgba(235,108,54,0.03)" stroke="#eb6c36" stroke-width="1.2"/>
+      <rect x="168" y="176" width="264" height="16" rx="2" fill="#f5f5f5"/>
+      <text x="300" y="188" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">ASYNCBOUNDARY · 三态边界</text>
+
+      <!-- Content box -->
+      <rect x="184" y="216" width="416" height="200" rx="6" fill="#f5f5f5"/>
+      <rect x="184" y="216" width="416" height="200" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="216" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Content · 插件内容</text>
+      <text x="216" y="262" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">正常态渲染(插件自由布局)</text>
+
+      <!-- Sidebar sub-box -->
+      <rect x="208" y="284" width="176" height="104" rx="6" fill="#f5f5f5"/>
+      <rect x="208" y="284" width="176" height="104" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="296" y="330" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Sidebar</text>
+      <text x="296" y="350" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">可选 · 树/列表</text>
+
+      <!-- Workspace sub-box -->
+      <rect x="400" y="284" width="176" height="104" rx="6" fill="#f5f5f5"/>
+      <rect x="400" y="284" width="176" height="104" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="488" y="330" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Workspace</text>
+      <text x="488" y="350" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">主内容区</text>
+
+      <!-- three state chips -->
+      <rect x="632" y="216" width="192" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="632" y="216" width="192" height="56" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="728" y="240" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Skeleton</text>
+      <text x="728" y="258" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">加载态</text>
+
+      <rect x="632" y="288" width="192" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="632" y="288" width="192" height="56" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="728" y="312" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ErrorState</text>
+      <text x="728" y="330" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">错误 · 重试</text>
+
+      <rect x="632" y="360" width="192" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="632" y="360" width="192" height="56" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="728" y="384" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">EmptyState</text>
+      <text x="728" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">空态 · 引导</text>
+
+      <!-- legend -->
+      <line x1="120" y1="512" x2="880" y2="512" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="120" y="536" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="216" y="528" width="24" height="12" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="248" y="538" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">平台固定区</text>
+      <rect x="384" y="528" width="24" height="12" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="416" y="538" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">插件自由区</text>
+      <rect x="552" y="528" width="24" height="12" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="584" y="538" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">替代态(互斥渲染)</text>
+      <text x="120" y="572" fill="#4f5d75" font-size="12" font-family="'Instrument Serif', serif" font-style="italic">插件只声明数据与内容,三态 UI 由边界统一接管 — 六个页面的观感从结构上保证一致。</text>
+    </svg>
+  </div>
+</body>
+</html>

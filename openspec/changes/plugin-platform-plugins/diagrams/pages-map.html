@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>六插件落位与 SDK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+      letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Diagram Design</p>
+    <h1>六插件落位与 SDK</h1>
+
+    <svg viewBox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="zdmap-title zdmap-desc">
+      <title id="zdmap-title">六插件落位与 SDK</title>
+      <desc id="zdmap-desc">六个内置插件各自携带 URL 参数契约,经统一 SDK 渲染并调用 server 侧 definePlugin 路由,SSE 事件从服务端回流插件。</desc>
+      <defs>
+        <marker id="zdmap-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+        <marker id="zdmap-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- zone: plugins -->
+      <rect x="48" y="72" width="904" height="232" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="64" y="76" width="96" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="112" y="87" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">插件层</text>
+
+      <!-- row 1: stats / view / apply -->
+      <rect x="80" y="112" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="80" y="112" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="104" y="140" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">stats 项目统计</text>
+      <text x="104" y="160" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">card → 钻取 navigate</text>
+      <text x="104" y="176" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__stats/data · /__detect</text>
+
+      <rect x="364" y="112" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="364" y="112" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="388" y="140" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">view 项目浏览</text>
+      <text x="388" y="160" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">wt · file · filter → URL</text>
+      <text x="388" y="176" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__files · /__worktrees</text>
+
+      <rect x="648" y="112" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="648" y="112" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="672" y="140" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">apply 执行进度</text>
+      <text x="672" y="160" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">change → URL</text>
+      <text x="672" y="176" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__apply</text>
+
+      <!-- row 2: design / just / apply-batch -->
+      <rect x="80" y="208" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="80" y="208" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="104" y="236" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">design 设计资产</text>
+      <text x="104" y="256" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">type · asset · folder → URL</text>
+      <text x="104" y="272" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__design/assets</text>
+
+      <rect x="364" y="208" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="364" y="208" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="388" y="236" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">just 多任务运行器</text>
+      <text x="388" y="256" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">recipe · task → URL</text>
+      <text x="388" y="272" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__just/* + SSE</text>
+
+      <rect x="648" y="208" width="272" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="648" y="208" width="272" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="672" y="236" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">apply-batch 批量驾驶舱</text>
+      <text x="672" y="256" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">view · sel → URL · SSE 化</text>
+      <text x="672" y="272" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">/__apply-batch/* 10 条</text>
+
+      <!-- arrows: plugins zone → SDK rail → server rail -->
+      <path d="M500,304 V336" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#zdmap-arrow)"/>
+      <rect x="516" y="312" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="548" y="321" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RENDER</text>
+
+      <path d="M500,416 V448" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#zdmap-arrow)"/>
+      <rect x="516" y="424" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="544" y="433" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ROUTE</text>
+
+      <!-- SSE return: server right edge → around → plugins zone right edge (dashed) -->
+      <path d="M952,488 H968 Q976,488 976,480 V128 Q976,120 968,120 H960" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#zdmap-arrow)"/>
+      <rect x="964" y="296" width="12" height="60" rx="2" fill="#f5f5f5"/>
+      <text x="968" y="322" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em" transform="rotate(90 968 322)">SSE 事件</text>
+
+      <!-- SDK rail (focal) -->
+      <rect x="48" y="336" width="904" height="80" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="80" y="368" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">SDK · defineWebPlugin / PluginPage / usePluginData / kit</text>
+      <text x="80" y="392" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">manifest 单源 · URL params 契约 · AsyncBoundary 三态 · plugin:&lt;mode&gt;:&lt;event&gt; 订阅</text>
+
+      <!-- server rail -->
+      <rect x="48" y="448" width="904" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="48" y="448" width="904" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="80" y="480" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">Server · definePlugin / route · guardedRoute / SSE broadcast</text>
+      <text x="80" y="504" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">stop-token 全覆盖 · apply-batch 写操作鉴权补齐 · just 多任务 runner 池</text>
+
+      <!-- legend -->
+      <line x1="48" y1="560" x2="952" y2="560" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="48" y="584" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="144" y="576" width="24" height="12" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="176" y="586" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">统一底座(SDK)</text>
+      <rect x="336" y="576" width="24" height="12" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="368" y="586" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">重写插件 / server 能力</text>
+      <line x1="560" y1="582" x2="592" y2="582" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#zdmap-arrow)"/>
+      <text x="600" y="586" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">SSE 事件回流</text>
+      <text x="48" y="616" fill="#4f5d75" font-size="10" font-family="'Instrument Serif', serif" font-style="italic">六插件迁移顺序:stats → view → apply → design → just → apply-batch,由简到繁。</text>
+    </svg>
+  </div>
+</body>
+</html>

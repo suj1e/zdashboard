@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>插件平台总体分层</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+      letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Layer Stack · Diagram Design</p>
+    <h1>插件平台总体分层</h1>
+
+    <svg viewBox="0 0 1000 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="zdarch-title zdarch-desc">
+      <title id="zdarch-title">插件平台总体分层</title>
+      <desc id="zdarch-desc">六层依赖栈:壳层、运行时、组件库、SDK、插件与 cordis 内核,标注各层由哪个 change 交付。</desc>
+      <defs>
+        <marker id="zdarch-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- direction indicator: upper layers depend on lower -->
+      <line x1="52" y1="64" x2="52" y2="424" stroke="#4f5d75" stroke-width="1" marker-end="url(#zdarch-arrow)"/>
+      <text x="44" y="44" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">依赖 ↓</text>
+
+      <!-- stack silhouette -->
+      <rect x="88" y="48" width="840" height="392" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+
+      <!-- L1 壳层 -->
+      <rect x="88" y="48" width="840" height="64" fill="#ffffff"/>
+      <text x="112" y="76" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L1</text>
+      <text x="180" y="78" fill="#2d3142" font-size="15" font-weight="600" font-family="'Geist', sans-serif">壳层 Shell</text>
+      <text x="904" y="76" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">App · IconRail · SidebarFrame · StatusBar</text>
+      <text x="904" y="94" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">现代化改造 — foundation</text>
+      <line x1="88" y1="112" x2="928" y2="112" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <!-- L2 运行时 -->
+      <rect x="88" y="112" width="840" height="64" fill="#f5f5f5"/>
+      <text x="112" y="140" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L2</text>
+      <text x="180" y="142" fill="#2d3142" font-size="15" font-weight="600" font-family="'Geist', sans-serif">运行时 Runtime</text>
+      <text x="904" y="140" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">router · registry · PluginPage 模板</text>
+      <text x="904" y="158" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">新建 — foundation</text>
+      <line x1="88" y1="176" x2="928" y2="176" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <!-- L3 组件库 -->
+      <rect x="88" y="176" width="840" height="64" fill="#ffffff"/>
+      <text x="112" y="204" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L3</text>
+      <text x="180" y="206" fill="#2d3142" font-size="15" font-weight="600" font-family="'Geist', sans-serif">组件库 Kit</text>
+      <text x="904" y="204" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">PageHeader · Toolbar · EmptyState · Skeleton …</text>
+      <text x="904" y="222" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">新建 — foundation</text>
+      <line x1="88" y1="240" x2="928" y2="240" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <!-- L4 SDK (focal) -->
+      <rect x="88" y="240" width="840" height="64" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="112" y="268" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L4</text>
+      <text x="180" y="270" fill="#2d3142" font-size="15" font-weight="600" font-family="'Geist', sans-serif">SDK</text>
+      <text x="904" y="268" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">definePlugin · defineWebPlugin · bridge · manifest 单源</text>
+      <text x="904" y="286" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">新建核心 — foundation</text>
+      <line x1="88" y1="304" x2="928" y2="304" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <!-- L5 插件 -->
+      <rect x="88" y="304" width="840" height="64" fill="#ffffff"/>
+      <text x="112" y="332" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L5</text>
+      <text x="180" y="334" fill="#2d3142" font-size="15" font-weight="600" font-family="'Geist', sans-serif">插件 Plugins</text>
+      <text x="904" y="332" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">stats · view · apply · design · just · apply-batch</text>
+      <text x="904" y="350" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">全量重写 — plugins</text>
+      <line x1="88" y1="368" x2="928" y2="368" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+      <!-- L6 内核 -->
+      <rect x="88" y="368" width="840" height="64" fill="#f5f5f5"/>
+      <text x="112" y="396" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L6</text>
+      <text x="180" y="398" fill="#4f5d75" font-size="15" font-weight="600" font-family="'Geist', sans-serif">内核 Kernel</text>
+      <text x="904" y="396" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">cordis: ServerService · ReloadService · DashboardService</text>
+      <text x="904" y="414" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" opacity="0.7">保留不动</text>
+
+      <!-- legend -->
+      <line x1="88" y1="496" x2="928" y2="496" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="88" y="520" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="176" y="512" width="24" height="12" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="208" y="522" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">SDK · 新建核心</text>
+      <rect x="352" y="512" width="24" height="12" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="384" y="522" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">壳层 / 插件 · 改造 / 重写</text>
+      <rect x="592" y="512" width="24" height="12" fill="#f5f5f5" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="624" y="522" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">内核 · 保留不动</text>
+      <text x="88" y="552" fill="#4f5d75" font-size="10" font-family="'Instrument Serif', serif" font-style="italic">上层依赖下层;SDK 是本序列唯一新增的承重层,六个插件页面全部重写在其上。</text>
+    </svg>
+  </div>
+</body>
+</html>
