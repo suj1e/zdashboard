@@ -9,6 +9,11 @@ export interface DetectResult {
   hasBugs: boolean;
 }
 
+/** --list 主探测超时(与迁移前一致) */
+const JUST_PROBE_TIMEOUT_MS = 5000;
+/** --version 兜底探测超时(快失败:二进制存在性检查无需长等) */
+const JUST_FALLBACK_TIMEOUT_MS = 3000;
+
 function justAvailable(cwd: string): Promise<boolean> {
   /** 探测一次:进程正常退出即视为可用 */
   const probe = (args: string[], timeout: number) => new Promise<boolean>((resolve) => {
@@ -17,7 +22,8 @@ function justAvailable(cwd: string): Promise<boolean> {
   });
   // 旧版以 --list --unsupported 判定;新版 just 移除该旗标会报错(hasJust 恒 false),
   // 回退 --version 探测二进制本身可用
-  return probe(['--list', '--unsupported'], 5000).then((ok) => (ok ? true : probe(['--version'], 3000)));
+  return probe(['--list', '--unsupported'], JUST_PROBE_TIMEOUT_MS)
+    .then((ok) => (ok ? true : probe(['--version'], JUST_FALLBACK_TIMEOUT_MS)));
 }
 
 function hasBugsConfig(root: string): boolean {
