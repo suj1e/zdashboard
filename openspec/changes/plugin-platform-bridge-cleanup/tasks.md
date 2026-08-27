@@ -8,5 +8,5 @@
   - 测试验收:手工清单全过;iframe 内无跨域报错;window.parent 访问被阻断
 - [x] T3 残留清理:detect hasBugs 链摘除;/__files detect 搭车字段删除;vite 代理修整;--review-sidebar-w;types.ts 孤儿类型;server 启动日志
   - 测试验收:`grep -rn "hasBugs\|ZenBug\|BugsResult\|review-sidebar" src/` 无命中;vite.config 无 bugs/review/docs 代理;curl /__files 响应无 detect 字段
-- [ ] T4 端到端冒烟(全序列完成关口):六内置插件 + 首页 + 外部 demo + 三主题×明暗 + 深链接刷新/后退全走查
+- [x] T4 端到端冒烟(全序列完成关口):六内置插件 + 首页 + 外部 demo + 三主题×明暗 + 深链接刷新/后退全走查
   - 测试验收:零 console error;`pnpm build && pnpm test` 全绿;三 change 状态核对(foundation/plugins 可 archive,本 change 验收后 archive)
