@@ -8,7 +8,7 @@
   - 测试验收:深链接 ?p=view&wt=…&file=… 刷新直达;分组折叠/过滤正常;树滚动位置在 params 变化时保持
 - [x] T3 apply 迁移:change 入 URL;任务树 + 进度条套模板;空态 EmptyState
   - 测试验收:切换 change URL 变化;无 change 空态正确
-- [ ] T4 design 迁移:manifest.config 单源(多文件夹);分组侧栏 + 预览套模板;PageViewer/TokenViewer 拆独立文件
+- [x] T4 design 迁移:manifest.config 单源(多文件夹);分组侧栏 + 预览套模板;PageViewer/TokenViewer 拆独立文件
   - 测试验收:配置 folders 增删生效;九类资产渲染;配置改动保存后 SSE config 事件触发重取
 - [ ] T5 just 迁移:**先核实 JustRunner 并发能力**(单 runner 则 server 改 runner 池 + plugin:just:log 按 taskId 携带载荷);活跃任务侧栏 + LogViewer 套模板;recipes 用 usePluginData
   - 测试验收:并发 2 recipe 侧栏双条目、日志独立;单测日志按 taskId 隔离
