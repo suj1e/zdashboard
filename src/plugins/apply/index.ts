@@ -1,43 +1,32 @@
-import type { Context } from 'cordis';
+/**
+ * apply server 侧:definePlugin 接入(manifest 单源)。
+ * /__apply、/__apply/change 路由与响应形状保持不变。
+ */
 import { scanApplyChanges, readApplyChange } from './scan.js';
+import { defineBuiltin } from '../builtin.js';
+import { manifest } from './manifest.js';
 
-export const apply = {
-  inject: ['server', 'dashboard'] as const,
-  apply(ctx: Context, config: { root: string }) {
-    const root = config.root;
+export const apply = defineBuiltin({
+  manifest,
+  setup(ctx, root) {
+    ctx.route('/__apply', async () => scanApplyChanges(root));
 
-    ctx.inject(['server'], () => {
-      if (!ctx.server?.route) return;
-
-      ctx.dashboard.register({ mode: 'apply', label: '执行进度', icon: '⚙️', description: 'OpenSpec change 任务进度' });
-
-      ctx.server.route('/__apply', async (_req, res) => {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-        res.end(JSON.stringify(scanApplyChanges(root)));
-      });
-
-      ctx.server.route('/__apply/change', async (req, res) => {
-        const url = new URL(req.url || '', 'http://x');
-        const name = url.searchParams.get('name');
-        if (!name) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: 'missing name' }));
-          return;
-        }
-        if (name.includes('..') || name.includes('/') || name.includes('\\')) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: 'invalid name' }));
-          return;
-        }
-        try {
-          const data = readApplyChange(root, name);
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
-          res.end(JSON.stringify(data));
-        } catch (e) {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'unknown error' }));
-        }
-      });
+    ctx.route('/__apply/change', async (req, res) => {
+      const url = new URL(req.url || '', 'http://x');
+      const name = url.searchParams.get('name');
+      const bad = (msg: string) => {
+        // 响应形状保持迁移前:400 + {error}
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: msg }));
+        return undefined;
+      };
+      if (!name) return bad('missing name');
+      if (name.includes('..') || name.includes('/') || name.includes('\\')) return bad('invalid name');
+      try {
+        return readApplyChange(root, name);
+      } catch (e) {
+        return bad(e instanceof Error ? e.message : 'unknown error');
+      }
     });
   },
-};
+});

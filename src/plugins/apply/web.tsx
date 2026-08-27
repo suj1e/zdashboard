@@ -1,14 +1,10 @@
+/** apply web 侧:defineWebPlugin(manifest 单源),SDK lazy 分包 */
 import { lazy } from 'react';
-import ApplyWorkspace from './Workspace.js';
+import { defineWebPlugin } from '../../sdk/client.js';
+import { manifest, params } from './manifest.js';
 
-const plugin = {
-  mode: 'apply',
-  label: '执行进度',
-  icon: '⚙️',
-  description: 'OpenSpec change 执行进度 · zapply',
-  order: 40,
-  Workspace: lazy(() => import('./Workspace.js')),
-} as const;
-
-export default plugin;
-export { ApplyWorkspace };
+export default defineWebPlugin({
+  manifest,
+  params,
+  workspace: lazy(() => import('./Workspace.js')),
+});
