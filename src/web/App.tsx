@@ -107,7 +107,7 @@ export default function App() {
 
 /**
  * 插件页骨架:统一 PluginPage 模板(mode→icon 主题图标,manifest.icon 兜底)。
- * 旧插件内容以兼容分支渲染在 children;key=mode 保证切换时重挂载。
+ * 外部插件兼容壳:内置插件走 SDK web 入口后,该壳仅服务外部插件;key=mode 保证切换时重挂载。
  */
 function PluginPageShell({ mode, label, description, icon: fallbackIcon, children }: {
   mode: string;

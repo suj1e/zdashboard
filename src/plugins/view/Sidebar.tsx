@@ -252,10 +252,14 @@ export default function Sidebar() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <ConfigField key_="scanDirs" field={manifest.config!.scanDirs} value={config.scanDirs} onChange={(k, v) => draftSave(k, v)} />
-                <ConfigField key_="defaultExpandDepth" field={manifest.config!.defaultExpandDepth} value={config.defaultExpandDepth} onChange={(k, v) => draftSave(k, v)} />
-              </div>
+              {manifest.config ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <ConfigField key_="scanDirs" field={manifest.config.scanDirs} value={config.scanDirs} onChange={(k, v) => draftSave(k, v)} />
+                  <ConfigField key_="defaultExpandDepth" field={manifest.config.defaultExpandDepth} value={config.defaultExpandDepth} onChange={(k, v) => draftSave(k, v)} />
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">该插件暂无配置项</p>
+              )}
               <div className="flex items-center justify-between pt-3 border-t">
                 <div className="text-xs">
                   {saving ? <span className="text-muted-foreground">保存中…</span> : hasDraft && <span className="text-muted-foreground">有未保存的更改</span>}
