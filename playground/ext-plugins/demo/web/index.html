@@ -5,22 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>External Demo</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; }
-    .box { padding: 16px; border-radius: 8px; background: #f6f8fa; }
-    code { background: #eaeef2; padding: 2px 6px; border-radius: 4px; }
+    /* 颜色跟随宿主 zd:theme 推送切换(明暗两套,风格仅区分主题名展示) */
+    :root {
+      --bg: #ffffff; --fg: #18181b; --muted: #71717a; --box: #f6f8fa; --code: #eaeef2; --border: #d0d7de; --accent: #4f46e5;
+    }
+    :root[data-mode='light'] { --bg: #ffffff; --fg: #18181b; --muted: #71717a; --box: #f6f8fa; --code: #eaeef2; --border: #d0d7de; }
+    :root[data-mode='dark']  { --bg: #101014; --fg: #e4e4e7; --muted: #a1a1aa; --box: #1c1c22; --code: #26262e; --border: #3f3f46; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; margin: 0;
+           background: var(--bg); color: var(--fg); transition: background .2s, color .2s; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .box { padding: 14px 16px; border-radius: 8px; background: var(--box); border: 1px solid var(--border); margin-bottom: 12px; }
+    .box h2 { font-size: 13px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
+    code { background: var(--code); padding: 2px 6px; border-radius: 4px; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+    button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+             background: var(--bg); color: var(--fg); cursor: pointer; margin-right: 8px; }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    .state { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
-  <h1>External Demo</h1>
+  <h1>External Demo <span class="state" id="handshake">握手中…</span></h1>
+
   <div class="box">
-    <p>调用 <code>/__demo/api</code> 的结果：</p>
-    <pre id="result">加载中...</pre>
+    <h2>主题同步(zd:init / zd:theme)</h2>
+    <pre id="theme">等待宿主推送…</pre>
   </div>
+
+  <div class="box">
+    <h2>数据代理 zd:fetch(GET /__stats/data)</h2>
+    <pre id="fetch">未请求</pre>
+    <p style="margin: 10px 0 0">
+      <button id="refetch">重新拉取 /__stats/data</button>
+      <button id="badfetch">安全核查:fetch /api/forbidden(应 403)</button>
+    </p>
+  </div>
+
+  <div class="box">
+    <h2>导航 zd:navigate</h2>
+    <p style="margin: 0 0 10px"><button id="nav-stats">跳转到 stats 插件</button></p>
+    <pre id="navlog">宿主导航推送:无</pre>
+  </div>
+
   <script>
-    fetch('/__demo/api')
-      .then((r) => r.json())
-      .then((data) => { document.getElementById('result').textContent = JSON.stringify(data); })
-      .catch((e) => { document.getElementById('result').textContent = '错误: ' + e; });
+    /**
+     * zd: 桥协议插件侧最小实现 —— 与宿主 src/sdk/bridge.ts 的协议约定一致:
+     * 消息带 source:'zdashboard';iframe→宿主:zd:ready / zd:navigate / zd:fetch;
+     * 宿主→iframe:zd:init / zd:theme / zd:navigate / zd:fetch:result / zd:config。
+     * 生产插件可直接复用 SDK 的 createPluginBridge(此处为零依赖内联版)。
+     */
+    (function () {
+      var BRIDGE_SOURCE = 'zdashboard';
+      var parent = window.parent;
+      var seq = 0;
+      var pending = {};
+
+      function post(payload) {
+        parent.postMessage(Object.assign({ source: BRIDGE_SOURCE }, payload), '*');
+      }
+
+      window.addEventListener('message', function (event) {
+        if (event.source !== parent) return;               // 非宿主来源丢弃
+        var m = event.data;
+        if (!m || m.source !== BRIDGE_SOURCE) return;      // 非协议消息丢弃
+        switch (m.type) {
+          case 'zd:init':        handlers.init && handlers.init(m); break;
+          case 'zd:theme':       handlers.theme && handlers.theme(m); break;
+          case 'zd:navigate':    handlers.navigate && handlers.navigate(m.params); break;
+          case 'zd:config':      handlers.config && handlers.config(m); break;
+          case 'zd:fetch:result': {
+            var p = pending[m.id];
+            if (p) { delete pending[m.id]; p(m); }
+            break;
+          }
+          // zd:ready 等宿主侧消息不归插件处理,静默丢弃
+        }
+      });
+
+      var handlers = {};
+
+      function bridgeReady() { post({ type: 'zd:ready' }); }
+      function bridgeFetch(path, init) {
+        return new Promise(function (resolve) {
+          var id = 'f' + (++seq);
+          pending[id] = resolve;
+          post({ type: 'zd:fetch', id: id, path: path, init: init });
+        });
+      }
+      function bridgeNavigate(params) { post({ type: 'zd:navigate', params: params }); }
+
+      // ---- demo UI 消费 ----
+      var $ = function (id) { return document.getElementById(id); };
+
+      function applyTheme(theme, mode) {
+        document.documentElement.dataset.mode = mode;
+        $('theme').textContent = JSON.stringify({ theme: theme, mode: mode });
+      }
+
+      function loadStats() {
+        $('fetch').textContent = '请求中…';
+        bridgeFetch('/__stats/data').then(function (r) {
+          $('fetch').textContent = 'status: ' + r.status + '\n' + JSON.stringify(r.body, null, 2);
+        });
+      }
+
+      handlers.init = function (m) {
+        $('handshake').textContent = '✓ 已握手';
+        applyTheme(m.theme, m.mode);
+        loadStats();
+      };
+      handlers.theme = function (m) { applyTheme(m.theme, m.mode); };
+      handlers.navigate = function (params) {
+        $('navlog').textContent = '宿主导航推送:' + JSON.stringify(params);
+      };
+
+      $('refetch').addEventListener('click', loadStats);
+      $('badfetch').addEventListener('click', function () {
+        bridgeFetch('/api/forbidden').then(function (r) {
+          $('fetch').textContent = 'status: ' + r.status + '(白名单外拒绝)\n' + JSON.stringify(r.body);
+        });
+      });
+      $('nav-stats').addEventListener('click', function () {
+        bridgeNavigate({ p: 'stats' });
+      });
+
+      bridgeReady();
+    })();
   </script>
 </body>
 </html>
