@@ -206,6 +206,10 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
                 </div>
               </section>
             )}
+
+            {change && !selected && detail.error && (
+              <EmptyState title={`未找到 change「${change}」`} hint={detail.error} />
+            )}
           </div>
         )}
       </div>

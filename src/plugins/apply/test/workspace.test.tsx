@@ -80,6 +80,12 @@ describe('apply Workspace — change 入 URL', () => {
     expect(await screen.findByText('alpha')).toBeInTheDocument();
     expect(screen.queryByText('已完成任务一')).not.toBeInTheDocument();
   });
+
+  it('change 不存在(深链接)→ 详情区渲染错误提示而非静默', async () => {
+    render(<Workspace params={new URLSearchParams('?p=apply&change=ghost')} />);
+    expect(await screen.findByText('未找到 change「ghost」')).toBeInTheDocument();
+    expect(screen.getByText('change not found')).toBeInTheDocument();
+  });
 });
 
 describe('apply Workspace — 空态', () => {
