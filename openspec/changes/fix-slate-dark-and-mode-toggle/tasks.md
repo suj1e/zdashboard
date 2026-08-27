@@ -5,7 +5,7 @@
 - [x] T2 pixel.css audit:同规则检查,存在 RGB 三元组则一并修复,无则报告「无同类问题」
   - 测试验收:格式守卫单测覆盖 pixel.css(或有据豁免)
   - audit 结论:pixel.css light/dark 两块所有 hsl() 消费颜色变量本就为 HSL 三元组,无同类问题,零改动(守卫单测覆盖 pixel.css 且通过)
-- [ ] T3 ThemeToggle 状态化:mode 改 React state 源,toggle 同步 dataset/localStorage/setMode
+- [x] T3 ThemeToggle 状态化:mode 改 React state 源,toggle 同步 dataset/localStorage/setMode
   - 测试验收:连点 3 次 dataset 与奇偶一致(红→绿);单次点击图标翻转
 - [ ] T4 收尾:主题格式守卫测试纳入套件;`pnpm test` + `pnpm typecheck` + `pnpm build` 全绿;手工冒烟三主题 × 明暗
   - 测试验收:全绿 + 冒烟通过
