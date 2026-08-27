@@ -8,6 +8,10 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import Workspace from '../Workspace.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
+import { __resetStopTokenForTest } from '../../../web/lib/stop-token.js';
+import { toast } from 'sonner';
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 const STATE = {
   version: '1',
@@ -47,6 +51,7 @@ function setLocation(url: string) {
 beforeEach(() => {
   __resetPluginDataForTest();
   __resetRouterForTest();
+  __resetStopTokenForTest();
   // useSSE 的 EventSource 单例跨测试存活,不重置 instances
   vi.stubGlobal('EventSource', FakeES);
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -114,6 +119,38 @@ describe('apply-batch Workspace — SSE 替代轮询', () => {
     await waitFor(() => {
       const after = fetchMock.mock.calls.filter((c) => String(c[0]) === '/__apply-batch').length;
       expect(after).toBeGreaterThan(before);
+    });
+  });
+});
+
+describe('apply-batch Workspace — 写操作鉴权与反馈', () => {
+  it('写 POST 携带 /__config 返回的 stop-token(非空,等于服务端 token)', async () => {
+    setLocation('/?p=apply-batch');
+    render(<Workspace params={new URLSearchParams('?p=apply-batch')} />);
+    fireEvent.click(await screen.findByRole('button', { name: '暂停' }));
+    await waitFor(() => {
+      const fetchMock = globalThis.fetch as unknown as { mock: { calls: unknown[][] } };
+      const post = fetchMock.mock.calls.find((c) => String(c[0]).includes('/__apply-batch/pause'));
+      expect(post).toBeDefined();
+      const headers = (post![1] as RequestInit).headers as Record<string, string>;
+      expect(headers['x-stop-token']).toBe('tok');
+    });
+  });
+
+  it('写 POST 非 2xx → 用户可见反馈(toast.error)', async () => {
+    setLocation('/?p=apply-batch');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const json = (v: unknown) => ({ json: async () => v, ok: true }) as Response;
+      if (url.includes('/__config')) return json({ stopToken: 'tok' });
+      if (init?.method === 'POST') return { ok: false, status: 500, json: async () => ({ error: 'internal' }) } as Response;
+      if (url.includes('/__apply-batch')) return json(STATE);
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    render(<Workspace params={new URLSearchParams('?p=apply-batch')} />);
+    fireEvent.click(await screen.findByRole('button', { name: '暂停' }));
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
     });
   });
 });

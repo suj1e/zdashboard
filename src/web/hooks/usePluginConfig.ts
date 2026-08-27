@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getStopToken } from '../lib/stop-token.js';
 
 export interface PluginConfigSchema {
   [key: string]: {
@@ -43,7 +44,8 @@ export function usePluginConfig(mode: string, schema?: PluginConfigSchema) {
     try {
       const res = await fetch('/__plugins/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Stop-Token': document.querySelector('meta[name="stop-token"]')?.getAttribute('content') ?? '' },
+        // 页面无 meta[name=stop-token],token 经 /__config 获取(写配置鉴权必需)
+        headers: { 'Content-Type': 'application/json', 'X-Stop-Token': await getStopToken() },
         body: JSON.stringify({ [mode]: next }),
       });
       if (res.ok) {

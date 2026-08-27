@@ -4,11 +4,13 @@
  * store 类型改 import type(运行时不引 server 模块)。
  */
 import { lazy, Suspense } from 'react';
+import { toast } from 'sonner';
 import type { BatchChange, BatchLog, BatchState } from '../../server/apply-batch-store.js';
 import { PluginPage } from '../../web/kit/index.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { useModeIcon } from '../../web/lib/icons.js';
+import { getStopToken } from '../../web/lib/stop-token.js';
 import type { PluginWorkspaceProps } from '../../sdk/client.js';
 import { manifest } from './manifest.js';
 
@@ -45,14 +47,16 @@ export default function Workspace(_props: PluginWorkspaceProps) {
   const state = query.data;
 
   const post = async (path: string, body?: unknown) => {
-    await fetch(`/__apply-batch/${path}`, {
+    const res = await fetch(`/__apply-batch/${path}`, {
       method: 'POST',
+      // 页面无 meta[name=stop-token],token 经 /__config 获取(guardedRoute 鉴权必需)
       headers: {
         'Content-Type': 'application/json',
-        'x-stop-token': document.querySelector('meta[name="stop-token"]')?.getAttribute('content') ?? '',
+        'x-stop-token': await getStopToken(),
       },
       body: body == null ? undefined : JSON.stringify(body),
     });
+    if (!res.ok) toast.error(`操作失败(HTTP ${res.status}):${path}`);
     query.reload();
   };
 
