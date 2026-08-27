@@ -1,14 +1,10 @@
+/** apply-batch web 侧:defineWebPlugin(manifest 单源),SDK lazy 分包 */
 import { lazy } from 'react';
-import ApplyBatchWorkspace from './Workspace.js';
+import { defineWebPlugin } from '../../sdk/client.js';
+import { manifest, params } from './manifest.js';
 
-const plugin = {
-  mode: 'apply-batch',
-  label: '批量执行',
-  icon: '⚡',
-  description: 'zapply 批量并行执行驾驶舱',
-  order: 60,
-  Workspace: lazy(() => import('./Workspace.js')),
-} as const;
-
-export default plugin;
-export { ApplyBatchWorkspace };
+export default defineWebPlugin({
+  manifest,
+  params,
+  workspace: lazy(() => import('./Workspace.js')),
+});

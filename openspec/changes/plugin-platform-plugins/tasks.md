@@ -12,7 +12,7 @@
   - 测试验收:配置 folders 增删生效;九类资产渲染;配置改动保存后 SSE config 事件触发重取
 - [x] T5 just 迁移:**先核实 JustRunner 并发能力**(单 runner 则 server 改 runner 池 + plugin:just:log 按 taskId 携带载荷);活跃任务侧栏 + LogViewer 套模板;recipes 用 usePluginData
   - 测试验收:并发 2 recipe 侧栏双条目、日志独立;单测日志按 taskId 隔离
-- [ ] T6 apply-batch 迁移:十条路由迁 SDK(写操作全 guardedRoute);store 变更 broadcast('state') + 500ms 节流;前端切 usePluginData subscribe、删 2s 轮询、store 改 import type;三视图套模板
+- [x] T6 apply-batch 迁移:十条路由迁 SDK(写操作全 guardedRoute);store 变更 broadcast('state') + 500ms 节流;前端切 usePluginData subscribe、删 2s 轮询、store 改 import type;三视图套模板
   - 测试验收:未带 token POST /approve 403;store 变更 <1s UI 更新且 DevTools 无轮询;SSE 节流单测过
 - [ ] T7 收尾:删除 foundation 兼容分支(web/lib/plugins.ts);全量手工走查六插件 + 三主题×明暗 + 全部深链接;build + test 全绿
   - 测试验收:grep 兼容分支无结果;走查清单零 console error

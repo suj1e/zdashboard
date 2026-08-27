@@ -76,6 +76,8 @@ export class ApplyBatchStore {
     this.root = root;
     this.statePath = path.join(root, '.zapply', 'batch-state.json');
     this.state = this.load();
+    // 修正:foundation 中 onBroadcast 形参从未接线(save 只通知 listeners),此处挂上
+    if (onBroadcast) this.subscribe(onBroadcast);
   }
 
   private load(): BatchState {
