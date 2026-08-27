@@ -5,6 +5,8 @@
  * - 所有消息带 `source: 'zdashboard'` 字段防与其他 postMessage 串扰;
  * - 方向:iframe→宿主(zd:ready / zd:navigate / zd:fetch),宿主→iframe(zd:init / zd:theme /
  *   zd:navigate / zd:fetch:result / zd:config);错方向、错来源、未知 type 一律静默丢弃;
+ *   zd:config 为宿主→iframe 单向(实施期协议收窄,修订理由见 design.md「协议修订记录」:
+ *   iframe→宿主「写」方向无授权机制,外部插件不可获得写权限);
  * - zd:fetch 由宿主同源代理(白名单默认放行 /__ 前缀,其余拒绝回 403),代理请求
  *   剥离 x-stop-token —— 外部插件不可获得写权限;
  * - zd:fetch 以自增 id 配对请求与响应。
@@ -93,9 +95,34 @@ export function parseBridgeMessage(data: unknown, direction: BridgeDirection): B
   }
 }
 
-/** zd:fetch 白名单:仅放行 /__ 前缀的同源 API 路径(绝对 URL/协议相对一律拒绝) */
+/** 白名单路径解析基准:固定假源;绝对 URL/协议相对 URL 因 origin 不符被拒(与全局 location 解耦,函数保持纯) */
+const FETCH_PATH_BASE = 'http://zd.invalid';
+
+/**
+ * zd:fetch 白名单:仅放行规范化后落在 /__ 前缀下的同源相对路径。
+ * 必须先经 WHATWG URL 解析再判定(与宿主 fetch 的实际规范化一致),否则
+ * `/__/../api/x`、`/%2e%2e/` 等遍历变体可借原始字符串 startsWith 绕过白名单,
+ * 落点越界到非白名单 API;绝对 URL/协议相对 URL 因 origin 不符一律拒绝。
+ */
 export function isAllowedFetchPath(path: unknown): path is string {
-  return typeof path === 'string' && path.startsWith(FETCH_PATH_PREFIX);
+  if (typeof path !== 'string') return false;
+  let url: URL;
+  try {
+    url = new URL(path, FETCH_PATH_BASE);
+  } catch {
+    return false;
+  }
+  if (url.origin !== FETCH_PATH_BASE) return false;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(url.pathname);
+  } catch {
+    return false; // 非法百分号编码,保守拒绝
+  }
+  // 解码后仍含 .. 点段(如 ..%2f 变体,URL 解析不会归一)即遍历,拒绝
+  if (decoded.split('/').some((seg) => seg === '..')) return false;
+  // 原始与解码路径都须以 /__ 开头(%5f 等编码拼写的前缀不放行,要求规范写法)
+  return url.pathname.startsWith(FETCH_PATH_PREFIX) && decoded.startsWith(FETCH_PATH_PREFIX);
 }
 
 /** 代理前净化 init:剥离 x-stop-token(写操作凭证不得经外部插件转发) */
@@ -143,6 +170,9 @@ export function createHostBridge(opts: HostBridgeOptions): HostBridge {
   const proxyFetch = opts.proxyFetch ?? defaultProxyFetch;
   let destroyed = false;
 
+  // 目标源 '*':iframe 沙箱未授 allow-same-origin,其 origin 对宿主不可知,'*' 为必要取舍;
+  // 安全由 event.source 严格配对(handle 仅接受来自 opts.target 的消息)+ sandbox 隔离兜底
+  // (约定见 design.md SDK 文档节)。
   const post = (payload: Record<string, unknown>) => {
     if (destroyed || !opts.target) return;
     opts.target.postMessage({ source: BRIDGE_SOURCE, ...payload }, '*');
@@ -214,6 +244,9 @@ export function createPluginBridge(opts: PluginBridgeOptions = {}): PluginBridge
   let seq = 0;
   const pending = new Map<string, (r: { status: number; body: unknown }) => void>();
 
+  // 目标源 '*':外部插件页运行于 iframe 沙箱(opaque origin),插件侧无法指定宿主精确 origin,
+  // '*' 为必要取舍;安全由宿主侧 event.source 严格配对 + iframe sandbox 隔离兜底
+  // (约定见 design.md SDK 文档节)。
   const post = (payload: Record<string, unknown>) => {
     if (destroyed || !parent) return;
     parent.postMessage({ source: BRIDGE_SOURCE, ...payload }, '*');
@@ -261,6 +294,9 @@ export function createPluginBridge(opts: PluginBridgeOptions = {}): PluginBridge
     destroy: () => {
       destroyed = true;
       if (typeof window !== 'undefined') window.removeEventListener('message', handle);
+      // 清理挂起的 fetch:以失败终态 settle,避免调用方 await 永久悬挂,并释放 pending 引用
+      for (const resolve of pending.values()) resolve({ status: PROXY_FAILURE_STATUS, body: { error: 'bridge destroyed' } });
+      pending.clear();
     },
   };
 }

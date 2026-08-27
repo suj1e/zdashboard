@@ -28,7 +28,7 @@ const STATS = {
   dirty: 4,
 };
 
-const DETECT = { hasOpenspec: true, hasDocs: true, hasJust: true, hasJustbugs: false };
+const DETECT = { hasOpenspec: true, hasDocs: true, hasJust: true };
 
 function setLocation(url: string) {
   window.history.replaceState(null, '', url);

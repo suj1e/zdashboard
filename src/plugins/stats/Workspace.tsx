@@ -30,7 +30,6 @@ interface DetectData {
   hasOpenspec: boolean;
   hasDocs: boolean;
   hasJust: boolean;
-  hasJustbugs: boolean;
 }
 
 export default function Workspace(_props: PluginWorkspaceProps) {
