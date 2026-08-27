@@ -21,7 +21,9 @@ ExternalWorkspace 改造(核心文件 src/web/components/ExternalWorkspace.tsx +
 | `zd:navigate` | 双向 | { params } | 跨插件导航(宿主侧转 useRoute.navigate) |
 | `zd:fetch` | iframe→宿主 | { id, path, init } | 数据代理;宿主同源请求后回 `zd:fetch:result` |
 | `zd:fetch:result` | 宿主→iframe | { id, status, body } | 响应回传 |
-| `zd:config` | 双向 | { plugin, config } | 配置读写同步 |
+| `zd:config` | 宿主→iframe | { plugin, config } | 配置只读同步(宿主变更推送) |
+
+> **协议修订记录(实施期收窄)**:design 初版将 `zd:config` 标为「双向」,实施复核后收窄为宿主→iframe 单向——写配置唯一通道 POST `/__plugins/config` 强制 stop-token,而 zd:fetch 代理按安全设计剥离该头,iframe→宿主「写」方向无授权机制(见风险节:外部插件不可获得写权限)。若未来需要外部插件写配置,须先引入显式授权机制再放开方向。
 
 - **fetch 代理**:去掉 allow-same-origin 后外部插件无法 fetch 同源 API,`zd:fetch` 由宿主代为请求;白名单默认放行 `/__` 前缀,其余拒绝(开放问题:粒度后续按需收紧)。
 - 时序图:[diagrams/bridge-sequence.html](diagrams/bridge-sequence.html)
