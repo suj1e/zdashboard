@@ -39,14 +39,24 @@ export function readRecord(root: string): InstanceRecord | null {
 }
 
 export function writeRecord(root: string, port: number): void {
-  fs.mkdirSync(path.dirname(recordPath(root)), { recursive: true });
+  const fp = recordPath(root);
+  fs.mkdirSync(path.dirname(fp), { recursive: true });
+  // 读改写:onListen 每次启动都会调 writeRecord,需沿用旧记录的 plugins 段,
+  // 只更新运行字段(pid/port/root/startedAt),否则插件配置跨重启清零。
+  const old = readRecord(root); // 记录缺失/损坏 → null,兜底最小记录
   const rec: InstanceRecord = {
     pid: process.pid,
     port,
     root,
     startedAt: new Date().toISOString(),
   };
-  fs.writeFileSync(recordPath(root), JSON.stringify(rec, null, 2) + '\n');
+  if (old?.plugins && typeof old.plugins === 'object') {
+    rec.plugins = old.plugins;
+  }
+  // tmp+rename 原子写(对齐 writePluginsConfig),避免半写状态被读到
+  const tmp = fp + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(rec, null, 2) + '\n');
+  fs.renameSync(tmp, fp);
 }
 
 export function readPluginsConfig(root: string): Record<string, Record<string, unknown>> {
