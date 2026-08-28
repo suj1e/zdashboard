@@ -7,7 +7,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createFakeCtx, createRes } from '../../../sdk/test/helpers.js';
-import type { ScanResult } from '../../../server/design-assets.js';
 
 const ASSET_KEYS = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font'] as const;
 
@@ -78,7 +77,7 @@ describe('design server 路由 — 约定化扫描(.zdev/design 单源)', () => 
   it('响应形状不变:ScanResult 九类分组(契约回归)', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-shape-'));
     try {
-      const out: ScanResult = await fetchAssets(root);
+      const out = await fetchAssets(root);
       for (const k of ASSET_KEYS) expect(Array.isArray(out[k]), k).toBe(true);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

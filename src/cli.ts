@@ -17,7 +17,7 @@ import {
   stopInstance,
   writeRecord,
   clearRecord,
-  stripLegacyViewConfig,
+  stripDeadPluginConfig,
 } from './core/instance.js';
 import { openUrl } from './core/open-url.js';
 import { apply as justApply } from './plugins/just/index.js';
@@ -136,9 +136,13 @@ async function main() {
 
   const appDir = path.resolve(__dirname, 'web');
 
-  // view 约定化扫描:启动一次性剥离 dashboard.json 里 plugins.view 死配置段(残留清理)
-  if (stripLegacyViewConfig(root)) {
-    console.log('[zdashboard] 已清理 dashboard.json 中 view 插件的过时配置段');
+  // built-in plugins:统一数组注册(未来迁移为 definePlugin 产出后无需改动此处)
+  // apply-batch 已并入 apply(mode apply,view=batch Tab 只读驾驶舱),见 2026-08-28-apply-merge-progress
+  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, designApply, viewApply];
+
+  // 约定化扫描:启动一次性剥离 dashboard.json 里内置插件的死配置键(未声明 config 即清,external/未知保留)
+  if (stripDeadPluginConfig(root, BUILTIN_PLUGINS.map((p) => p.manifest))) {
+    console.log('[zdashboard] 已清理 dashboard.json 中内置插件的过时配置键');
   }
 
   // P2: restart 且有旧记录时，起始端口用 record.port（用户显式 --port 则尊重）
@@ -168,9 +172,6 @@ async function main() {
   ctx.plugin(worktreesApply, { root });
   ctx.plugin(DashboardService);
 
-  // built-in plugins:统一数组注册(未来迁移为 definePlugin 产出后无需改动此处)
-  // apply-batch 已并入 apply(mode apply,view=batch Tab 只读驾驶舱),见 2026-08-28-apply-merge-progress
-  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, designApply, viewApply];
   for (const apply of BUILTIN_PLUGINS) {
     try {
       ctx.plugin(apply, { root });
