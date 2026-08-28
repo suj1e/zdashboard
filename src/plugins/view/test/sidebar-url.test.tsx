@@ -159,3 +159,28 @@ describe('view Sidebar — params 变化时滚动位置保持', () => {
     expect(scroller.scrollTop).toBe(before);
   });
 });
+
+describe('view Sidebar — 约定化后无配置入口', () => {
+  it('不渲染「配置」按钮与配置弹窗', async () => {
+    await renderSidebar('/?p=view');
+    expect(screen.queryByRole('button', { name: /配置/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('View 配置')).not.toBeInTheDocument();
+    expect(screen.queryByText('保存')).not.toBeInTheDocument();
+    expect(screen.queryByText('重置默认')).not.toBeInTheDocument();
+  });
+
+  it('不再请求 /__plugins/config(配置链路整体拆除)', async () => {
+    await renderSidebar('/?p=view');
+    const called = (fetch as ReturnType<typeof vi.fn>).mock.calls.some(
+      (args: unknown[]) => String(args[0]).includes('/__plugins/config'),
+    );
+    expect(called).toBe(false);
+  });
+
+  it('worktree 分组与当前分支组结构不受配置拆除影响', async () => {
+    await renderSidebar('/?p=view');
+    expect(screen.getByRole('button', { name: /feature\/a/ })).toBeInTheDocument(); // worktree 组
+    expect(screen.getByRole('button', { name: /当前分支/ })).toBeInTheDocument();   // 当前分支组
+    expect(screen.getByPlaceholderText('过滤…')).toBeInTheDocument();              // 过滤框保留
+  });
+});

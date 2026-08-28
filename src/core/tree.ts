@@ -1,8 +1,11 @@
 import type { Context } from 'cordis';
 import { scanTree } from '../server/spec-scan.js';
 
+/** 生态约定:项目根/worktree 根下的固定扫描目录,非用户可配 */
+const CONVENTION_SCAN_DIRS = ['openspec', 'docs'] as const;
+
 export const apply = {
-  inject: ['server', 'dashboard'] as const,
+  inject: ['server'] as const,
   apply(ctx: Context, config: { root: string }) {
     const server = ctx.server;
     if (server?.route) {
@@ -12,11 +15,7 @@ export const apply = {
           const url = new URL(req.url || '/', 'http://localhost');
           const wt = url.searchParams.get('wt');
           const scanRoot = wt ? decodeURIComponent(wt) : config.root;
-          const viewCfg = ctx.dashboard.getConfig('view') as { scanDirs?: string[]; defaultExpandDepth?: number; showHidden?: boolean } | undefined;
-          const tree = scanTree(scanRoot, Array.isArray(viewCfg?.scanDirs) ? viewCfg.scanDirs : ['openspec'], {
-            defaultExpandDepth: typeof viewCfg?.defaultExpandDepth === 'number' ? viewCfg.defaultExpandDepth : undefined,
-            showHidden: typeof viewCfg?.showHidden === 'boolean' ? viewCfg.showHidden : undefined,
-          });
+          const tree = scanTree(scanRoot, [...CONVENTION_SCAN_DIRS]);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
           res.end(JSON.stringify({ tree }));
         } catch {
