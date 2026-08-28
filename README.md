@@ -225,6 +225,7 @@ node dist/cli.js --dir <项目根> --port 4190 --plugins ./my-plugins
 | `/__apply/change` | GET | `?name=<change>` 详情 |
 | `/__worktrees` | GET | `.zworktree/` 下的 worktree 列表（`git worktree list --porcelain`） |
 | `/__design/assets` | GET | 设计资产扫描 |
+| `/__design/asset` | GET | 设计资产只读代理 `?path=<rel-to-.zdev/design>`；非法路径（`..`/绝对路径/反斜杠/缺参）400，缺失 404 |
 | `/__stats/data` | GET | 项目统计（内置 stats 插件） |
 | `/__notes/data` | GET | 便签列表（examples/notes 示例） |
 | `/__notes/save` | POST | 保存便签（`x-stop-token` 鉴权） |

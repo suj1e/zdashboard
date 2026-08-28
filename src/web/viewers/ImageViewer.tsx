@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-export function ImageViewer({ path }: { path: string }) {
+/** resolve:可选整 URL 解析器(不传 = 根路径直取,view 插件语义);design 插件传代理路由解析 */
+export function ImageViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [dim, setDim] = useState('-');
   const [zoom, setZoom] = useState(1);
   const [err, setErr] = useState(false);
@@ -28,7 +29,7 @@ export function ImageViewer({ path }: { path: string }) {
           <p className="text-muted-foreground">该格式无法预览</p>
         ) : (
           <img
-            src={'/' + encodeURI(path)}
+            src={resolve ? resolve(path) : '/' + encodeURI(path)}
             alt={name}
             style={{ transform: `scale(${zoom})` }}
             className="max-w-full max-h-full object-contain transition-transform"
