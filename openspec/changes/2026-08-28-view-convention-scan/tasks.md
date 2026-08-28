@@ -8,7 +8,7 @@
   - 验收:`/__plugins/config` 返回的 view schema 为空对象
 - [x] 4. `view/Sidebar.tsx` 删设置按钮、配置弹窗、`usePluginConfig`/draft/commitSave
   - 验收:组件测试断言无「配置」入口;树分组(当前分支+worktree)与过滤回归通过
-- [ ] 5. `dashboard.json` 加载时剥离 `plugins.view` 死键(启动一次性,tmp+rename 原子写)
+- [x] 5. `dashboard.json` 加载时剥离 `plugins.view` 死键(启动一次性,tmp+rename 原子写)
   - 验收:单测:含残留键的记录加载后键消失且其余 plugins 配置保留
 - [ ] 6. 回归:`pnpm typecheck && pnpm test` 全绿;playground 手验 view 页无配置入口、树结构符合约定
   - 验收:typecheck 0 error;手工 checklist 过

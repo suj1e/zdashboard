@@ -74,6 +74,25 @@ export function writePluginsConfig(root: string, plugins: Record<string, Record<
   fs.renameSync(tmp, fp);
 }
 
+/**
+ * 启动一次性:剥离 dashboard.json 里 view 插件的死配置段。
+ * view 已约定化扫描(manifest 不再声明 config),残留键无消费方,徒增误导;
+ * 其余 plugins 配置原样保留。无变更/无记录时不写盘。返回是否发生了剥离。
+ */
+export function stripLegacyViewConfig(root: string): boolean {
+  try {
+    const rec = readRecord(root);
+    if (!rec?.plugins || typeof rec.plugins !== 'object') return false;
+    if (!('view' in rec.plugins)) return false;
+    const plugins = { ...rec.plugins };
+    delete plugins.view;
+    writePluginsConfig(root, plugins); // tmp+rename 原子写
+    return true;
+  } catch {
+    return false; // 记录缺失/损坏:跳过清理,不阻塞启动
+  }
+}
+
 export function clearRecord(root: string): void {
   try {
     // 属主校验:记录若已指向别的实例(并发双启落败者),不得误删胜者记录
