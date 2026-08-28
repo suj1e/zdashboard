@@ -80,6 +80,18 @@ describe('just LogViewer 内嵌列表 — 点 recipe → URL param', () => {
   });
 });
 
+describe('just Workspace — 面板撑满主区', () => {
+  it('容器去 max-w-6xl(撑满主区,mx-auto 保留无害)', () => {
+    setLocation('/?p=just');
+    const { container } = render(<Workspace params={new URLSearchParams('?p=just')} />);
+    const panel = document.querySelector('[data-plugin-page="just"] div.bg-background');
+    expect(panel).not.toBeNull();
+    expect(panel!.className).not.toContain('max-w-6xl');
+    // 整个工作区渲染树无任何限宽类
+    expect(container.querySelector('.max-w-6xl')).toBeNull();
+  });
+});
+
 describe('just Workspace — recipe/task 入 URL', () => {
   it('?p=just&task=dev-server → LogViewer 聚焦该任务(单任务视图含清屏)', async () => {
     setLocation('/?p=just&task=dev-server');

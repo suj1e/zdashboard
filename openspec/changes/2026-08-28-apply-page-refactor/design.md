@@ -14,7 +14,7 @@
 **SingleChangeView 分栏**：
 - 外层 `flex h-full`：左列 `w-72 shrink-0 overflow-auto`（change 摘要卡列表，选中高亮，点击写 `change` param），右列 `flex-1 min-h-0 overflow-auto`（详情：进度头 → 任务列表 → proposal/design 折叠渲染）
 - `<md` 断点退化单列（列表在上，`lg:` 起分栏）——Tailwind 响应式前缀实现
-- 列表项摘要：名称 + done/total 进度 + hasDesign/inWorktree 等既有徽标 + 🔧[人工] 计数
+- 列表项摘要：名称 + done/total 进度 + hasDesign/inWorktree 等既有徽标 + 🔧[人工] 计数（**实施期裁决**：ChangeSummary 无 manual 字段，全列表计数需扩 /__apply 契约，与「不动 server 契约」冲突——裁决为仅选中项详情可见计数，即 craftsman 实现；若未来需要全列表计数，另立 server 契约扩展 change）
 
 **BatchView 分区**：
 - 顶部概览条 `shrink-0`：runId、状态 Badge、批次 i/n、完成 change 数、并发度、plan 摘要入口——一行
