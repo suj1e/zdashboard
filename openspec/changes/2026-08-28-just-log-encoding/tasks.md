@@ -1,6 +1,6 @@
 # 任务:just 日志编码智能解码
 
-- [ ] 1. 新增 `iconv-lite` 依赖(锁定版本,server 侧)
+- [x] 1. 新增 `iconv-lite` 依赖(锁定版本,server 侧)
   - 验收:package.json/pnpm-lock 变更;typecheck 通过
 - [ ] 2. TDD:解码层单测——GBK 中文行/UTF-8 中文行/混合多行/多字节跨 chunk 切分/纯 ASCII,先红后绿
   - 验收:单测覆盖 design.md 五场景
