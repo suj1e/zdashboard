@@ -1,6 +1,6 @@
 /**
- * design 侧栏:九类资产分组树 + 多文件夹配置(manifest.config 单源)。
- * type/asset 入 URL;配置保存后 SSE config 事件触发资产重取(usePluginData subscribe)。
+ * design 侧栏:九类资产分组树(约定化扫描,无配置区)。
+ * type/asset 入 URL;SSE files 事件触发资产重取(usePluginData subscribe)。
  */
 import { useMemo, useState } from 'react';
 import type { AssetType } from '../../server/design-assets.js';
@@ -8,9 +8,6 @@ import { FileIcon } from '../../web/components/FileIcon.js';
 import { useIcons } from '../../web/lib/icons.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
-import { usePluginConfig } from '../../web/hooks/usePluginConfig.js';
-import { ConfigField } from '../../web/components/ConfigField.js';
-import { manifest } from './manifest.js';
 
 interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
 
@@ -36,13 +33,10 @@ export default function Sidebar() {
   const folderFilter = params.get('folder');
 
   const { icon } = useIcons();
-  const [showConfig, setShowConfig] = useState(false);
-  const [savingLocal, setSavingLocal] = useState(false);
-  const { config, save } = usePluginConfig('design', manifest.config);
 
-  // config 频道(SSE)到达 → 失效重取,配置 folders 增删即时生效
+  // files 频道(SSE)到达 → 失效重取,.zdev/design 资产变更即时生效
   const assets = usePluginData<Record<string, AssetFile[]>>('design:/__design/assets', () =>
-    fetch('/__design/assets', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'config' });
+    fetch('/__design/assets', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
 
   const groups = useMemo(() => {
     const data = assets.data;
@@ -53,15 +47,6 @@ export default function Sidebar() {
   }, [assets.data, folderFilter]);
 
   const selectAsset = (it: AssetFile) => route.navigate({ type: it.type, asset: it.path });
-
-  const handleConfigChange = async (key: string, value: unknown) => {
-    setSavingLocal(true);
-    try {
-      await save({ ...config, [key]: value });
-    } finally {
-      setSavingLocal(false);
-    }
-  };
 
   return (
     <div>
@@ -74,24 +59,6 @@ export default function Sidebar() {
           onSelect={selectAsset}
         />
       ))}
-      <div className="border-t border-border mt-2">
-        <button
-          onClick={() => setShowConfig(o => !o)}
-          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center transition-transform ${showConfig ? 'rotate-90' : ''}`}>
-            {icon('chevron-right')}
-          </span>
-          <span className="h-3.5 w-3.5 shrink-0 inline-flex items-center justify-center">{icon('settings')}</span>
-          配置
-        </button>
-        {showConfig && (
-          <div className="px-3 pb-3 space-y-3">
-            <ConfigField key_="folders" field={manifest.config!.folders} value={config.folders} onChange={(k, v) => { void handleConfigChange(k, v); }} />
-            <div className="text-xs text-muted-foreground">{savingLocal ? '保存中…' : '配置已保存'}</div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
