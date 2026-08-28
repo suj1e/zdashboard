@@ -10,6 +10,10 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import BatchView from '../BatchView.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
+import { configure } from '@testing-library/react';
+
+// 全量并发下 lazy chunk 动态加载可能超过默认 1s,给异步查询 5s 余量
+configure({ asyncUtilTimeout: 5000 });
 import type { BatchSnapshot } from '../batch.js';
 
 const STATE = {

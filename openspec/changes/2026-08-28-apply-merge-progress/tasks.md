@@ -14,5 +14,5 @@
   - 验收:集成测试未知 mode 回落;IconRail 仅一个执行进度入口
 - [x] 7. playground mock `.zdev/apply/runs/` 三件套 + CURRENT,手验 Tab/graph/日志/plan
   - 验收:手工 checklist 过
-- [ ] 8. 回归:`pnpm typecheck && pnpm test` 全绿
+- [x] 8. 回归:`pnpm typecheck && pnpm test` 全绿
   - 验收:typecheck 0 error
