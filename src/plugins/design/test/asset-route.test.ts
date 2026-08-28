@@ -49,7 +49,7 @@ async function serveAsset(root: string, query: string): Promise<StreamRes> {
   if (!handler) throw new Error('route /__design/asset 未注册');
   const req = { headers: {}, url: `/__design/asset?${query}` } as never;
   const res = createStreamRes();
-  await handler(req, res);
+  await handler(req, res as never);
   await drain(res);
   return res;
 }
