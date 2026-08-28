@@ -4,7 +4,7 @@
   - 验收:单测:目录缺失返回九组空数组；存在时仅含该目录扫描结果
 - [x] 2. `design/Sidebar.tsx` 删配置区与 `usePluginConfig`；`usePluginData` 订阅改 `files` 频道
   - 验收:组件测试断言无「配置」按钮；资产行渲染回归通过
-- [ ] 3. `design/manifest.ts` 删 `config` 字段
+- [x] 3. `design/manifest.ts` 删 `config` 字段
   - 验收:`/__plugins/config` 中 design schema 为空
 - [ ] 4. 删孤儿:`ConfigField.tsx`、`usePluginConfig.ts`、`usePluginConfig.test.tsx`（前置 change 已合入时全仓库无引用）
   - 验收:`grep -r "ConfigField\|usePluginConfig" src/` 仅剩 core 基础设施
