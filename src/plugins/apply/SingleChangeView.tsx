@@ -2,6 +2,7 @@
  * 单 change 视图:分栏布局(2026-08-28-apply-page-refactor T2)。
  * 左列 w-72 change 摘要列表(选中高亮、点击写 change param、长名 truncate+title),
  * 右列 flex-1 详情(进度头 → 任务列表 → proposal/design 折叠);
+ * 详情按 name 身份守卫,未就绪(冷启动深链/切换瞬态)渲染 Skeleton(S1 修复);
  * lg: 起分栏,小屏退化为上下堆叠。URL change 参数契约不变;数据 usePluginData(files 频道失效)。
  * PluginPage/ViewHeader 由壳与局部组件持有,页面状态(status)经 onStatus 上报。
  */
@@ -166,7 +167,9 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
   }, { subscribe: 'files' });
 
   const changes = list.data ?? [];
-  const selected = detail.data ?? null;
+  // 身份守卫:key 切换、新请求未返回期间 usePluginData 保留旧 key 的 data,
+  // 仅当详情 name 与当前 change 匹配才视为有效选中,避免瞬态串数据(计数徽标/详情内容)。
+  const selected = detail.data && detail.data.name === change ? detail.data : null;
   const { total: taskCount, manual: manualCount } = countTasks(selected?.tasks ?? '');
 
   useEffect(() => {
@@ -232,6 +235,9 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
               </>
             ) : change && detail.error ? (
               <EmptyState title={`未找到 change「${change}」`} hint={detail.error} />
+            ) : change ? (
+              // 加载中/详情未就绪(冷启动深链、切换选中瞬态):Skeleton 替代误导性「未选择 change」空态
+              <div data-testid="detail-loading" className="p-4"><Skeleton rows={4} /></div>
             ) : (
               <EmptyState title="未选择 change" hint="从左侧列表选择 change 查看详情" />
             )}

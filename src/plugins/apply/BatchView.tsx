@@ -127,7 +127,6 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
         <span>{counts.completed}/{total} 完成</span>
         <span>并行度: {state.parallelism}</span>
         <span>🔄 {counts.running} 运行中</span>
-        <span>✅ {counts.completed} 成功</span>
         <span>❌ {counts.failed} 失败</span>
         <span>⏸️ {counts.parked} parked</span>
         {plan.data && (

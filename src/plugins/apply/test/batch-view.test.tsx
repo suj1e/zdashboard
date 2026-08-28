@@ -140,13 +140,13 @@ describe('BatchView — 空态引导(design 风险节文案)', () => {
 });
 
 describe('BatchView — 只读驾驶舱渲染', () => {
-  it('汇总条:并行度/运行中/成功/失败/parked 计数', async () => {
+  it('汇总条:并行度/运行中/失败/parked 计数(「成功」段与完成数重复,不再展示)', async () => {
     setLocation('/?p=apply&view=batch');
     render(<BatchView />);
     expect(await screen.findByText('zapply batch')).toBeInTheDocument();
     expect(screen.getByText(/并行度:\s*3/)).toBeInTheDocument();
     expect(screen.getByText(/1 运行中/)).toBeInTheDocument();
-    expect(screen.getByText(/1 成功/)).toBeInTheDocument();
+    expect(screen.queryByText(/成功/)).not.toBeInTheDocument();
     expect(screen.getByText(/1 parked/)).toBeInTheDocument();
   });
 
@@ -233,6 +233,8 @@ describe('BatchView — 三段分区(T3)', () => {
     expect(within(overview).getByText('第 2/2 批')).toBeInTheDocument();
     expect(within(overview).getByText('1/3 完成')).toBeInTheDocument();
     expect(within(overview).getByText(/并行度:\s*3/)).toBeInTheDocument();
+    // S2:「n/n 完成」已表达完成数,「✅ n 成功」段删除,概览条不再出现「成功」
+    expect(within(overview).queryByText(/成功/)).not.toBeInTheDocument();
     expect(within(overview).getByText(/run: run-1/)).toBeInTheDocument();
   });
 

@@ -5,7 +5,7 @@
  * - 人工条目弱化样式(muted,保留 🔧[人工] 前缀文字),不作为「下一步」引导。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, configure } from '@testing-library/react';
+import { render, screen, configure, fireEvent, act } from '@testing-library/react';
 import SingleChangeView from '../SingleChangeView.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
@@ -81,5 +81,76 @@ describe('SingleChangeView — 🔧[人工] 口径', () => {
     setLocation('/?p=apply&change=alpha');
     render(<SingleChangeView />);
     expect(await screen.findByText('🔧[人工] 2')).toBeInTheDocument();
+  });
+});
+
+describe('SingleChangeView — 选中切换瞬态(S1)', () => {
+  const TWO_CHANGES: ChangeSummary[] = [
+    { name: 'alpha', path: 'p/alpha', total: 2, done: 2, hasProposal: false, hasDesign: false, inWorktree: false },
+    { name: 'beta', path: 'p/beta', total: 1, done: 0, hasProposal: false, hasDesign: false, inWorktree: false },
+  ];
+  // alpha:manual=2(与上方 DETAIL 同口径);beta:manual=0
+  const ALPHA: ChangeDetail = {
+    ...TWO_CHANGES[0],
+    tasks: '- [x] 普通任务一\n- [x] 普通任务二\n- [ ] 🔧[人工] 人工确认部署\n- [x] 🔧[人工] 人工核对产物',
+    dependsOn: [],
+    hasTestStrategy: false,
+  };
+  const BETA: ChangeDetail = {
+    ...TWO_CHANGES[1],
+    tasks: '- [ ] beta 普通任务',
+    dependsOn: [],
+    hasTestStrategy: false,
+  };
+
+  /** beta 详情请求挂起(返回放行函数),alpha 详情/列表/worktrees 立即返回 */
+  function stubDeferredBetaFetch(): (v: ChangeDetail) => void {
+    let resolveBeta!: (v: ChangeDetail) => void;
+    const pending = new Promise<ChangeDetail>((res) => { resolveBeta = res; });
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const json = (v: unknown) => ({ json: async () => v }) as Response;
+      if (url.includes('name=beta')) return pending.then(json);
+      if (url.includes('/__apply/change')) return json(ALPHA);
+      if (url.includes('/__apply')) return json(TWO_CHANGES);
+      if (url.includes('/__worktrees')) return json([]);
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    return resolveBeta;
+  }
+
+  it('切换选中项:beta 详情未返回前不串用 alpha 的 🔧[人工] 计数,右列出加载态', async () => {
+    const resolveBeta = stubDeferredBetaFetch();
+    setLocation('/?p=apply&change=alpha');
+    render(<SingleChangeView />);
+    // alpha 详情就绪:详情头与列表项均出现 manual=2
+    expect(await screen.findByText('待人工 2 项')).toBeInTheDocument();
+    expect(screen.getByText('🔧[人工] 2')).toBeInTheDocument();
+    // 切到 beta(beta 详情挂起 → 瞬态窗口)
+    fireEvent.click(screen.getByRole('button', { name: /beta/ }));
+    // 身份守卫:瞬态期间 beta 不得短暂挂上 alpha 的计数(列表徽标与详情头)
+    expect(screen.queryByText('🔧[人工] 2')).not.toBeInTheDocument();
+    expect(screen.queryByText('待人工 2 项')).not.toBeInTheDocument();
+    // 加载态替代误导空态;alpha 旧详情内容不得残留
+    expect(screen.getByTestId('detail-loading')).toBeInTheDocument();
+    expect(screen.queryByText('未选择 change')).not.toBeInTheDocument();
+    expect(screen.queryByText('普通任务一')).not.toBeInTheDocument();
+    // beta 详情返回 → 恢复渲染(manual=0 无徽标,计数已归零重载)
+    await act(async () => { resolveBeta(BETA); });
+    expect(await screen.findByText('beta 普通任务')).toBeInTheDocument();
+    expect(screen.queryByTestId('detail-loading')).not.toBeInTheDocument();
+    expect(screen.queryByText('待人工 2 项')).not.toBeInTheDocument();
+  });
+
+  it('冷启动深链 ?change=beta:详情加载中渲染 Skeleton 而非「未选择 change」空态', async () => {
+    const resolveBeta = stubDeferredBetaFetch();
+    setLocation('/?p=apply&change=beta');
+    render(<SingleChangeView />);
+    // 列表先就绪(beta 项可见),详情仍挂起
+    expect((await screen.findAllByText('beta')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('未选择 change')).not.toBeInTheDocument();
+    expect(screen.getByTestId('detail-loading')).toBeInTheDocument();
+    await act(async () => { resolveBeta(BETA); });
+    expect(await screen.findByText('beta 普通任务')).toBeInTheDocument();
   });
 });
