@@ -141,3 +141,67 @@ describe('App — ?p=apply-batch 兼容重定向(zskills 新约定)', () => {
     expect(screen.queryByRole('button', { name: 'apply-batch' })).not.toBeInTheDocument();
   });
 });
+
+describe('App — SSE reload 事件不再整页刷新(reload 闪烁修复)', () => {
+  /**
+   * jsdom 将 window.location.reload 标记为 [Unforgeable](own non-configurable),
+   * 无法 vi.spyOn/重定义;其调用经 virtualConsole 同步转发为
+   * console.error('Error: Not implemented: window.location.reload'),
+   * 以此作为「reload 被触发」的可观测信号。
+   */
+  function stubReloadSignal() {
+    const errSpy = vi.spyOn(console, 'error');
+    return {
+      fired: () => errSpy.mock.calls.some((c) => String(c[0]).includes('Not implemented')),
+      restore: () => errSpy.mockRestore(),
+    };
+  }
+  /** useSSE 每次挂载新建连接,取最近一个 FakeES 实例 */
+  function lastES(): FakeES {
+    const es = FakeES.instances.at(-1);
+    expect(es).toBeDefined();
+    return es!;
+  }
+  /** 模拟服务端推送具名 SSE 事件 */
+  function dispatchSSE(ev: string) {
+    for (const fn of lastES().listeners.get(ev) ?? []) fn({ data: '' });
+  }
+
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/');
+    FakeES.instances.length = 0;
+  });
+
+  it("派发 'reload' SSE 事件后不触发 window.location.reload", () => {
+    const signal = stubReloadSignal();
+    try {
+      render(
+        <TooltipProvider>
+          <App />
+        </TooltipProvider>,
+      );
+      // 事件确实送达 useSSE 监听器;此刻无 jsdom 未实现噪音
+      expect(lastES().listeners.get('reload')?.size).toBeGreaterThan(0);
+      expect(signal.fired()).toBe(false);
+      dispatchSSE('reload');
+      expect(signal.fired()).toBe(false); // 修复后:不再整页 reload
+    } finally {
+      signal.restore();
+    }
+  });
+
+  it("派发 'files' SSE 事件同样不触发整页刷新", () => {
+    const signal = stubReloadSignal();
+    try {
+      render(
+        <TooltipProvider>
+          <App />
+        </TooltipProvider>,
+      );
+      dispatchSSE('files');
+      expect(signal.fired()).toBe(false);
+    } finally {
+      signal.restore();
+    }
+  });
+});

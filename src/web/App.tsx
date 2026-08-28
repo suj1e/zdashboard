@@ -28,8 +28,10 @@ export default function App() {
   const stoppedRef = useRef(false);
   const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false });
 
+  // SSE 'reload' 仅代表服务端文件变更;'files' 事件已驱动各订阅方增量刷新,
+  // 整页 location.reload 会打断交互并引发全屏闪烁,故 no-op(消除闪烁)
   const status = useSSE(
-    () => { window.location.reload(); },
+    () => {},
     () => {},
     stoppedRef
   );
