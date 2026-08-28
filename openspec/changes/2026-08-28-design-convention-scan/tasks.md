@@ -6,7 +6,7 @@
   - 验收:组件测试断言无「配置」按钮；资产行渲染回归通过
 - [x] 3. `design/manifest.ts` 删 `config` 字段
   - 验收:`/__plugins/config` 中 design schema 为空
-- [ ] 4. 删孤儿:`ConfigField.tsx`、`usePluginConfig.ts`、`usePluginConfig.test.tsx`（前置 change 已合入时全仓库无引用）
+- [x] 4. 删孤儿:`ConfigField.tsx`、`usePluginConfig.ts`、`usePluginConfig.test.tsx`（前置 change 已合入时全仓库无引用）
   - 验收:`grep -r "ConfigField\|usePluginConfig" src/` 仅剩 core 基础设施
 - [ ] 5. 存储死键剥离泛化:内置插件未声明 config 的键加载即清；external 插件键保留
   - 验收:单测覆盖内置清除/外部保留/无声明不清除三分支
