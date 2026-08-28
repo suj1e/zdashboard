@@ -3,7 +3,7 @@
  * T2 迁移:wt/file/filter 全部入 URL(useRoute 读写),数据走 usePluginData;
  * stats 钻取 card=dirty 时高亮 dirty worktree;params 变化不重挂载,滚动位置保持。
  * 约定化扫描 change:扫描目录为约定常量(['openspec','docs']),配置 UI 与
- * usePluginConfig/draft/commitSave 链路整体拆除;保留过滤框 + 树分组,
+ * draft/commitSave 配置链路整体拆除;保留过滤框 + 树分组,
  * 树数据经 usePluginData(subscribe 'files')在文件变更时自动刷新。
  */
 import { useState } from 'react';

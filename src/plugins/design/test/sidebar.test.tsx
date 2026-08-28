@@ -1,5 +1,6 @@
 /**
- * T4 design Sidebar 验收:type/asset 入 URL;配置保存后 SSE config 事件触发资产重取。
+ * design Sidebar 验收:约定化 —— 无配置入口,type/asset 入 URL;
+ * SSE files 频道事件触发资产重取(配置频道已拆除)。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -43,7 +44,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     const json = (v: unknown) => ({ json: async () => v }) as Response;
-    if (url.includes('/__plugins/config')) return json({});
+    // 配置链路已拆除:Sidebar 不得再请求 /__plugins/config
+    if (url.includes('/__plugins/config')) throw new Error(`unexpected config fetch: ${url}`);
     if (url.includes('/__design/assets')) return json(ASSETS);
     throw new Error(`unexpected fetch: ${url}`);
   }));
@@ -55,7 +57,7 @@ afterEach(() => {
   setLocation('/');
 });
 
-describe('design Sidebar — type/asset 入 URL', () => {
+describe('design Sidebar — type/asset 入 URL(资产行渲染回归)', () => {
   it('渲染分组侧栏(有资产的组)', async () => {
     setLocation('/?p=design');
     render(<Sidebar />);
@@ -81,22 +83,46 @@ describe('design Sidebar — type/asset 入 URL', () => {
   });
 });
 
-describe('design Sidebar — 配置保存后 SSE config 重取', () => {
-  it('config 事件到达 → /__design/assets 失效重取', async () => {
+describe('design Sidebar — 约定化(无配置入口,files 频道刷新)', () => {
+  it('无「配置」按钮与配置面板(配置区整体拆除)', async () => {
+    setLocation('/?p=design');
+    render(<Sidebar />);
+    await screen.findByText('home.html');
+    expect(screen.queryByText('配置')).not.toBeInTheDocument();
+    expect(screen.queryByText(/保存中|配置已保存/)).not.toBeInTheDocument();
+  });
+
+  it('不发 /__plugins/config 请求(fetch mock 对 config URL 抛错)', async () => {
+    setLocation('/?p=design');
+    render(<Sidebar />);
+    await screen.findByText('home.html');
+    const calls = vi.mocked(fetch).mock.calls.filter(([u]) => String(u).includes('/__plugins/config'));
+    expect(calls).toEqual([]);
+  });
+
+  it('files 事件到达 → /__design/assets 失效重取(config 事件不再订阅)', async () => {
     setLocation('/?p=design');
     render(<Sidebar />);
     await screen.findByText('home.html');
     const fetchMock = vi.mocked(fetch);
-    const callsBefore = fetchMock.mock.calls.filter(([u]) => String(u).includes('/__design/assets')).length;
+    const assetsCalls = () => fetchMock.mock.calls.filter(([u]) => String(u).includes('/__design/assets')).length;
+    const callsBefore = assetsCalls();
     expect(callsBefore).toBeGreaterThanOrEqual(1);
 
     const es = FakeES.instances[0];
     await act(async () => {
-      es.emit('config', { plugin: 'design' });
+      es.emit('files', { changed: ['a/tokens.css'] });
     });
     await waitFor(() => {
-      const callsAfter = fetchMock.mock.calls.filter(([u]) => String(u).includes('/__design/assets')).length;
-      expect(callsAfter).toBeGreaterThan(callsBefore);
+      expect(assetsCalls()).toBeGreaterThan(callsBefore);
     });
+
+    // config 事件不应触发重取(旧订阅已拆除)
+    const callsAtFiles = assetsCalls();
+    await act(async () => {
+      es.emit('config', { plugin: 'design' });
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(assetsCalls()).toBe(callsAtFiles);
   });
 });

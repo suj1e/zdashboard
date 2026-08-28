@@ -74,19 +74,57 @@ export function writePluginsConfig(root: string, plugins: Record<string, Record<
   fs.renameSync(tmp, fp);
 }
 
+/** 死键剥离判定所需的最小 manifest 投影(PluginManifest 结构兼容) */
+export interface ConfigSchemaInfo {
+  mode: string;
+  external?: boolean;
+  /** manifest.config 声明:缺省或空对象表示该内置插件无配置面 */
+  config?: Record<string, unknown>;
+}
+
 /**
- * 启动一次性:剥离 dashboard.json 里 view 插件的死配置段。
- * view 已约定化扫描(manifest 不再声明 config),残留键无消费方,徒增误导;
- * 其余 plugins 配置原样保留。无变更/无记录时不写盘。返回是否发生了剥离。
+ * 启动一次性:剥离 dashboard.json 里内置插件的死配置键(通用规则,收敛自 view/design 约定化扫描)。
+ * - 内置(非 external)未声明 config → 整段死键,清除;
+ * - 内置已声明 config → 仅保留声明键(键级收敛);
+ * - external 插件键保留;存储中无 manifest 声明的键(未知/未加载插件)保守保留。
+ * 无变更/无记录时不写盘。返回是否发生了剥离。记录缺失/损坏跳过清理,不阻塞启动。
  */
-export function stripLegacyViewConfig(root: string): boolean {
+export function stripDeadPluginConfig(root: string, manifests: readonly ConfigSchemaInfo[]): boolean {
   try {
     const rec = readRecord(root);
     if (!rec?.plugins || typeof rec.plugins !== 'object') return false;
-    if (!('view' in rec.plugins)) return false;
-    const plugins = { ...rec.plugins };
-    delete plugins.view;
-    writePluginsConfig(root, plugins); // tmp+rename 原子写
+    const byMode = new Map(manifests.map((m) => [m.mode, m]));
+    const stored = rec.plugins as Record<string, unknown>;
+    const plugins: Record<string, unknown> = { ...stored };
+    let changed = false;
+    for (const mode of Object.keys(plugins)) {
+      const m = byMode.get(mode);
+      // 无声明(未注册,可能是外部插件或已卸载)→ 保守不清;external → 保留
+      if (!m || m.external) continue;
+      const section = plugins[mode];
+      if (section === null || typeof section !== 'object') continue;
+      const keys = Object.keys(section as Record<string, unknown>);
+      if (!m.config || Object.keys(m.config).length === 0) {
+        // 内置且未声明 config → 整段死键
+        if (keys.length > 0) {
+          delete plugins[mode];
+          changed = true;
+        }
+        continue;
+      }
+      // 键级收敛:仅保留 manifest.config 声明的键
+      const kept: Record<string, unknown> = {};
+      for (const key of Object.keys(m.config)) {
+        if (key in (section as Record<string, unknown>)) kept[key] = (section as Record<string, unknown>)[key];
+      }
+      if (Object.keys(kept).length !== keys.length) {
+        if (Object.keys(kept).length === 0) delete plugins[mode];
+        else plugins[mode] = kept;
+        changed = true;
+      }
+    }
+    if (!changed) return false;
+    writePluginsConfig(root, plugins as Record<string, Record<string, unknown>>); // tmp+rename 原子写
     return true;
   } catch {
     return false; // 记录缺失/损坏:跳过清理,不阻塞启动

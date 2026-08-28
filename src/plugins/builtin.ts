@@ -22,6 +22,7 @@ export function defineBuiltin(def: {
 
   return {
     inject: inner.inject,
+    manifest: def.manifest, // cli 启动期死键剥离按 manifest 判定(config 声明/external)
     apply(ctx: Context, config: { root?: string }) {
       currentRoot = config?.root ?? '';
       inner.apply(ctx, config);

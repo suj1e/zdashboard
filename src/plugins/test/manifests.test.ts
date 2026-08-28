@@ -50,9 +50,9 @@ describe('六插件 manifest 单源契约', () => {
     }
   });
 
-  it('design 多文件夹配置在 manifest.config 单源声明(folders)', () => {
-    expect(designManifest.config?.folders).toMatchObject({ type: 'string[]' });
-    expect(designManifest.config?.folders?.default).toEqual([]);
+  it('design 约定化后不再声明 config(schema 为空对象,/__plugins/config 不再返回 design 段)', () => {
+    // 扫描目录改为约定常量 <root>/.zdev/design,配置链路整体拆除
+    expect(designManifest.config ?? {}).toEqual({});
   });
 
   it('view 约定化后不再声明 config(schema 为空对象,/__plugins/config 不再返回 view 段)', () => {
