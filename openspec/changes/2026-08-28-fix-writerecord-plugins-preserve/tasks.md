@@ -4,5 +4,5 @@
   - 验收:4 分支单测存在且先红
 - [x] 2. 实现 `writeRecord` 读改写合并 + tmp+rename 原子写
   - 验收:4 分支全绿
-- [ ] 3. 回归:`pnpm typecheck && pnpm test` 全绿,instance-strip 用例不回归
+- [x] 3. 回归:`pnpm typecheck && pnpm test` 全绿,instance-strip 用例不回归
   - 验收:typecheck 0 error
