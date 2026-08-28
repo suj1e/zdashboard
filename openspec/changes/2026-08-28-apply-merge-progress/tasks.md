@@ -12,7 +12,7 @@
   - 验收:单 change 视图现有测试迁移后全绿;批量视图空态引导文案渲染
 - [x] 6. 删 `src/plugins/apply-batch/` 整目录;确认 `?p=apply-batch` 回落首页
   - 验收:集成测试未知 mode 回落;IconRail 仅一个执行进度入口
-- [ ] 7. playground mock `.zdev/apply/runs/` 三件套 + CURRENT,手验 Tab/graph/日志/plan
+- [x] 7. playground mock `.zdev/apply/runs/` 三件套 + CURRENT,手验 Tab/graph/日志/plan
   - 验收:手工 checklist 过
 - [ ] 8. 回归:`pnpm typecheck && pnpm test` 全绿
   - 验收:typecheck 0 error
