@@ -139,3 +139,8 @@ export const BATCH_LOGS_TAIL = 100;
 export function tailLogs(state: BatchState | null): BatchLog[] {
   return (state?.logs ?? []).slice(-BATCH_LOGS_TAIL);
 }
+
+/** 读活动 run 的 plan.md 文本;缺失返回 null(路由层转 404,前端空态承接) */
+export function readBatchPlan(root: string, runId: string): string | null {
+  return readText(path.join(root, '.zdev', 'apply', 'runs', runId, 'plan.md'));
+}

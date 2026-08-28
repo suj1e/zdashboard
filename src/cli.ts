@@ -26,7 +26,6 @@ import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
 import { apply as viewApply } from './plugins/view/index.js';
 import { apply as statsApply } from './plugins/stats/index.js';
-import { apply as applyBatchApply } from './plugins/apply-batch/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -166,7 +165,8 @@ async function main() {
   ctx.plugin(DashboardService);
 
   // built-in plugins:统一数组注册(未来迁移为 definePlugin 产出后无需改动此处)
-  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, applyBatchApply, designApply, viewApply];
+  // apply-batch 已并入 apply(mode apply,view=batch Tab 只读驾驶舱),见 2026-08-28-apply-merge-progress
+  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, designApply, viewApply];
   for (const apply of BUILTIN_PLUGINS) {
     try {
       ctx.plugin(apply, { root });
