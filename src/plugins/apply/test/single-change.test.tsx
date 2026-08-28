@@ -76,4 +76,10 @@ describe('SingleChangeView — 🔧[人工] 口径', () => {
     // tasks.md 标题计数 = 非人工项数(2),而非原始 4
     expect(screen.getByText('(2 项)')).toBeInTheDocument();
   });
+
+  it('左列列表项显示 🔧[人工] 计数徽标(选中且详情已加载时)', async () => {
+    setLocation('/?p=apply&change=alpha');
+    render(<SingleChangeView />);
+    expect(await screen.findByText('🔧[人工] 2')).toBeInTheDocument();
+  });
 });

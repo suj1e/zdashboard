@@ -4,7 +4,7 @@
  * - 任务树/进度条渲染;无 change 参数只显列表;无 change 空态 EmptyState。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import Workspace from '../Workspace.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
@@ -26,6 +26,13 @@ const DETAIL: ChangeDetail = {
   hasTestStrategy: true,
 };
 
+const DETAIL_BETA: ChangeDetail = {
+  ...CHANGES[1],
+  tasks: '- [ ] beta 任务一',
+  dependsOn: [],
+  hasTestStrategy: false,
+};
+
 function setLocation(url: string) {
   window.history.replaceState(null, '', url);
 }
@@ -39,6 +46,7 @@ beforeEach(() => {
     if (url.includes('/__apply/change')) {
       const name = new URL(url, 'http://x').searchParams.get('name');
       if (name === 'alpha') return json(DETAIL);
+      if (name === 'beta') return json(DETAIL_BETA);
       return json({ error: 'change not found' });
     }
     if (url.includes('/__apply')) return json(CHANGES);
@@ -111,5 +119,57 @@ describe('apply Workspace — 空态', () => {
     setLocation('/?p=apply');
     render(<Workspace params={new URLSearchParams('?p=apply')} />);
     expect(await screen.findByText('没有进行中的 change')).toBeInTheDocument();
+  });
+});
+
+describe('SingleChangeView — 分栏布局(T2)', () => {
+  it('lg 断点分栏结构存在:容器 flex-col(小屏堆叠)+lg:flex-row,左列 lg:w-72 shrink-0,右列 flex-1', async () => {
+    setLocation('/?p=apply');
+    render(<Workspace params={new URLSearchParams('?p=apply')} />);
+    await screen.findByText('alpha');
+    const split = screen.getByTestId('single-split');
+    expect(split.className).toContain('flex-col');
+    expect(split.className).toContain('lg:flex-row');
+    const listPane = screen.getByTestId('change-list-pane');
+    expect(listPane.className).toContain('lg:w-72');
+    expect(listPane.className).toContain('shrink-0');
+    expect(screen.getByTestId('change-detail-pane').className).toContain('flex-1');
+  });
+
+  it('点左列 beta 项 → 写 change=beta 且右列详情切换为 beta', async () => {
+    setLocation('/?p=apply&change=alpha');
+    render(<Workspace params={new URLSearchParams('?p=apply&change=alpha')} />);
+    expect(await screen.findByText('已完成任务一')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId('change-list-pane')).getByText('beta'));
+    expect(new URLSearchParams(window.location.search).get('change')).toBe('beta');
+    expect(await screen.findByText('beta 任务一')).toBeInTheDocument();
+    expect(screen.queryByText('已完成任务一')).not.toBeInTheDocument();
+  });
+
+  it('选中高亮:change=alpha 时左列 alpha 项带选中态样式,未选项不带', async () => {
+    setLocation('/?p=apply&change=alpha');
+    render(<Workspace params={new URLSearchParams('?p=apply&change=alpha')} />);
+    await screen.findByText('已完成任务一');
+    const listPane = screen.getByTestId('change-list-pane');
+    const selectedBtn = within(listPane).getByText('alpha').closest('button');
+    expect(selectedBtn?.className).toContain('border-primary');
+    const otherBtn = within(listPane).getByText('beta').closest('button');
+    expect(otherBtn?.className).not.toContain('border-primary');
+  });
+
+  it('未选中 change 时右列详情窗格显示引导占位', async () => {
+    setLocation('/?p=apply');
+    render(<Workspace params={new URLSearchParams('?p=apply')} />);
+    await screen.findByText('alpha');
+    expect(screen.getByText('从左侧列表选择 change 查看详情')).toBeInTheDocument();
+  });
+
+  it('左列长名 truncate 且带 title 提示', async () => {
+    setLocation('/?p=apply');
+    render(<Workspace params={new URLSearchParams('?p=apply')} />);
+    await screen.findByText('alpha');
+    const nameSpan = within(screen.getByTestId('change-list-pane')).getByText('alpha');
+    expect(nameSpan.className).toContain('truncate');
+    expect(nameSpan).toHaveAttribute('title', 'alpha');
   });
 });
