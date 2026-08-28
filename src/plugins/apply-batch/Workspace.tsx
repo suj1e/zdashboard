@@ -5,7 +5,7 @@
  */
 import { lazy, Suspense } from 'react';
 import { toast } from 'sonner';
-import type { BatchChange, BatchLog, BatchState } from '../../server/apply-batch-store.js';
+import type { BatchChange, BatchLog, BatchState } from '../apply/batch.js';
 import { PluginPage } from '../../web/kit/index.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
