@@ -34,7 +34,8 @@ declare module 'cordis' {
   }
 }
 
-const MIME: Record<string, string> = {
+/** 扩展名 → Content-Type 表(SDK 插件路由等复用,勿在他处复制) */
+export const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8',
   '.mjs': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',

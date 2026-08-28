@@ -7,15 +7,15 @@ export { ImageViewer } from '../../../web/viewers/ImageViewer.js';
 export { CodeViewer } from '../../../web/viewers/CodeViewer.js';
 
 export function VideoViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8"><video src={'/' + encodeURI(path)} controls className="max-w-full max-h-[80vh] rounded border" /></div>;
+  return <div className="grid place-items-center p-8"><video src={'/__design/asset?path=' + encodeURI(path)} controls className="max-w-full max-h-[80vh] rounded border" /></div>;
 }
 
 export function AudioViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8"><audio src={'/' + encodeURI(path)} controls className="w-full max-w-2xl" /></div>;
+  return <div className="grid place-items-center p-8"><audio src={'/__design/asset?path=' + encodeURI(path)} controls className="w-full max-w-2xl" /></div>;
 }
 
 export function PdfViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8 h-full"><iframe src={'/' + encodeURI(path)} title="PDF" className="w-full h-full max-h-[80vh] rounded border bg-white" /></div>;
+  return <div className="grid place-items-center p-8 h-full"><iframe src={'/__design/asset?path=' + encodeURI(path)} title="PDF" className="w-full h-full max-h-[80vh] rounded border bg-white" /></div>;
 }
 
 export function FontViewer({ path }: { path: string }) {
@@ -24,7 +24,7 @@ export function FontViewer({ path }: { path: string }) {
     let cancelled = false;
     let objectUrl = '';
     let face: FontFace | null = null;
-    fetch('/' + encodeURI(path))
+    fetch('/__design/asset?path=' + encodeURI(path))
       .then(r => r.blob())
       .then(async blob => {
         if (cancelled) return;

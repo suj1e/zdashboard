@@ -19,7 +19,7 @@ export default function TokenViewer({ path }: { path: string }) {
     let cancelled = false;
     setLoading(true);
     setSections([]);
-    fetch('/' + encodeURI(path), { cache: 'no-store' })
+    fetch('/__design/asset?path=' + encodeURI(path), { cache: 'no-store' })
       .then(r => r.text())
       .then(text => {
         if (cancelled) return;
