@@ -1,4 +1,5 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
+import iconv from 'iconv-lite';
 
 export interface Recipe { name: string; description: string; }
 export type TaskStatus = 'running' | 'exited';
@@ -17,10 +18,24 @@ interface Task {
   signal?: string;
   startedAt: number;
   buffer: string[];
-  pending: string; // 行缓冲:块缓冲输出会在行中间断开,攒到 \n 才切行
+  pending: Buffer; // 字节级行缓冲:块缓冲输出会在行中间断开,攒到 \n(0x0A)才切行——多字节字符不会跨行界,解码只发生在完整行上
 }
 
 const MAX_BUFFER = 1000;
+
+const utf8Strict = new TextDecoder('utf-8', { fatal: true });
+
+/**
+ * 逐行解码:先 UTF-8 严格解码,失败回退 GBK(Windows 码页输出)。
+ * 行界按 0x0A 字节切分是安全的:UTF-8 续字节 ≥ 0x80、GBK 尾字节 0x40–0xFE,均不含 0x0A。
+ */
+function decodeLine(buf: Buffer): string {
+  try {
+    return utf8Strict.decode(buf);
+  } catch {
+    return iconv.decode(buf, 'gbk');
+  }
+}
 
 /** 多任务并发 runner:每个 recipe 独立进程/日志/状态,同名 start 即重启,互不影响 */
 export class JustRunner {
@@ -74,7 +89,7 @@ export class JustRunner {
   /** 启动 recipe:同名先停旧进程(重启语义),不影响其他任务;调用方须先用 recipes() 校验名字 */
   start(recipe: string) {
     this.killOne(recipe);
-    const task: Task = { recipe, child: null, state: 'running', code: null, startedAt: Date.now(), buffer: [], pending: '' };
+    const task: Task = { recipe, child: null, state: 'running', code: null, startedAt: Date.now(), buffer: [], pending: Buffer.alloc(0) };
     this.tasks.set(recipe, task);
     this.emit({ type: 'clear', recipe }); // 广播清屏:同步清掉该任务上一轮残留日志
     this.emit({ type: 'state', recipe, state: 'running', code: null, startedAt: task.startedAt });
@@ -94,21 +109,21 @@ export class JustRunner {
     const isStale = () => this.tasks.get(recipe) !== task;
     const push = (d: Buffer) => {
       if (isStale()) return;
-      task.pending += d.toString();
+      task.pending = Buffer.concat([task.pending, d]);
       let idx: number;
-      while ((idx = task.pending.indexOf('\n')) >= 0) {
-        const line = task.pending.slice(0, idx + 1);
-        task.pending = task.pending.slice(idx + 1);
-        this.pushLine(task, line);
+      while ((idx = task.pending.indexOf(0x0a)) >= 0) { // 字节级切行:行界 0x0A 不会落在多字节字符内部
+        const line = task.pending.subarray(0, idx + 1);
+        task.pending = task.pending.subarray(idx + 1);
+        this.pushLine(task, decodeLine(line));
       }
-      // 无 \n 的尾巴留在 pending,等下个 chunk(块缓冲输出会在行中断开,不能当独立行)
+      // 无 \n 的尾巴留在字节缓冲,等下个 chunk(块缓冲输出会在行中断开,不能当独立行;半个多字节字符也在此安全等待)
     };
     child.stdout?.on('data', push);
     child.stderr?.on('data', push);
     child.on('error', (err) => { this.pushLine(task, `[zdashboard] spawn error: ${err.message}\n`); });
     child.on('exit', (code, signal) => {
-      if (task.pending && !isStale()) { this.pushLine(task, task.pending + '\n'); } // flush 末尾无换行的残留
-      task.pending = '';
+      if (task.pending.length > 0 && !isStale()) { this.pushLine(task, decodeLine(task.pending) + '\n'); } // flush 末尾无换行的残留(空 Buffer 为 truthy,须按 length 判)
+      task.pending = Buffer.alloc(0);
       task.child = null;
       task.state = 'exited';
       task.code = code ?? 0;
@@ -139,7 +154,7 @@ export class JustRunner {
     const task = this.tasks.get(recipe);
     if (!task) return;
     task.buffer = [];
-    task.pending = '';
+    task.pending = Buffer.alloc(0);
     this.emit({ type: 'clear', recipe });
   }
 
