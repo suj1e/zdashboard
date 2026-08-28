@@ -1,5 +1,5 @@
 /**
- * just 工作区:活跃任务侧栏 + LogViewer 主区(模板化)。
+ * just 工作区:LogViewer 主区(内嵌任务列表,模板化)。
  * 选中任务由 URL 驱动(task 优先,退回 recipe);recipes 数据走 usePluginData。
  */
 import { LogViewer } from '../../web/components/LogViewer.js';

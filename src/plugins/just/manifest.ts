@@ -10,8 +10,8 @@ export const manifest: PluginManifest = {
   order: 50,
 };
 
-/** recipe:选中 recipe;task:活跃任务 id(与 recipe 同名空间,为多任务侧栏预留) */
+/** recipe:选中 recipe;task:活跃任务 id(与 recipe 同名空间) */
 export const params: ParamSchema = [
   { name: 'recipe', label: 'Recipe', type: 'string', description: '选中的 recipe 名' },
-  { name: 'task', label: '活跃任务', type: 'string', description: '活跃任务 id' },
+  { name: 'task', label: '任务', type: 'string', description: '活跃任务 id' },
 ];

@@ -6,7 +6,7 @@
  * 无需 runner 池改造。plugin:just:log 等频道广播按事件原样携带 taskId。
  *
  * start/restart/stop/clear 走 guardedRoute(x-stop-token);
- * /__just/tasks 为活跃任务侧栏新增只读路由。
+ * /__just/tasks 为任务列表提供只读路由。
  */
 import type http from 'node:http';
 import { JustRunner } from '../../server/just-runner.js';

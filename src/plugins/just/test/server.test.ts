@@ -1,7 +1,7 @@
 /**
  * T5 just 插件 server 接线验收:
  * - definePlugin 接入;/__just/start|stop|restart|clear 走 guardedRoute(无 token 403);
- * - 新增 /__just/tasks 供活跃任务侧栏;SSE /__just/logs 保留;
+ * - 新增 /__just/tasks 供任务列表;SSE /__just/logs 保留;
  * - plugin:just:* 频道广播载荷携带 taskId(recipe)。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
