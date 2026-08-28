@@ -1,3 +1,7 @@
+/**
+ * 批量 checkpoint 进度(只读):执行中变更的任务列表与当前任务高亮。
+ * 自 apply-batch viewers 原样迁入(2026-08-28-apply-merge-progress),无写控件。
+ */
 interface Change {
   name: string;
   status: string;

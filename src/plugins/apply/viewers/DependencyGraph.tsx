@@ -1,3 +1,7 @@
+/**
+ * 批量依赖图(只读):批次分组 + 状态筛选 + 选中 change(经 onSelectChange 入 URL sel)。
+ * 自 apply-batch viewers 迁入裁剪(2026-08-28-apply-merge-progress):重试按钮随写路由一并删除。
+ */
 import { useState } from 'react';
 
 interface Change {
@@ -14,14 +18,13 @@ interface Conflict {
 }
 
 interface Props {
-  state: {
+  graph: {
     changes: Change[];
     batches: { index: number; changeNames: string[]; status: string }[];
     conflicts: Conflict[];
   };
   selectedChange: string | null;
   onSelectChange: (name: string | null) => void;
-  onRetry: (name: string) => void;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -33,13 +36,13 @@ const STATUS_COLOR: Record<string, string> = {
   skipped: 'bg-muted text-muted-foreground line-through',
 };
 
-export default function DependencyGraph({ state, selectedChange, onSelectChange, onRetry }: Props) {
+export default function DependencyGraph({ graph, selectedChange, onSelectChange }: Props) {
   const [filter, setFilter] = useState<string>('all');
 
-  const filtered = state.changes.filter(c => filter === 'all' || c.status === filter);
+  const filtered = graph.changes.filter(c => filter === 'all' || c.status === filter);
 
-  const batchGroups = state.batches.reduce<Record<number, Change[]>>((acc, batch) => {
-    const changesInBatch = state.changes.filter(c => c.batchIndex === batch.index);
+  const batchGroups = graph.batches.reduce<Record<number, Change[]>>((acc, batch) => {
+    const changesInBatch = graph.changes.filter(c => c.batchIndex === batch.index);
     if (changesInBatch.length) acc[batch.index] = changesInBatch;
     return acc;
   }, {});
@@ -82,14 +85,6 @@ export default function DependencyGraph({ state, selectedChange, onSelectChange,
               <div className="text-xs text-muted-foreground">
                 批次 {c.batchIndex} · 依赖 {c.dependencies.length} 个
               </div>
-              {c.status === 'failed' && (
-                <button
-                  onClick={e => { e.stopPropagation(); onRetry(c.name); }}
-                  className="mt-2 text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20"
-                >
-                  重试
-                </button>
-              )}
             </div>
           ))}
         </div>
@@ -97,11 +92,11 @@ export default function DependencyGraph({ state, selectedChange, onSelectChange,
 
       {/* Main Graph Area */}
       <main className="flex-1 overflow-y-auto p-6">
-        {state.conflicts.length > 0 && (
+        {graph.conflicts.length > 0 && (
           <div className="mb-6 p-4 rounded-lg border border-warning bg-warning/10">
             <h3 className="font-medium text-warning mb-2">⚠️ 文件冲突检测</h3>
             <div className="space-y-2">
-              {state.conflicts.map((conflict, i) => (
+              {graph.conflicts.map((conflict, i) => (
                 <div key={i} className="text-sm">
                   <span className="font-medium">{conflict.changeA}</span>
                   <span className="text-muted-foreground"> 与 </span>

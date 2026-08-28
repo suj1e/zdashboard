@@ -1,0 +1,224 @@
+/**
+ * T5 批量驾驶舱视图(只读)验收:
+ * - 空态引导文案(无 run / run 存在但 state 缺失「历史 run 只读」);
+ * - graph 批次分组渲染 + sel 入 URL;checkpoint 子视图切换(组件 state);
+ * - 日志尾渲染;plan 只读展示(404 空态承接);
+ * - 只读:无任何写控件(暂停/恢复/确认执行/重试);订阅 files 频道失效重取。
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import BatchView from '../BatchView.js';
+import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
+import { __resetRouterForTest } from '../../../web/router.js';
+import { configure } from '@testing-library/react';
+
+// 全量并发下 lazy chunk 动态加载可能超过默认 1s,给异步查询 5s 余量
+configure({ asyncUtilTimeout: 5000 });
+import type { BatchSnapshot } from '../batch.js';
+
+const STATE = {
+  version: '1',
+  status: 'running',
+  changes: [
+    { name: 'alpha', path: 'x', status: 'completed', priority: 1, risk: 'low', dependencies: [], estimatedDuration: 1, batchIndex: 0, retryCount: 0 },
+    { name: 'beta', path: 'y', status: 'running', priority: 2, risk: 'medium', dependencies: ['alpha'], estimatedDuration: 1, batchIndex: 1, retryCount: 0,
+      checkpoint: { currentTaskIndex: 1, totalTasks: 2, completedTasks: 1, currentTask: '写实现' } },
+    { name: 'gamma', path: 'z', status: 'parked', priority: 3, risk: 'high', dependencies: [], estimatedDuration: 1, batchIndex: 1, retryCount: 0 },
+  ],
+  batches: [
+    { index: 0, changeNames: ['alpha'], status: 'completed' },
+    { index: 1, changeNames: ['beta', 'gamma'], status: 'running' },
+  ],
+  currentBatchIndex: 1,
+  parallelism: 3,
+  logs: [
+    { timestamp: '2026-01-01T00:00:01Z', level: 'info', message: '计划已生成' },
+    { timestamp: '2026-01-01T00:00:02Z', level: 'success', message: 'alpha 完成', changeName: 'alpha' },
+  ],
+  conflicts: [],
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:02Z',
+};
+
+const PLAN = '# 执行计划\n\n- 并行度 3\n';
+
+const OK_SNAPSHOT: BatchSnapshot = { run: { id: 'run-1' }, state: STATE as never };
+const NO_RUN: BatchSnapshot = { run: null, state: null };
+const BROKEN_STATE: BatchSnapshot = { run: { id: 'run-1' }, state: null };
+
+class FakeES {
+  static instances: FakeES[] = [];
+  listeners = new Map<string, Set<(e: unknown) => void>>();
+  constructor(public url: string) { FakeES.instances.push(this); }
+  addEventListener(name: string, fn: (e: unknown) => void) {
+    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
+    this.listeners.get(name)!.add(fn);
+  }
+  removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
+  close(): void {}
+  emit(name: string, data: unknown) {
+    for (const fn of this.listeners.get(name) ?? []) fn({ data: JSON.stringify(data) });
+  }
+}
+
+function setLocation(url: string) {
+  window.history.replaceState(null, '', url);
+}
+
+let batchPayload: BatchSnapshot;
+let planStatus: number;
+let batchFail: boolean;
+
+function stubFetch() {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const json = (v: unknown) => ({ json: async () => v, ok: true }) as Response;
+    if (url === '/__apply/batch') {
+      if (batchFail) throw new Error('network down');
+      return json(batchPayload);
+    }
+    if (url === '/__apply/batch/graph') {
+      return json(batchPayload.state
+        ? {
+            changes: batchPayload.state.changes.map((c) => ({ name: c.name, status: c.status, dependencies: c.dependencies, batchIndex: c.batchIndex })),
+            batches: batchPayload.state.batches,
+            conflicts: batchPayload.state.conflicts,
+          }
+        : { changes: [], batches: [], conflicts: [] });
+    }
+    if (url === '/__apply/batch/logs') return json(batchPayload.state?.logs ?? []);
+    if (url === '/__apply/batch/plan') {
+      return planStatus === 200 ? json({ plan: PLAN }) : { ok: false, status: 404, json: async () => ({ error: 'plan not found' }) } as Response;
+    }
+    throw new Error(`unexpected fetch: ${url}`);
+  }));
+}
+
+beforeEach(() => {
+  __resetPluginDataForTest();
+  __resetRouterForTest();
+  batchPayload = OK_SNAPSHOT;
+  planStatus = 200;
+  batchFail = false;
+  stubFetch();
+  vi.stubGlobal('EventSource', FakeES);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  setLocation('/');
+});
+
+describe('BatchView — 空态引导(design 风险节文案)', () => {
+  it('无 run → 空态引导:提示在 zapply batch 中启动 + 新约定路径说明', async () => {
+    batchPayload = NO_RUN;
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
+    expect(screen.getByText(/zapply batch/)).toBeInTheDocument();
+    expect(screen.getByText(/\.zdev\/apply\/runs\//)).toBeInTheDocument();
+    expect(screen.getByText(/历史数据不迁移/)).toBeInTheDocument();
+  });
+
+  it('run 存在但 state 缺失/损坏 → 空态并注明历史 run 只读', async () => {
+    batchPayload = BROKEN_STATE;
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
+    expect(screen.getByText(/历史 run 只读/)).toBeInTheDocument();
+  });
+
+  it('数据加载失败(传输层)→ 与数据损坏分开文案,不误述为 run 损坏', async () => {
+    batchFail = true;
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
+    expect(screen.getByText(/数据加载失败/)).toBeInTheDocument();
+    expect(screen.queryByText(/历史 run 只读/)).not.toBeInTheDocument();
+  });
+});
+
+describe('BatchView — 只读驾驶舱渲染', () => {
+  it('汇总条:并行度/运行中/成功/失败/parked 计数', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('zapply batch')).toBeInTheDocument();
+    expect(screen.getByText(/并行度:\s*3/)).toBeInTheDocument();
+    expect(screen.getByText(/1 运行中/)).toBeInTheDocument();
+    expect(screen.getByText(/1 成功/)).toBeInTheDocument();
+    expect(screen.getByText(/1 parked/)).toBeInTheDocument();
+  });
+
+  it('graph:批次分组渲染 change 名与状态,无写控件', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    // alpha 同时出现在侧栏列表与主图卡片(graph 双区渲染)
+    expect((await screen.findAllByText('alpha')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('beta').length).toBeGreaterThanOrEqual(1);
+    // 只读:写控件不存在
+    expect(screen.queryByRole('button', { name: '暂停' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '恢复' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '确认执行' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重试' })).not.toBeInTheDocument();
+  });
+
+  it('点 change 卡片 → sel 入 URL;再点取消(sel 删键)', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    fireEvent.click((await screen.findAllByText('alpha'))[0]);
+    expect(new URLSearchParams(window.location.search).get('sel')).toBe('alpha');
+    fireEvent.click(screen.getAllByText('alpha')[0]);
+    expect(new URLSearchParams(window.location.search).get('sel')).toBeNull();
+  });
+
+  it('checkpoint 子视图切换(组件 state,不占 URL view)并显示任务进度', async () => {
+    setLocation('/?p=apply&view=batch&sel=beta');
+    render(<BatchView />);
+    fireEvent.click(await screen.findByRole('button', { name: '进度' }));
+    expect(await screen.findByText('执行中的变更')).toBeInTheDocument();
+    expect(screen.getByText('写实现')).toBeInTheDocument();
+    // URL view 仍是 batch(未被内部子视图污染)
+    expect(new URLSearchParams(window.location.search).get('view')).toBe('batch');
+  });
+
+  it('日志尾渲染 message 与 changeName 标注', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('计划已生成')).toBeInTheDocument();
+    expect(screen.getByText('alpha 完成')).toBeInTheDocument();
+    expect(screen.getByText('[alpha]')).toBeInTheDocument();
+  });
+
+  it('plan 只读展示:/__apply/batch/plan 内容渲染', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText(/并行度 3/)).toBeInTheDocument();
+  });
+
+  it('plan 缺失(404)→ 不渲染 plan 区,主视图不受影响', async () => {
+    planStatus = 404;
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect((await screen.findAllByText('alpha')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('执行计划 plan.md(只读)')).not.toBeInTheDocument();
+  });
+});
+
+describe('BatchView — files 频道刷新', () => {
+  it('SSE files 事件到达 → 失效重取 /__apply/batch', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const fetchMock = globalThis.fetch as unknown as { mock: { calls: unknown[][] } };
+    const before = fetchMock.mock.calls.filter((c) => String(c[0]) === '/__apply/batch').length;
+    const es = FakeES.instances.at(-1)!;
+    await act(async () => {
+      es.emit('files', '');
+    });
+    await waitFor(() => {
+      const after = fetchMock.mock.calls.filter((c) => String(c[0]) === '/__apply/batch').length;
+      expect(after).toBeGreaterThan(before);
+    });
+  });
+});

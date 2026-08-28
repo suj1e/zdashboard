@@ -71,7 +71,7 @@ describe('comparePlugins — manifest.order 排序', () => {
 
   it('同 order 时按字母序稳定', () => {
     const a = { mode: 'apply', order: 10 } as WebPlugin;
-    const b = { mode: 'apply-batch', order: 10 } as WebPlugin;
+    const b = { mode: 'zeta', order: 10 } as WebPlugin;
     expect(comparePlugins(a, b)).toBeLessThan(0);
   });
 });
@@ -82,15 +82,15 @@ describe('collectPlugins — glob 收集与排序', () => {
       ['/plugins/view/web.tsx', () => Promise.resolve({ default: sdkExport('view', 20) })],
       ['/plugins/stats/web.tsx', () => Promise.resolve({ default: sdkExport('stats') })],
       ['/plugins/design/web.tsx', () => Promise.reject(new Error('boom'))],
-      ['/plugins/apply-batch/web.tsx', () => Promise.resolve({ default: sdkExport('apply-batch', 45) })],
+      ['/plugins/zeta/web.tsx', () => Promise.resolve({ default: sdkExport('zeta', 45) })],
       ['/plugins/broken/web.tsx', () => Promise.resolve({})],
     ];
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const list = await collectPlugins(loaders);
     spy.mockRestore();
     // design 加载失败被跳过,broken 非法导出被跳过
-    // view(20) < apply-batch(45) 有序在前;stats 缺 order 排尾
-    expect(list.map((p) => p.mode)).toEqual(['view', 'apply-batch', 'stats']);
+    // view(20) < zeta(45) 有序在前;stats 缺 order 排尾
+    expect(list.map((p) => p.mode)).toEqual(['view', 'zeta', 'stats']);
     expect(list[0].order).toBe(20); // view 来自 manifest.order
   });
 
