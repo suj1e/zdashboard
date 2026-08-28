@@ -6,6 +6,7 @@
  * 3. GBK+UTF-8 混合多行 → 各行正确
  * 4. 多字节跨 chunk(一行中文从字节中点/字符中点切成两个 chunk)→ 不错乱
  * 5. 纯 ASCII → 不回归
+ * 6. exit flush:进程退出时无换行的 GBK 残留行经 decodeLine(pending)+'\n' 正确 flush,pending 清空不重复
  * 附加:stderr 与 stdout 同规则。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -128,5 +129,17 @@ describe('JustRunner — 日志编码智能解码(design 五场景)', () => {
     expect(logs()).toEqual([]); // 无 \n 且行未完整,不产出行
     childAt(0).stdout.emit('data', full.subarray(5));
     expect(logs()).toEqual(['中文内容\n']);
+  });
+
+  it('场景6 exit flush:退出时无换行的 GBK 残留行正确解码 flush,pending 清空不重复', () => {
+    const { logs } = setup();
+    const child = childAt(0);
+    // 'GBK中文' 的 GBK 字节(47 42 4B D6 D0 CE C4),无 0x0a:块缓冲在行中断开的最后一段
+    child.stdout.emit('data', Buffer.from([0x47, 0x42, 0x4b, 0xd6, 0xd0, 0xce, 0xc4]));
+    expect(logs()).toEqual([]); // 无换行:残留留 pending,不产出行
+    child.emit('exit', 0, null);
+    expect(logs()).toEqual(['GBK中文\n']); // flush:decodeLine(pending)+'\n' 出正确中文行
+    child.emit('exit', 0, null); // 二次 exit:pending 已清空,不得重复 flush 同一行
+    expect(logs()).toEqual(['GBK中文\n']);
   });
 });
