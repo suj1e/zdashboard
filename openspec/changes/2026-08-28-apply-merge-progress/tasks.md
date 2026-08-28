@@ -1,6 +1,6 @@
 # 任务:apply 合并执行进度插件
 
-- [ ] 1. server:`src/plugins/apply/batch.ts` 只读读取器(CURRENT 解析 + runId 字符校验 + state.json 读取,null 空态语义)
+- [x] 1. server:`src/plugins/apply/batch.ts` 只读读取器(CURRENT 解析 + runId 字符校验 + state.json 读取,null 空态语义)
   - 验收:单测四分支——无 CURRENT/非法 runId/JSON 损坏/正常读取
 - [ ] 2. server:注册 `/__apply/batch`、`/__apply/batch/graph`、`/__apply/batch/logs`、`/__apply/batch/plan` 只读路由;删 7 条 guardedRoute 写路由与 `throttle.ts`
   - 验收:curl 读路由返回约定形状;写路由 404
