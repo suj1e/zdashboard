@@ -83,10 +83,10 @@ export function scanTree(root: string, scanDirs: string[], opts?: ScanTreeOption
     const paths: string[] = [];
     walkDir(dirPath, { maxDepth: 4, onFile: (_, rel) => paths.push(rel) });
     const prefix = dir;
-      const children = prefixPaths(buildTree(paths, defaultExpandDepth), prefix);
-      if (children.length) {
-        tree.push({ name: `${dir} (${children.length})`, kind: 'dir', children });
-      }
+    const children = prefixPaths(buildTree(paths, defaultExpandDepth), prefix);
+    if (children.length) {
+      tree.push({ name: `${dir} (${children.length})`, kind: 'dir', children });
+    }
   }
   return tree;
 }
