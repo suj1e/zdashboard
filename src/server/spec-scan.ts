@@ -57,8 +57,6 @@ function buildTree(paths: string[], defaultExpandDepth = 2): TreeNode[] {
 }
 
 export interface ScanTreeOptions {
-  hiddenDirs?: string[];
-  showHidden?: boolean;
   defaultExpandDepth?: number;
 }
 
@@ -83,7 +81,7 @@ export function scanTree(root: string, scanDirs: string[], opts?: ScanTreeOption
     const dirPath = path.join(root, dir);
     if (!fs.existsSync(dirPath)) continue;
     const paths: string[] = [];
-    walkDir(dirPath, { maxDepth: 4, showHidden: opts?.showHidden, onFile: (_, rel) => paths.push(rel) });
+    walkDir(dirPath, { maxDepth: 4, onFile: (_, rel) => paths.push(rel) });
     const prefix = dir;
       const children = prefixPaths(buildTree(paths, defaultExpandDepth), prefix);
       if (children.length) {
