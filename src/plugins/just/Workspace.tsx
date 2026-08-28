@@ -20,7 +20,7 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
       icon={themed}
       breadcrumb={['插件', manifest.mode, ...(selected ? [selected] : [])]}
     >
-      <div className="mx-auto h-full max-w-6xl bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
+      <div className="mx-auto h-full bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <LogViewer
           selected={selected}
           onSelect={(recipe) => route.navigate(recipe ? { recipe, task: null } : { recipe: null, task: null })}
