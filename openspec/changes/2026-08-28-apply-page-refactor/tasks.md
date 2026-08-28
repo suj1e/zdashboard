@@ -6,5 +6,5 @@
   - 验收:组件测试:点列表项写 URL 且右列切换;lg 断点分栏结构存在
 - [x] 3. BatchView 分区:概览条(runId/状态/批次/并发度/plan 入口)+中部 graph/checkpoint 切换+底部 h-48 固定高日志区
   - 验收:组件测试:概览条元素、日志容器类、空态引导保留
-- [ ] 4. 回归:🔧[人工] 徽标、`?p=apply-batch` 重定向、view 非法回落全部不回归;playground 手验(含小屏)
+- [x] 4. 回归:🔧[人工] 徽标、`?p=apply-batch` 重定向、view 非法回落全部不回归;playground 手验(含小屏)
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);手工 checklist 过
