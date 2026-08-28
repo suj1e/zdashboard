@@ -37,16 +37,17 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   );
 }
 
-export function MdViewer({ path }: { path: string }) {
+/** resolve:可选整 URL 解析器(不传 = /__file-content 根路径,view 插件语义);design 插件传代理路由解析 */
+export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [text, setText] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    fetch('/__file-content/' + encodeURI(path), { cache: 'no-store' })
+    fetch(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((r) => r.text())
       .then((t) => { if (alive) setText(t); })
       .catch(() => { if (alive) setText(''); });
     return () => { alive = false; };
-  }, [path]);
+  }, [path, resolve]);
 
   if (text === null) return <p className="p-3 text-xs text-muted-foreground">加载中…</p>;
 

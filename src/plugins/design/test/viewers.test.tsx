@@ -5,9 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { selectViewer, ASSET_VIEWER_TYPES } from '../viewers/index.js';
-import { UnsupportedViewer, PdfViewer, VideoViewer, AudioViewer, FontViewer } from '../viewers/misc.js';
+import { UnsupportedViewer, PdfViewer, VideoViewer, AudioViewer, FontViewer, MdViewer, ImageViewer, CodeViewer } from '../viewers/misc.js';
 import TokenViewer from '../viewers/TokenViewer.js';
 import PageViewer from '../viewers/PageViewer.js';
+
+/** 代理 URL 构造与生产同式:查询值必须 encodeURIComponent(&、+、#、= 不被截断) */
+const viaProxy = (p: string) => '/__design/asset?path=' + encodeURIComponent(p);
 
 const CSS_FIXTURE = `:root {
   --color-primary: #ff0000;
@@ -41,10 +44,10 @@ describe('design 查看器注册表 — 九类资产渲染', () => {
   });
 
   it('page → iframe 预览,src 走代理路由', () => {
-    const { container } = render(<PageViewer path=".zdev/design/home.html" />);
+    const { container } = render(<PageViewer path="home.html" />);
     const iframe = container.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    expect(iframe!.getAttribute('src')).toBe('/__design/asset?path=' + encodeURI('.zdev/design/home.html'));
+    expect(iframe!.getAttribute('src')).toBe(viaProxy('home.html'));
   });
 });
 
@@ -53,14 +56,14 @@ describe('design viewer 资产 src 走 /__design/asset 代理', () => {
     const { container } = render(<PdfViewer path="docs/spec.pdf" />);
     const iframe = container.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    expect(iframe!.getAttribute('src')).toBe('/__design/asset?path=' + encodeURI('docs/spec.pdf'));
+    expect(iframe!.getAttribute('src')).toBe(viaProxy('docs/spec.pdf'));
   });
 
   it('video/audio → media src 走代理路由', () => {
     const { container: v } = render(<VideoViewer path="demo/demo.mp4" />);
-    expect(v.querySelector('video')!.getAttribute('src')).toBe('/__design/asset?path=' + encodeURI('demo/demo.mp4'));
+    expect(v.querySelector('video')!.getAttribute('src')).toBe(viaProxy('demo/demo.mp4'));
     const { container: a } = render(<AudioViewer path="demo/demo.mp3" />);
-    expect(a.querySelector('audio')!.getAttribute('src')).toBe('/__design/asset?path=' + encodeURI('demo/demo.mp3'));
+    expect(a.querySelector('audio')!.getAttribute('src')).toBe(viaProxy('demo/demo.mp3'));
   });
 
   it('font/token 内容拉取走代理路由', async () => {
@@ -72,8 +75,35 @@ describe('design viewer 资产 src 走 /__design/asset 代理', () => {
     render(<FontViewer path="fonts/app.woff2" />);
     render(<TokenViewer path="tokens.css" />);
     await waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(2));
-    expect(calls).toContain('/__design/asset?path=' + encodeURI('fonts/app.woff2'));
-    expect(calls).toContain('/__design/asset?path=' + encodeURI('tokens.css'));
+    expect(calls).toContain(viaProxy('fonts/app.woff2'));
+    expect(calls).toContain(viaProxy('tokens.css'));
+  });
+});
+
+describe('design 共享查看器经 resolve 走代理(icon/md/component,B1)', () => {
+  it('icon → ImageViewer img src 走代理', () => {
+    const { container } = render(<ImageViewer path="icons/logo.svg" />);
+    expect(container.querySelector('img')!.getAttribute('src')).toBe(viaProxy('icons/logo.svg'));
+  });
+
+  it('md → MdViewer 内容拉取走代理', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return { text: async () => '# hi' } as unknown as Response;
+    }));
+    render(<MdViewer path="docs/readme.md" />);
+    await waitFor(() => expect(calls).toContain(viaProxy('docs/readme.md')));
+  });
+
+  it('component → CodeViewer 内容拉取走代理', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return { ok: true, text: async () => 'const x = 1' } as unknown as Response;
+    }));
+    render(<CodeViewer path="comp/button.tsx" />);
+    await waitFor(() => expect(calls).toContain(viaProxy('comp/button.tsx')));
   });
 });
 

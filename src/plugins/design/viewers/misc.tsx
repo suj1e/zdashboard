@@ -1,21 +1,35 @@
 /** design 资产查看器:媒体/字体/未支持(自 foundation Workspace 拆出的杂项) */
 import { useEffect, useState } from 'react';
 import { useIcons } from '../../../web/lib/icons.js';
+import { MdViewer as SharedMdViewer } from '../../../web/viewers/MdViewer.js';
+import { ImageViewer as SharedImageViewer } from '../../../web/viewers/ImageViewer.js';
+import { CodeViewer as SharedCodeViewer } from '../../../web/viewers/CodeViewer.js';
 
-export { MdViewer } from '../../../web/viewers/MdViewer.js';
-export { ImageViewer } from '../../../web/viewers/ImageViewer.js';
-export { CodeViewer } from '../../../web/viewers/CodeViewer.js';
+/** design 资产一律走 /__design/asset 代理(约定根 .zdev/design);共享查看器默认解析保留给 view 插件 */
+const viaDesignAsset = (p: string) => '/__design/asset?path=' + encodeURIComponent(p);
+
+export function MdViewer({ path }: { path: string }) {
+  return <SharedMdViewer path={path} resolve={viaDesignAsset} />;
+}
+
+export function ImageViewer({ path }: { path: string }) {
+  return <SharedImageViewer path={path} resolve={viaDesignAsset} />;
+}
+
+export function CodeViewer({ path }: { path: string }) {
+  return <SharedCodeViewer path={path} resolve={viaDesignAsset} />;
+}
 
 export function VideoViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8"><video src={'/__design/asset?path=' + encodeURI(path)} controls className="max-w-full max-h-[80vh] rounded border" /></div>;
+  return <div className="grid place-items-center p-8"><video src={'/__design/asset?path=' + encodeURIComponent(path)} controls className="max-w-full max-h-[80vh] rounded border" /></div>;
 }
 
 export function AudioViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8"><audio src={'/__design/asset?path=' + encodeURI(path)} controls className="w-full max-w-2xl" /></div>;
+  return <div className="grid place-items-center p-8"><audio src={'/__design/asset?path=' + encodeURIComponent(path)} controls className="w-full max-w-2xl" /></div>;
 }
 
 export function PdfViewer({ path }: { path: string }) {
-  return <div className="grid place-items-center p-8 h-full"><iframe src={'/__design/asset?path=' + encodeURI(path)} title="PDF" className="w-full h-full max-h-[80vh] rounded border bg-white" /></div>;
+  return <div className="grid place-items-center p-8 h-full"><iframe src={'/__design/asset?path=' + encodeURIComponent(path)} title="PDF" className="w-full h-full max-h-[80vh] rounded border bg-white" /></div>;
 }
 
 export function FontViewer({ path }: { path: string }) {
@@ -24,7 +38,7 @@ export function FontViewer({ path }: { path: string }) {
     let cancelled = false;
     let objectUrl = '';
     let face: FontFace | null = null;
-    fetch('/__design/asset?path=' + encodeURI(path))
+    fetch('/__design/asset?path=' + encodeURIComponent(path))
       .then(r => r.blob())
       .then(async blob => {
         if (cancelled) return;

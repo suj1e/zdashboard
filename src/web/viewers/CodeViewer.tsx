@@ -7,7 +7,8 @@ function escHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-export function CodeViewer({ path }: { path: string }) {
+/** resolve:可选整 URL 解析器(不传 = /__file-content 根路径,view 插件语义);design 插件传代理路由解析 */
+export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [text, setText] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -17,7 +18,7 @@ export function CodeViewer({ path }: { path: string }) {
     let alive = true;
     setText(null);
     setErr(null);
-    fetch('/__file-content/' + encodeURI(path), { cache: 'no-store' })
+    fetch(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();
@@ -25,7 +26,7 @@ export function CodeViewer({ path }: { path: string }) {
       .then((t) => { if (alive) setText(t); })
       .catch((e) => { if (alive) setErr(e.message || '加载失败'); });
     return () => { alive = false; };
-  }, [path]);
+  }, [path, resolve]);
 
   if (err) {
     return <div className="p-4 text-xs text-destructive">加载失败: {err}</div>;
