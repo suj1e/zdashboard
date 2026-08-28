@@ -2,9 +2,7 @@
 
 ## Purpose
 TBD - created by archiving change 2026-08-21-cordis-rewrite. Update Purpose after archive.
-
 ## Requirements
-
 ### Requirement: cordis 插件运行时
 
 系统 SHALL 以 cordis@4.0.0-rc.8 作为插件运行时：core 服务（server/reload/tree/manifest）与业务插件（just/bugs/review/design/apply/view）全部为 cordis 插件，通过 `ctx.server.route()` / `ctx.server.sse()` 注册能力，注册自动 effect 化，插件卸载时逆序回收副作用。
@@ -348,12 +346,17 @@ stats 卡片 SHALL 做实钻取:点击 Worktree 卡片 SHALL 导航至 view(`?p=
 
 ### Requirement: just 多任务并发视图
 
-just 插件 SHALL 提供活跃任务侧栏:并发运行多个 recipe 时,侧栏列出全部活跃任务,点击切换主区日志;各任务日志 SHALL 按 taskId 隔离互不串扰。server 侧 SHALL 支持多任务并发执行(若现有 JustRunner 为单实例则改造为 runner 池)。
+just 插件不设侧边栏:主区 LogViewer 内嵌任务列表为唯一任务选择面,并发运行多个 recipe 时在该列表展示运行态并点击切换主区日志;各任务日志 SHALL 按 taskId 隔离互不串扰。server 侧 SHALL 支持多任务并发执行(若现有 JustRunner 为单实例则改造为 runner 池)。
 
 #### Scenario: 并发双任务日志隔离
 
 - **WHEN** 同时启动两个 recipe
-- **THEN** 侧栏出现两个活跃条目,分别点开显示各自日志,内容无交叉
+- **THEN** LogViewer 内嵌任务列表出现两个活跃条目,分别点开显示各自日志,内容无交叉
+
+#### Scenario: 无侧边栏布局
+
+- **WHEN** 用户从 IconRail 进入 just 插件
+- **THEN** 页面仅渲染主区(LogViewer 全宽),SidebarFrame 按 `plugin?.Sidebar` 判空收栏,任务选择经内嵌列表完成并写回 `recipe`/`task` URL 参数
 
 ### Requirement: 外部插件沙箱与 postMessage 桥
 
@@ -377,3 +380,4 @@ plugin-platform 三 change 序列 SHALL 以端到端冒烟作为完成关口:六
 
 - **WHEN** 在 src/ 与 vite.config.ts 中 grep hasBugs、ZenBug、BugsResult、review-sidebar 及 bugs/review 代理
 - **THEN** 全部无命中;`/__files` 响应不含 detect 字段
+
