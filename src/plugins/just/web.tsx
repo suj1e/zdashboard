@@ -7,5 +7,4 @@ export default defineWebPlugin({
   manifest,
   params,
   workspace: lazy(() => import('./Workspace.js')),
-  sidebar: lazy(() => import('./Sidebar.js')),
 });

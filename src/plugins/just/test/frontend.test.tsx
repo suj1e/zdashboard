@@ -1,19 +1,15 @@
 /**
- * T5 just 前端验收:
- * - 活跃任务侧栏(/__just/tasks,subscribe plugin:just:state):运行中任务列表,点击 task 入 URL;
- * - recipes 走 usePluginData;LogViewer 选中项由 URL(task ?? recipe)驱动。
+ * just 前端验收(去侧栏后):
+ * - web.tsx 不再导出 sidebar —— 任务选择面唯一入口是 LogViewer 内嵌列表;
+ * - LogViewer 内嵌 recipe 列表(FilterPills 药丸行)点选 → recipe 入 URL、task 置空、选中高亮;
+ * - LogViewer 选中项由 URL(task ?? recipe)驱动;无选中 → 总控台视图。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import Sidebar from '../Sidebar.js';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import Workspace from '../Workspace.js';
+import webPlugin from '../web.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
-
-const TASKS = [
-  { recipe: 'dev-server', state: 'running', code: null, startedAt: 1 },
-  { recipe: 'build', state: 'exited', code: 0, startedAt: 1 },
-];
 
 class FakeES {
   static instances: FakeES[] = [];
@@ -42,7 +38,6 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     const json = (v: unknown) => ({ json: async () => v }) as Response;
-    if (url.includes('/__just/tasks')) return json(TASKS);
     if (url.includes('/__just/recipes')) return json([{ name: 'dev-server', description: 'dev' }, { name: 'build', description: 'b' }]);
     if (url.includes('/__config')) return json({ stopToken: 'tok' });
     throw new Error(`unexpected fetch: ${url}`);
@@ -55,38 +50,33 @@ afterEach(() => {
   setLocation('/');
 });
 
-describe('just Sidebar — 活跃任务侧栏', () => {
-  it('列出运行中任务,退出任务不在活跃区', async () => {
-    setLocation('/?p=just');
-    render(<Sidebar />);
-    expect(await screen.findByText('dev-server')).toBeInTheDocument();
-    expect(screen.queryByText('build')).not.toBeInTheDocument();
-    expect(screen.getByText(/活跃任务/)).toBeInTheDocument();
+describe('just web 插件定义 — 去侧栏', () => {
+  it('web.tsx 不再含 sidebar 导出(SidebarFrame 判空自动收栏,选择面收敛到 LogViewer)', () => {
+    expect(webPlugin.sidebar).toBeUndefined();
+    expect(webPlugin.workspace).toBeDefined();
   });
+});
 
-  it('点活跃任务 → task+recipe 入 URL', async () => {
+describe('just LogViewer 内嵌列表 — 点 recipe → URL param', () => {
+  it('?p=just 总控台:点药丸行 recipe → recipe 入 URL 且 task 置空,LogViewer 聚焦该任务', async () => {
     setLocation('/?p=just');
-    render(<Sidebar />);
+    const { rerender } = render(<Workspace params={new URLSearchParams('?p=just')} />);
+    const pills = await screen.findByRole('group', { name: '任务筛选' });
+    const pill = within(pills).getByText('dev-server');
     // findBy 在 act 外轮询;仅点击包 act
-    const item = await screen.findByText('dev-server');
     await act(async () => {
-      fireEvent.click(item);
+      fireEvent.click(pill);
     });
     const q = new URLSearchParams(window.location.search);
-    expect(q.get('task')).toBe('dev-server');
+    expect(q.get('p')).toBe('just');
     expect(q.get('recipe')).toBe('dev-server');
-  });
-
-  it('无运行中任务 → 空态提示(边界)', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      const json = (v: unknown) => ({ json: async () => v }) as Response;
-      if (url.includes('/__just/tasks')) return json([]);
-      throw new Error(`unexpected fetch: ${url}`);
-    }));
-    setLocation('/?p=just');
-    render(<Sidebar />);
-    expect(await screen.findByText('暂无活跃任务')).toBeInTheDocument();
+    expect(q.get('task')).toBeNull();
+    // App 按 URL 变化以新 params 重渲染 Workspace → LogViewer 聚焦该任务(单任务视图含清屏)
+    rerender(<Workspace params={new URLSearchParams(window.location.search)} />);
+    expect(await screen.findByText('清屏')).toBeInTheDocument();
+    const pillsAfter = screen.getByRole('group', { name: '任务筛选' });
+    expect(within(pillsAfter).getByText('dev-server').closest('button')).toHaveAttribute('aria-pressed', 'true');
+    expect(within(pillsAfter).getByText('总控台').closest('button')).toHaveAttribute('aria-pressed', 'false');
   });
 });
 
