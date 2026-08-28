@@ -56,7 +56,7 @@ export default function Workspace(_props: PluginWorkspaceProps) {
             {view === 'single' ? (
               <SingleChangeView onStatus={handleStatus} />
             ) : (
-              <BatchView />
+              <BatchView onStatus={handleStatus} />
             )}
           </Suspense>
         </div>
