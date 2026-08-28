@@ -34,6 +34,13 @@ describe('countTasks — 🔧[人工] 条目口径', () => {
     expect(c.done).toBe(1);
     expect(c.manual).toBe(0);
   });
+
+  it('CRLF 行尾:与 LF 口径一致(含 🔧[人工] 条目)', () => {
+    const crlf = '- [ ] a\r\n- [x] 🔧[人工] b\r\n- [x] c\r\n';
+    expect(countTasks(crlf)).toEqual({ total: 2, done: 1, manual: 1 });
+    // 与 LF 基准完全一致
+    expect(countTasks(crlf)).toEqual(countTasks('- [ ] a\n- [x] 🔧[人工] b\n- [x] c\n'));
+  });
 });
 
 describe('parseTasks — manual 标记', () => {
@@ -41,5 +48,10 @@ describe('parseTasks — manual 标记', () => {
     const items = parseTasks('- [ ] 🔧[人工] 人工确认\n- [ ] 普通项');
     expect(items[0]).toEqual({ text: '🔧[人工] 人工确认', checked: false, manual: true });
     expect(items[1]).toEqual({ text: '普通项', checked: false, manual: false });
+  });
+
+  it('CRLF 行尾:text 不残留 \\r', () => {
+    const items = parseTasks('- [ ] a\r\n- [ ] 🔧[人工] b\r\n');
+    expect(items.map((t) => t.text)).toEqual(['a', '🔧[人工] b']);
   });
 });

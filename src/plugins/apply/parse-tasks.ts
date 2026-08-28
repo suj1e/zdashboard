@@ -11,8 +11,9 @@ export interface ParsedTask {
 }
 
 export function parseTasks(md: string): ParsedTask[] {
+  // 按可选 \r 拆行:CRLF 文件(\r 是正则行终止符,$ 无法锚定其前)否则全量失配
   return md
-    .split('\n')
+    .split(/\r?\n/)
     .filter((l) => TASK_RE.test(l))
     .map((l) => {
       const m = l.match(TASK_RE);
