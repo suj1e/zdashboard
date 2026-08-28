@@ -62,13 +62,16 @@ function MarkdownDoc({ label, content }: { label: string; content: string }) {
 function TaskList({ tasks }: { tasks: string }) {
   const items = parseTasks(tasks);
   if (!items.length) return <p className="text-xs text-muted-foreground">无 tasks.md</p>;
-  const firstUnchecked = items.findIndex((t) => !t.checked);
+  // 人工条目(🔧[人工])不作为「下一步」引导
+  const firstUnchecked = items.findIndex((t) => !t.checked && !t.manual);
   return (
     <ul className="space-y-1 text-xs">
       {items.map((t, i) => {
         const isNext = i === firstUnchecked;
+        // 人工条目弱化样式:恒为 muted,保留 🔧[人工] 前缀文字
+        const tone = t.manual ? 'text-muted-foreground' : t.checked ? 'text-foreground' : 'text-muted-foreground';
         return (
-          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-warning/10 border-l-2 border-warning' : ''} ${t.checked ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <li key={i} className={`flex items-start gap-2 rounded px-1.5 -mx-1.5 py-0.5 ${isNext ? 'bg-warning/10 border-l-2 border-warning' : ''} ${tone}`}>
             {t.checked ? (
               <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full bg-success text-white flex items-center justify-center text-xs">✓</span>
             ) : (
@@ -148,7 +151,7 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
 
   const changes = list.data ?? [];
   const selected = detail.data ?? null;
-  const taskCount = countTasks(selected?.tasks ?? '').total;
+  const { total: taskCount, manual: manualCount } = countTasks(selected?.tasks ?? '');
 
   useEffect(() => {
     onStatus?.(changes.length ? { label: `${changes.length} 个进行中`, tone: 'info' } : undefined);
@@ -179,6 +182,7 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-medium">{selected.name}</h3>
                 <StatusPill done={selected.done} total={selected.total} />
+                {manualCount > 0 && <Badge variant="warning">待人工 {manualCount} 项</Badge>}
                 {selected.inWorktree && <InWorktreeBadge />}
                 {selected.hasTestStrategy && <TestStrategyBadge />}
               </div>
