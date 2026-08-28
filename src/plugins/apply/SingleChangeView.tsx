@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 import { Badge } from '../../web/components/ui/badge';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
 import { countTasks, parseTasks } from './parse-tasks.js';
+import { ViewHeader } from './ViewHeader.js';
 import { EmptyState, Skeleton } from '../../web/kit/index.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
@@ -161,12 +162,11 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
 
   return (
     <div className="mx-auto h-full max-w-6xl flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+      <ViewHeader title="进行中的 change" actions={<WorktreeOverview />} />
       {list.loading && !changes.length ? (
         <div className="p-4"><Skeleton rows={4} /></div>
       ) : (
         <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
-          <WorktreeOverview />
-
           {!changes.length ? (
             <EmptyState icon={icon('folder-git-2', 'h-6 w-6')} title="没有进行中的 change" hint="在 openspec/changes/ 下创建 change 后会显示在这里" />
           ) : (

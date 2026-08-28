@@ -9,6 +9,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { BatchChange, BatchGraph, BatchLog, BatchSnapshot, BatchState } from './batch.js';
+import { ViewHeader } from './ViewHeader.js';
 import { EmptyState } from '../../web/kit/index.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
@@ -102,8 +103,8 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
 
   return (
     <div data-testid="batch-view" className="h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+      <ViewHeader title="zapply batch" />
       <div className="flex-none px-4 py-2 border-b border-border flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-        <span className="text-sm font-semibold text-foreground">zapply batch</span>
         <span>并行度: {state.parallelism}</span>
         <span>·</span>
         <span>🔄 {counts.running} 运行中</span>
