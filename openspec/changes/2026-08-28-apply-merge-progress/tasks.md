@@ -4,7 +4,7 @@
   - 验收:单测四分支——无 CURRENT/非法 runId/JSON 损坏/正常读取
 - [x] 2. server:注册 `/__apply/batch`、`/__apply/batch/graph`、`/__apply/batch/logs`、`/__apply/batch/plan` 只读路由;删 7 条 guardedRoute 写路由与 `throttle.ts`
   - 验收:curl 读路由返回约定形状;写路由 404
-- [ ] 3. 删 `src/server/apply-batch-store.ts` + 测试;`ApplyBatchStore` 消费点清零
+- [x] 3. 删 `src/server/apply-batch-store.ts` + 测试;`ApplyBatchStore` 消费点清零
   - 验收:`grep -r "apply-batch-store" src/` 无结果
 - [x] 4. web:`manifest.ts` 更新 description,params 增 `view`/`sel`;Workspace 改 Tab 壳(单 change｜批量驾驶舱,URL `view` param 读写)
   - 验收:组件测试:Tab 切换写 URL、直接带 `?p=apply&view=batch` 打开落在批量 Tab

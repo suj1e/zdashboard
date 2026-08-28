@@ -27,6 +27,9 @@ export default function Workspace(_props: PluginWorkspaceProps) {
   const themed = useModeIcon(manifest.mode, 'h-5 w-5');
   const route = useRoute();
   const view = asView(route.params.get('view'));
+  // 基线行为(迁移保真):单 change 视图选中 change 时 breadcrumb 附加 change 名(三段)
+  const change = route.params.get('change');
+  const breadcrumb = ['插件', manifest.mode, ...(view === 'single' && change ? [change] : [])];
   const [status, setStatus] = useState<PageStatus>(undefined);
   const handleStatus = useCallback((s: PageStatus) => setStatus(s), []);
 
@@ -34,7 +37,7 @@ export default function Workspace(_props: PluginWorkspaceProps) {
     <PluginPage
       manifest={manifest}
       icon={themed}
-      breadcrumb={['插件', manifest.mode]}
+      breadcrumb={breadcrumb}
       status={status}
     >
       <div className="h-full flex flex-col gap-3">

@@ -67,6 +67,8 @@ describe('apply Workspace — change 入 URL', () => {
     render(<Workspace params={new URLSearchParams('?p=apply&change=alpha')} />);
     expect(await screen.findByText('已完成任务一')).toBeInTheDocument();
     expect(screen.getByText('待办任务二')).toBeInTheDocument();
+    // breadcrumb 保真:单 change 视图选中 change 时三段(插件 / apply / alpha)
+    expect(screen.getByText('插件 / apply / alpha')).toBeInTheDocument();
   });
 
   it('点 beta 卡片 → URL change=beta', async () => {

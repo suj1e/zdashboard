@@ -57,7 +57,8 @@ function BatchEmptyState({ run, hasError }: { run: BatchSnapshot['run']; hasErro
       <div className="text-center text-xs text-muted-foreground space-y-1">
         <p>状态文件:<code className="font-mono">.zdev/apply/runs/&lt;runId&gt;/state.json</code>(由 zapply 写入,本页只读)</p>
         <p>旧 .zapply/batch-state.json 历史数据不迁移,仅留档</p>
-        {(run !== null || hasError) && <p>CURRENT 指向的 run 状态缺失或损坏(历史 run 只读)</p>}
+        {run !== null && <p>CURRENT 指向的 run 状态缺失或损坏(历史 run 只读)</p>}
+        {hasError && <p>数据加载失败,请稍后重试或刷新页面</p>}
       </div>
     </div>
   );

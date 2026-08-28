@@ -8,7 +8,7 @@ describe('mode→icon 平台映射', () => {
     expect(MODE_ICON_MAP['apply-batch']).toBeUndefined();
   });
 
-  it('覆盖六个内置插件且键都在 ICON_MAP 中注册', () => {
+  it('覆盖五个内置插件且键都在 ICON_MAP 中注册', () => {
     // apply-batch 已并入 apply(2026-08-28-apply-merge-progress):执行进度仅一个入口
     const modes = ['stats', 'view', 'design', 'apply', 'just'];
     for (const m of modes) {

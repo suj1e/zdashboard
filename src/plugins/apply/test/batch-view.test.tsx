@@ -67,12 +67,16 @@ function setLocation(url: string) {
 
 let batchPayload: BatchSnapshot;
 let planStatus: number;
+let batchFail: boolean;
 
 function stubFetch() {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     const json = (v: unknown) => ({ json: async () => v, ok: true }) as Response;
-    if (url === '/__apply/batch') return json(batchPayload);
+    if (url === '/__apply/batch') {
+      if (batchFail) throw new Error('network down');
+      return json(batchPayload);
+    }
     if (url === '/__apply/batch/graph') {
       return json(batchPayload.state
         ? {
@@ -95,6 +99,7 @@ beforeEach(() => {
   __resetRouterForTest();
   batchPayload = OK_SNAPSHOT;
   planStatus = 200;
+  batchFail = false;
   stubFetch();
   vi.stubGlobal('EventSource', FakeES);
 });
@@ -122,6 +127,15 @@ describe('BatchView — 空态引导(design 风险节文案)', () => {
     render(<BatchView />);
     expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
     expect(screen.getByText(/历史 run 只读/)).toBeInTheDocument();
+  });
+
+  it('数据加载失败(传输层)→ 与数据损坏分开文案,不误述为 run 损坏', async () => {
+    batchFail = true;
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
+    expect(screen.getByText(/数据加载失败/)).toBeInTheDocument();
+    expect(screen.queryByText(/历史 run 只读/)).not.toBeInTheDocument();
   });
 });
 

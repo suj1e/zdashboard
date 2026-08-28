@@ -85,6 +85,11 @@ export interface BatchGraph {
 /** runId 仅允许字母/数字/连字符(同时阻断路径穿越);与 zapply 生成约定一致 */
 const RUN_ID_PATTERN = /^[A-Za-z0-9-]+$/;
 
+/** BatchState 必须是普通对象:数组/原始值放行会让投影层 state.changes.map 抛 TypeError */
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
 function readText(p: string): string | null {
   try {
     return fs.readFileSync(p, 'utf8');
@@ -110,10 +115,11 @@ export function readBatchState(root: string): BatchSnapshot {
       return null;
     }
   })();
-  if (!parsed) {
+  if (!isPlainObject(parsed)) {
     return { run: { id: runId }, state: null };
   }
-  return { run: { id: runId }, state: parsed as BatchState };
+  // 形状守卫已确认普通对象;字段级结构由消费方容忍(外部写入,无 schema 校验层)
+  return { run: { id: runId }, state: parsed as unknown as BatchState };
 }
 
 /** batch state → 依赖图投影;state 缺失时给三数组空投影(前端空态直接消费) */

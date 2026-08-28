@@ -140,6 +140,20 @@ describe('GET /__apply/batch* 只读路由(mock runs fixture)', () => {
     expect(jsonBody(res)).toHaveProperty('error');
   });
 
+  it('state.json 为合法 JSON 但非对象 → 空投影空日志,路由不 500', async () => {
+    fs.writeFileSync(path.join(root, '.zdev', 'apply', 'runs', RUN_ID, 'state.json'), '[1,2]');
+    const routes = await setup(root);
+    const batch = await callGet(routes, '/__apply/batch');
+    expect(batch.res.statusCode).toBe(200);
+    expect(jsonBody(batch.res)).toEqual({ run: { id: RUN_ID }, state: null });
+    const graph = await callGet(routes, '/__apply/batch/graph');
+    expect(graph.res.statusCode).toBe(200);
+    expect(jsonBody(graph.res)).toEqual({ changes: [], batches: [], conflicts: [] });
+    const logs = await callGet(routes, '/__apply/batch/logs');
+    expect(logs.res.statusCode).toBe(200);
+    expect(jsonBody(logs.res)).toEqual([]);
+  });
+
   it('log 尾窗超过 100 条 → 只回最近 100 条(边界)', async () => {
     const big: BatchState = {
       ...STATE,

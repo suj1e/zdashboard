@@ -88,6 +88,20 @@ describe('readBatchState — 四分支', () => {
     expect(readBatchState(root)).toEqual({ run: { id: 'run-1' }, state: null });
   });
 
+  it.each([
+    ['数组', '[1,2]'],
+    ['字符串', '"just a string"'],
+    ['数字', '3'],
+    ['true', 'true'],
+    ['JSON null', 'null'],
+  ])('合法 JSON 但非对象(%s)→ { run: { id }, state: null },不抛错', (_label, raw) => {
+    writeCurrent(root, 'run-1');
+    fs.mkdirSync(path.join(root, '.zdev', 'apply', 'runs', 'run-1'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.zdev', 'apply', 'runs', 'run-1', 'state.json'), raw);
+    expect(() => readBatchState(root)).not.toThrow();
+    expect(readBatchState(root)).toEqual({ run: { id: 'run-1' }, state: null });
+  });
+
   it('正常读取 → { run: { id }, state: 全量 BatchState }', () => {
     writeCurrent(root, 'run-42');
     writeState(root, 'run-42', STATE);
