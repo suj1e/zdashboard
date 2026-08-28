@@ -10,5 +10,5 @@
   - 验收:`grep -r "ConfigField\|usePluginConfig" src/` 仅剩 core 基础设施
 - [x] 5. 存储死键剥离泛化:内置插件未声明 config 的键加载即清；external 插件键保留
   - 验收:单测覆盖内置清除/外部保留/无声明不清除三分支
-- [ ] 6. 回归:`pnpm typecheck && pnpm test` 全绿;playground 手验 design 页无配置、资产正常展示
+- [x] 6. 回归:`pnpm typecheck && pnpm test` 全绿;playground 手验 design 页无配置、资产正常展示
   - 验收:typecheck 0 error;手工 checklist 过
