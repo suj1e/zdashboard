@@ -11,6 +11,16 @@ declare module 'cordis' {
 
 const WATCH_DEBOUNCE_MS = 300;
 
+/** 忽略目录(recursive watch 相对路径前缀)与编辑器/系统/日志噪音文件 */
+const IGNORED_DIR_RE = /^(?:\.git|node_modules|dist|\.pnpm)(?:[/\\]|$)/;
+const IGNORED_FILE_RE = /\.(?:swp|tmp|log)$|~$|^\.DS_Store$|^Thumbs\.db$/i;
+
+/** filename 是否应被 watcher 忽略;null(平台未提供文件名)放行,行为不变 */
+export function isIgnoredPath(filename: string | null): boolean {
+  if (!filename) return false;
+  return IGNORED_DIR_RE.test(filename) || IGNORED_FILE_RE.test(filename);
+}
+
 export class ReloadService extends Service {
   static inject = ['server'];
   private clients = new Set<http.ServerResponse>();
@@ -28,8 +38,7 @@ export class ReloadService extends Service {
 
     try {
       this.watcher = fs.watch(config.root, { recursive: true }, (eventType, filename) => {
-        if (filename && /^(?:\.git|node_modules|dist|\.pnpm)(?:[/\\]|$)/.test(filename)) return;
-        if (filename && /\.(?:swp|tmp)$|~$|^\.DS_Store$|^Thumbs\.db$/i.test(filename)) return;
+        if (isIgnoredPath(filename)) return;
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
           this.ctx.server.refreshGitInfo();

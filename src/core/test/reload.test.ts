@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ReloadService } from '../reload.js';
+import { ReloadService, isIgnoredPath } from '../reload.js';
 import { detectLiveShape } from '../../server/detect.js';
 
 function createFakeCtx() {
@@ -18,6 +18,42 @@ function createFakeCtx() {
   };
   return { ctx, getSseHandler: () => sseHandler, cleanups };
 }
+
+describe('isIgnoredPath — watcher 忽略规则纯函数', () => {
+  it('`.log` 后缀命中(日志写入不触发 reload)', () => {
+    expect(isIgnoredPath('error.log')).toBe(true);
+    expect(isIgnoredPath('DEBUG.LOG')).toBe(true); // 后缀忽略大小写,与原正则 i flag 一致
+  });
+
+  it('子目录下的 `.log` 命中(recursive watch 相对路径)', () => {
+    expect(isIgnoredPath('logs/x.log')).toBe(true);
+    expect(isIgnoredPath('logs\\x.log')).toBe(true); // win32 反斜杠路径
+  });
+
+  it('`.log.ts` 不误伤(后缀必须完整匹配,非子串)', () => {
+    expect(isIgnoredPath('src/foo.log.ts')).toBe(false);
+    expect(isIgnoredPath('log.ts')).toBe(false);
+    expect(isIgnoredPath('catalog.ts')).toBe(false);
+  });
+
+  it('既有忽略规则不回归:tmp/swp/~/DS_Store/Thumbs.db 与忽略目录', () => {
+    expect(isIgnoredPath('a.tmp')).toBe(true);
+    expect(isIgnoredPath('a.swp')).toBe(true);
+    expect(isIgnoredPath('a~')).toBe(true);
+    expect(isIgnoredPath('.DS_Store')).toBe(true);
+    expect(isIgnoredPath('Thumbs.db')).toBe(true);
+    expect(isIgnoredPath('.git/config')).toBe(true);
+    expect(isIgnoredPath('node_modules/vite/index.js')).toBe(true);
+    expect(isIgnoredPath('dist/cli.js')).toBe(true);
+    expect(isIgnoredPath('.pnpm/store.data')).toBe(true);
+  });
+
+  it('正常源码放行;null filename 放行(行为不变)', () => {
+    expect(isIgnoredPath('src/App.tsx')).toBe(false);
+    expect(isIgnoredPath('package.json')).toBe(false);
+    expect(isIgnoredPath(null)).toBe(false);
+  });
+});
 
 describe('ReloadService.broadcastPlugin', () => {
   it('广播到 plugin:<mode>:<event> 频道且携带 JSON data', () => {
