@@ -6,5 +6,5 @@
   - 验收:组件测试断言徽标与进度 100% 语义
 - [x] 3. TDD:App 对 `?p=apply-batch` 重定向 `?p=apply&view=batch`(replace),其余未知 mode 仍回落首页
   - 验收:组件测试先红后绿;落点为批量 Tab
-- [ ] 4. 回归 + playground 手验
+- [x] 4. 回归 + playground 手验
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);手工 checklist 过
