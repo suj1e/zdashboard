@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>apply 页面重构:前后对比</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --color-paper:#f5f5f5; --color-ink:#2d3142; --color-muted:#4f5d75; --color-accent:#eb6c36;
+      --font-sans:'Geist',system-ui,sans-serif; --font-serif:'Instrument Serif',serif; --font-mono:'Geist Mono',ui-monospace,monospace; }
+    body { font-family:var(--font-sans); background:var(--color-paper); color:var(--color-ink);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:3rem 2rem; }
+    .frame { max-width:1200px; width:100%; }
+    .eyebrow { font-family:var(--font-mono); font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--color-muted); margin-bottom:0.5rem; }
+    h1 { font-family:var(--font-serif); font-size:clamp(1.5rem,2.4vw + 0.75rem,2rem); font-weight:400; letter-spacing:-0.02em; margin-bottom:1.5rem; }
+    svg { width:100%; min-width:900px; display:block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">2026-08-28-apply-page-refactor</p>
+    <h1>apply 页面重构:前后对比</h1>
+    <svg viewBox="0 0 960 560" role="img" aria-labelledby="applyref-title applyref-desc">
+      <title id="applyref-title">apply 页面重构前后对比</title>
+      <desc id="applyref-desc">布局对比图:单 change 视图从上下堆叠改为左列表右详情分栏;批量视图从纵向长条平铺改为概览条、主区、固定高日志三段分区;顶部信息层两 Tab 统一。</desc>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- BEFORE zone -->
+      <rect x="32" y="56" width="424" height="456" rx="8" fill="none" stroke="rgba(45,49,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="48" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">BEFORE · 单 change 堆叠</text>
+      <rect x="48" y="96" width="392" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="244" y="136" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">change 列表(纵排卡片)</text>
+      <text x="244" y="156" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">详情展开即把列表顶出视口</text>
+      <rect x="48" y="200" width="392" height="88" rx="6" fill="rgba(79,93,117,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="244" y="240" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">选中详情(上下堆叠)</text>
+      <text x="244" y="260" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">proposal 一长,来回滚动</text>
+      <rect x="48" y="304" width="392" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="244" y="340" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">批量页:graph</text>
+      <text x="244" y="360" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">checkpoint / plan / logs 纵向长条平铺</text>
+      <rect x="48" y="400" width="392" height="80" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="244" y="436" fill="#4f5d75" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">日志无限增高</text>
+      <text x="244" y="456" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">关键信息被推走 · 顶部两 Tab 风格不一</text>
+
+      <!-- AFTER zone -->
+      <rect x="504" y="56" width="424" height="456" rx="8" fill="none" stroke="#eb6c36" stroke-width="1"/>
+      <text x="520" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">AFTER · 分栏 + 分区</text>
+      <!-- 单 change 分栏 -->
+      <rect x="520" y="96" width="120" height="150" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="580" y="166" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">左列 w-72</text>
+      <text x="580" y="184" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">change 摘要列表</text>
+      <rect x="656" y="96" width="256" height="150" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="784" y="166" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">右列详情(进度/任务/proposal)</text>
+      <text x="784" y="184" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">选中切换仅右列刷新 · 小屏退化堆叠</text>
+      <!-- 批量分区 -->
+      <rect x="520" y="262" width="392" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="716" y="290" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">批量概览条:run · 状态 · 批次 · 并发度 · plan</text>
+      <rect x="520" y="318" width="392" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="716" y="354" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">主区:依赖图 ∥ checkpoint(切换)</text>
+      <text x="716" y="374" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">flex-1 独立滚动</text>
+      <rect x="520" y="406" width="392" height="52" rx="6" fill="rgba(79,93,117,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="716" y="436" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">日志区 h-48 固定高 · border-t 独立滚动</text>
+      <text x="520" y="486" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">顶部信息层:两 Tab 共用 ViewHeader,面包屑/操作槽位一致</text>
+
+      <!-- legend -->
+      <line x1="32" y1="528" x2="928" y2="528" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="550" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="112" y="538" width="24" height="14" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="144" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">保留内容</text>
+      <rect x="248" y="538" width="24" height="14" rx="3" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="280" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">痛点(消除)</text>
+      <rect x="392" y="538" width="24" height="14" rx="3" fill="#eb6c36" opacity="0.08"/>
+      <rect x="392" y="538" width="24" height="14" rx="3" fill="none" stroke="#eb6c36" stroke-width="1"/>
+      <text x="424" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">重构后布局</text>
+    </svg>
+  </div>
+</body>
+</html>

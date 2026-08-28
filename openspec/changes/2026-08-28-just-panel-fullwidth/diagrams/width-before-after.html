@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>just 面板宽度:前后对比</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --color-paper:#f5f5f5; --color-ink:#2d3142; --color-muted:#4f5d75; --color-accent:#eb6c36;
+      --font-sans:'Geist',system-ui,sans-serif; --font-serif:'Instrument Serif',serif; --font-mono:'Geist Mono',ui-monospace,monospace; }
+    body { font-family:var(--font-sans); background:var(--color-paper); color:var(--color-ink);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:3rem 2rem; }
+    .frame { max-width:1200px; width:100%; }
+    .eyebrow { font-family:var(--font-mono); font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--color-muted); margin-bottom:0.5rem; }
+    h1 { font-family:var(--font-serif); font-size:clamp(1.5rem,2.4vw + 0.75rem,2rem); font-weight:400; letter-spacing:-0.02em; margin-bottom:1.5rem; }
+    svg { width:100%; min-width:900px; display:block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">2026-08-28-just-panel-fullwidth</p>
+    <h1>just 面板宽度:前后对比</h1>
+    <svg viewBox="0 0 960 360" role="img" aria-labelledby="justwidth-title justwidth-desc">
+      <title id="justwidth-title">just 面板宽度前后对比</title>
+      <desc id="justwidth-desc">布局对比图:before 日志卡片 max-w-6xl 居中限宽浪费两侧空间;after 去限宽撑满主区可用宽度。</desc>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- main area background -->
+      <text x="32" y="64" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">BEFORE · max-w-6xl</text>
+      <rect x="32" y="80" width="896" height="96" rx="6" fill="rgba(79,93,117,0.04)" stroke="rgba(45,49,66,0.15)" stroke-width="1" stroke-dasharray="4,3"/>
+      <rect x="212" y="92" width="536" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="480" y="132" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">LogViewer(max-w-6xl 限宽)</text>
+      <text x="60" y="134" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">浪费 ←</text>
+      <text x="880" y="134" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">→ 浪费</text>
+
+      <text x="32" y="216" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">AFTER · 撑满主区</text>
+      <rect x="32" y="232" width="896" height="96" rx="6" fill="#eb6c36" opacity="0.08"/>
+      <rect x="32" y="232" width="896" height="96" rx="6" fill="none" stroke="#eb6c36" stroke-width="1"/>
+      <text x="480" y="284" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">LogViewer(全宽,卡片/圆角/边框样式保留)</text>
+
+      <line x1="32" y1="336" x2="928" y2="336" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="354" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">CHANGE</text>
+      <text x="120" y="354" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">仅移除 Workspace 容器的 max-w-6xl,一行 className;LogViewer 内部与溢出处理不动</text>
+    </svg>
+  </div>
+</body>
+</html>

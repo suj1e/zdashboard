@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "front": "playground-demo",
+  "status": "completed",
+  "changes": [
+    {
+      "name": "add-auth",
+      "path": "openspec/changes/add-auth",
+      "status": "completed",
+      "priority": 1,
+      "risk": "low",
+      "dependencies": [],
+      "estimatedDuration": 40,
+      "batchIndex": 0,
+      "retryCount": 0,
+      "startedAt": "2026-08-28T09:10:00+08:00",
+      "completedAt": "2026-08-28T09:52:00+08:00"
+    },
+    {
+      "name": "fix-search",
+      "path": "openspec/changes/fix-search",
+      "status": "completed",
+      "priority": 2,
+      "risk": "medium",
+      "dependencies": ["add-auth"],
+      "estimatedDuration": 30,
+      "batchIndex": 1,
+      "retryCount": 1,
+      "startedAt": "2026-08-28T09:53:00+08:00",
+      "completedAt": "2026-08-28T10:21:00+08:00"
+    },
+    {
+      "name": "polish-docs",
+      "path": "openspec/changes/polish-docs",
+      "status": "completed",
+      "priority": 3,
+      "risk": "low",
+      "dependencies": ["add-auth"],
+      "estimatedDuration": 15,
+      "batchIndex": 1,
+      "retryCount": 0,
+      "startedAt": "2026-08-28T09:53:00+08:00",
+      "completedAt": "2026-08-28T10:05:00+08:00"
+    }
+  ],
+  "batches": [
+    { "index": 0, "changeNames": ["add-auth"], "status": "completed", "startedAt": "2026-08-28T09:10:00+08:00", "completedAt": "2026-08-28T09:52:00+08:00" },
+    { "index": 1, "changeNames": ["fix-search", "polish-docs"], "status": "completed", "startedAt": "2026-08-28T09:53:00+08:00", "completedAt": "2026-08-28T10:21:00+08:00" }
+  ],
+  "currentBatchIndex": 1,
+  "parallelism": 2,
+  "logs": [
+    { "timestamp": "2026-08-28T09:10:01+08:00", "level": "info", "message": "用户确认执行计划，并行度=2" },
+    { "timestamp": "2026-08-28T09:52:00+08:00", "level": "success", "message": "批次 0 完成", "changeName": "add-auth" },
+    { "timestamp": "2026-08-28T09:53:10+08:00", "level": "warn", "message": "fix-search 首跑测试抖动,自动重试 1 次", "changeName": "fix-search" },
+    { "timestamp": "2026-08-28T10:05:00+08:00", "level": "success", "message": "polish-docs 完成", "changeName": "polish-docs" },
+    { "timestamp": "2026-08-28T10:21:00+08:00", "level": "success", "message": "全部 change 完成,批次收尾" }
+  ],
+  "conflicts": [
+    { "changeA": "fix-search", "changeB": "polish-docs", "files": ["README.md"], "resolution": "serialize" }
+  ],
+  "createdAt": "2026-08-28T09:05:00+08:00",
+  "updatedAt": "2026-08-28T10:21:00+08:00"
+}
