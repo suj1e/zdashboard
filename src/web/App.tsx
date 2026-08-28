@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Topbar } from './components/Topbar';
 import { IconRail } from './layout/IconRail';
 import { SidebarFrame } from './layout/SidebarFrame';
@@ -56,6 +56,14 @@ export default function App() {
       ? null
       : requestedMode;
   const plugin = known ? plugins.find((p) => p.mode === known)! : null;
+
+  // ?p=apply-batch 旧直达兼容:replace 一次性重定向到批量 Tab(不留历史,不渲染首页);
+  // 其余未知 mode 维持回落首页逻辑
+  useLayoutEffect(() => {
+    if (requestedMode === 'apply-batch') {
+      route.navigate({ p: 'apply', view: 'batch' }, { replace: true });
+    }
+  }, [requestedMode, route]);
 
   // 唯一导航出口:URL params(p 键增删即进/出插件)
   const handleSelect = useCallback((m: string | null) => {
