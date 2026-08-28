@@ -6,7 +6,7 @@
  * - 只读:无任何写控件(暂停/恢复/确认执行/重试);订阅 files 频道失效重取。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import BatchView from '../BatchView.js';
 import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetRouterForTest } from '../../../web/router.js';
@@ -220,5 +220,42 @@ describe('BatchView — files 频道刷新', () => {
       const after = fetchMock.mock.calls.filter((c) => String(c[0]) === '/__apply/batch').length;
       expect(after).toBeGreaterThan(before);
     });
+  });
+});
+
+describe('BatchView — 三段分区(T3)', () => {
+  it('概览条首屏元素:状态 Badge/批次 i/n/完成数/并发度/runId', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const overview = screen.getByTestId('batch-overview');
+    expect(within(overview).getByText('running')).toBeInTheDocument();
+    expect(within(overview).getByText('第 2/2 批')).toBeInTheDocument();
+    expect(within(overview).getByText('1/3 完成')).toBeInTheDocument();
+    expect(within(overview).getByText(/并行度:\s*3/)).toBeInTheDocument();
+    expect(within(overview).getByText(/run: run-1/)).toBeInTheDocument();
+  });
+
+  it('日志区固定高独立滚动容器(h-48 shrink-0 overflow-auto border-t)', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const logs = screen.getByTestId('batch-logs');
+    expect(logs.className).toContain('h-48');
+    expect(logs.className).toContain('shrink-0');
+    expect(logs.className).toContain('overflow-auto');
+    expect(logs.className).toContain('border-t');
+    // 日志内容仍在容器内
+    expect(within(logs).getByText('计划已生成')).toBeInTheDocument();
+  });
+
+  it('plan 入口:概览条按钮默认展开 plan 区,点击可收起/再展开', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    expect(await screen.findByText('执行计划 plan.md(只读)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '执行计划' }));
+    expect(screen.queryByText('执行计划 plan.md(只读)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '执行计划' }));
+    expect(await screen.findByText('执行计划 plan.md(只读)')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,7 @@
 /**
- * 批量驾驶舱视图(只读):汇总条 + 依赖图/进度子视图 + plan 只读展示 + 日志尾。
+ * 批量驾驶舱视图(只读):三段分区(2026-08-28-apply-page-refactor T3)。
+ * 顶部概览条 shrink-0(状态 Badge/批次 i/n/完成数/并发度/plan 入口/runId)+
+ * 中部 flex-1 min-h-0 依赖图/进度子视图切换 + 底部 h-48 固定高日志区(独立滚动)。
  * 数据源 .zdev/apply/runs/<runId>/(经 /__apply/batch* 只读路由);写控件全部删除
  * (状态文件由 zapply skill 写入,dashboard 只读避免双写)。
  * 刷新订阅全局 files 频道(skill 写文件 → fs.watch → SSE files → 失效重取)。
@@ -11,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import type { BatchChange, BatchGraph, BatchLog, BatchSnapshot, BatchState } from './batch.js';
 import { ViewHeader } from './ViewHeader.js';
 import { EmptyState } from '../../web/kit/index.js';
+import { Badge } from '../../web/components/ui/badge';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { useIcons } from '../../web/lib/icons.js';
@@ -23,6 +26,17 @@ const SUB_VIEWS = ['graph', 'checkpoint'] as const;
 type SubViewKey = (typeof SUB_VIEWS)[number];
 
 const SUB_VIEW_LABEL: Record<SubViewKey, string> = { graph: '依赖图', checkpoint: '进度' };
+
+/** run 状态 → Badge 色(概览条首屏) */
+const STATUS_VARIANT: Record<BatchState['status'], 'info' | 'success' | 'destructive' | 'warning' | 'neutral'> = {
+  idle: 'neutral',
+  analyzing: 'info',
+  'pending-approval': 'warning',
+  running: 'info',
+  paused: 'warning',
+  completed: 'success',
+  failed: 'destructive',
+};
 
 /** 日志尾显示条数(与迁前一致;数据源为服务端尾窗 /__apply/batch/logs) */
 const LOG_TAIL = 20;
@@ -70,6 +84,8 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
   const route = useRoute();
   const sel = route.params.get('sel');
   const [subView, setSubView] = useState<SubViewKey>('graph');
+  // plan 只读区可见性(概览条「执行计划」入口收起/展开;默认展开保持迁前语义)
+  const [planOpen, setPlanOpen] = useState(true);
   const { snapshot, graph, logs, plan } = useBatchData();
 
   const state = snapshot.data?.state ?? null;
@@ -103,20 +119,31 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
 
   return (
     <div data-testid="batch-view" className="h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+      {/* ── 顶部:统一 header + 概览条(shrink-0 首屏恒可见) ── */}
       <ViewHeader title="zapply batch" />
-      <div className="flex-none px-4 py-2 border-b border-border flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+      <div data-testid="batch-overview" className="flex-none px-4 py-2 border-b border-border flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+        <Badge variant={STATUS_VARIANT[state.status]}>{state.status}</Badge>
+        <span>第 {state.currentBatchIndex + 1}/{state.batches.length} 批</span>
+        <span>{counts.completed}/{total} 完成</span>
         <span>并行度: {state.parallelism}</span>
-        <span>·</span>
         <span>🔄 {counts.running} 运行中</span>
-        <span>·</span>
         <span>✅ {counts.completed} 成功</span>
-        <span>·</span>
         <span>❌ {counts.failed} 失败</span>
-        <span>·</span>
         <span>⏸️ {counts.parked} parked</span>
-        <span className="ml-auto text-xs">run: {run?.id ?? '-'} · 只读</span>
+        {plan.data && (
+          <button
+            type="button"
+            aria-pressed={planOpen}
+            onClick={() => setPlanOpen(v => !v)}
+            className={`px-2 py-0.5 text-xs rounded-md border transition-colors ${planOpen ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'}`}
+          >
+            执行计划
+          </button>
+        )}
+        <span className="ml-auto text-xs font-mono">run: {run?.id ?? '-'} · 只读</span>
       </div>
 
+      {/* ── 中部:子视图切换 + 依赖图/进度(flex-1 min-h-0) ── */}
       <div className="flex-none px-4 py-1.5 border-b border-border flex items-center gap-2">
         {SUB_VIEWS.map((v) => (
           <button
@@ -151,7 +178,8 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
         </Suspense>
       </div>
 
-      {plan.data && (
+      {/* plan 只读展示:概览条入口控制收起/展开 */}
+      {plan.data && planOpen && (
         <div className="flex-none border-t border-border px-6 py-3 max-h-48 overflow-y-auto">
           <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
             {icon('file-text', 'h-3 w-3')} 执行计划 plan.md(只读)
@@ -162,7 +190,8 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
         </div>
       )}
 
-      <footer className="border-t border-border px-6 py-2 max-h-32 overflow-y-auto">
+      {/* ── 底部:固定高日志区,独立滚动不再推挤主区 ── */}
+      <footer data-testid="batch-logs" className="h-48 shrink-0 overflow-auto border-t border-border px-6 py-2">
         <div className="text-xs font-mono space-y-1">
           {(logs.data ?? []).slice(-LOG_TAIL).reverse().map((log: BatchLog, i: number) => (
             <div key={i} className={logLevelClass(log.level)}>
