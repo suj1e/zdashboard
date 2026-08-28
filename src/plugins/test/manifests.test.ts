@@ -36,7 +36,7 @@ describe('六插件 manifest 单源契约', () => {
   it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,apply=change/view/sel,just=recipe/task,design=type/asset/folder,stats=card)', () => {
     expect(names(statsParams)).toEqual(['card']);
     expect(names(viewParams)).toEqual(['wt', 'file', 'filter']);
-    expect(names(applyParams)).toEqual(['change']);
+    expect(names(applyParams)).toEqual(['change', 'view', 'sel']);
     expect(names(justParams)).toEqual(['recipe', 'task']);
     expect(names(designParams)).toEqual(['type', 'asset', 'folder']);
   });

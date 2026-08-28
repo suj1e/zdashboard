@@ -6,7 +6,7 @@
   - 验收:curl 读路由返回约定形状;写路由 404
 - [ ] 3. 删 `src/server/apply-batch-store.ts` + 测试;`ApplyBatchStore` 消费点清零
   - 验收:`grep -r "apply-batch-store" src/` 无结果
-- [ ] 4. web:`manifest.ts` 更新 description,params 增 `view`/`sel`;Workspace 改 Tab 壳(单 change｜批量驾驶舱,URL `view` param 读写)
+- [x] 4. web:`manifest.ts` 更新 description,params 增 `view`/`sel`;Workspace 改 Tab 壳(单 change｜批量驾驶舱,URL `view` param 读写)
   - 验收:组件测试:Tab 切换写 URL、直接带 `?p=apply&view=batch` 打开落在批量 Tab
 - [ ] 5. web:原 apply Workspace 内容迁 `SingleChangeView.tsx`(回归不变);apply-batch viewers 迁入裁剪为 `BatchView.tsx`(graph/checkpoint/logs 只读,ApprovalPanel 写控件删除、plan 只读展示或裁剪),订阅改 `files` 频道
   - 验收:单 change 视图现有测试迁移后全绿;批量视图空态引导文案渲染
