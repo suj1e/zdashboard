@@ -78,13 +78,12 @@ type GenericKey =
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
-/** 平台维护的 mode→icon 映射(manifest.icon 仅作未命中 fallback) */
+/** 平台维护的 mode→icon 映射(manifest.icon 仅作未命中 fallback);apply-batch 已并入 apply */
 export const MODE_ICON_MAP: Record<string, IconKey> = {
   stats: 'bar-chart-3',
   view: 'folder-tree',
   design: 'palette',
   apply: 'clipboard-check',
-  'apply-batch': 'blocks',
   just: 'terminal',
 };
 
