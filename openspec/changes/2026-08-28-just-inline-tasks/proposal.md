@@ -1,10 +1,14 @@
-# 2026-08-28-just-inline-tasks
-
-just runner 移除侧边栏,任务选择由主区 LogViewer 承担
-
-## 需求复述
+## Why
 
 just 插件的侧边栏只有一块「活跃任务列表」，但主区 `LogViewer` **已经内嵌了完整的 recipe 列表**（running 状态点、运行计数、选中高亮、启停/清屏按钮、总控台切换）。侧栏与主区功能完全重复，纯冗余——直接删除侧边栏即可，无需新做任何任务列 UI。
+
+## What Changes
+
+- 删除 `src/plugins/just/Sidebar.tsx`；`web.tsx` 移除 sidebar 导出（SidebarFrame 判空自动收栏）
+- 任务选择语义不变：LogViewer 内嵌列表点 recipe → `recipe`/`task` param 写 URL
+- spec 同步：MODIFY「just 多任务并发视图」requirement,移除侧栏 SHALL,改述为 LogViewer 内嵌列表（保留 taskId 日志隔离与 server 并发 SHALL）
+
+## 需求复述
 
 ## 要解决的问题
 
