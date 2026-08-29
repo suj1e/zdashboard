@@ -12,7 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { BatchChange, BatchGraph, BatchLog, BatchSnapshot, BatchState } from './batch.js';
 import { ViewHeader } from './ViewHeader.js';
-import { EmptyState } from '../../web/kit/index.js';
+import { Chip, EmptyState } from '../../web/kit/index.js';
 import { Badge } from '../../web/components/ui/badge';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
@@ -48,15 +48,18 @@ function logLevelClass(level: BatchLog['level']): string {
   return 'text-muted-foreground';
 }
 
-function useBatchData() {
-  const snapshot = usePluginData<BatchSnapshot>('apply:/__apply/batch', () =>
-    fetch('/__apply/batch', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
-  const graph = usePluginData<BatchGraph>('apply:/__apply/batch/graph', () =>
-    fetch('/__apply/batch/graph', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
-  const logs = usePluginData<BatchLog[]>('apply:/__apply/batch/logs', () =>
-    fetch('/__apply/batch/logs', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
-  const plan = usePluginData<string | null>('apply:/__apply/batch/plan', () =>
-    fetch('/__apply/batch/plan', { cache: 'no-store' })
+function useBatchData(run: string | null) {
+  // run query 透传(多战线寻址):显式 runId 直达 runs/<runId>/,缺省读 CURRENT;
+  // key 含 run → 切换 run 独立缓存/失效。
+  const qs = run ? `?run=${encodeURIComponent(run)}` : '';
+  const snapshot = usePluginData<BatchSnapshot>(`apply:/__apply/batch${qs}`, () =>
+    fetch(`/__apply/batch${qs}`, { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
+  const graph = usePluginData<BatchGraph>(`apply:/__apply/batch/graph${qs}`, () =>
+    fetch(`/__apply/batch/graph${qs}`, { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
+  const logs = usePluginData<BatchLog[]>(`apply:/__apply/batch/logs${qs}`, () =>
+    fetch(`/__apply/batch/logs${qs}`, { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
+  const plan = usePluginData<string | null>(`apply:/__apply/batch/plan${qs}`, () =>
+    fetch(`/__apply/batch/plan${qs}`, { cache: 'no-store' })
       .then(r => (r.ok ? r.json().then((d: { plan: string }) => d.plan) : null))
       .catch(() => null), { subscribe: 'files' });
   return { snapshot, graph, logs, plan };
@@ -82,10 +85,12 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
   const { icon } = useIcons();
   const route = useRoute();
   const sel = route.params.get('sel');
+  // 显式 runId(多战线寻址):URL ?run= → 数据路由透传;Tab/选点 navigate patch 合并语义天然保留该参数
+  const runParam = route.params.get('run');
   const [subView, setSubView] = useState<SubViewKey>('graph');
   // plan 只读区可见性(概览条「执行计划」入口收起/展开;默认展开保持迁前语义)
   const [planOpen, setPlanOpen] = useState(true);
-  const { snapshot, graph, logs, plan } = useBatchData();
+  const { snapshot, graph, logs, plan } = useBatchData(runParam);
 
   const state = snapshot.data?.state ?? null;
   const run = snapshot.data?.run ?? null;
@@ -140,7 +145,15 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
             执行计划
           </button>
         )}
-        <span className="ml-auto text-xs font-mono">run: {run?.id ?? '-'} · 只读</span>
+        <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-mono">
+          {/* front(战线别名,zskills 0.6.0 可选):非空才渲染,Chip 截断 + title 全称 */}
+          {state.front && (
+            <Chip tone="info">
+              <span className="max-w-40 truncate" title={state.front}>{state.front}</span>
+            </Chip>
+          )}
+          <span>run: {run?.id ?? '-'} · 只读</span>
+        </span>
       </div>
 
       {/* ── 中部:子视图切换 + 依赖图/进度(flex-1 min-h-0) ── */}

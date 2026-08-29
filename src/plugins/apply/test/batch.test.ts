@@ -109,6 +109,60 @@ describe('readBatchState — 四分支', () => {
   });
 });
 
+describe('readBatchState — 显式 run 寻址(多战线,design ④)', () => {
+  it('合法显式 runId → 跳过 CURRENT 直接读 runs/<runId>/state.json(override 生效)', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    const other = { ...STATE, status: 'paused' as const };
+    writeState(root, 'run-2', other);
+    expect(readBatchState(root, 'run-2')).toEqual({ run: { id: 'run-2' }, state: other });
+  });
+
+  it('非法显式 runId(字符校验外)→ 忽略 override,回退 CURRENT', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    // 非法 runId 即使同名目录存在也不得读取(路径穿越防护),回退 CURRENT 的 run-1
+    expect(readBatchState(root, '../evil')).toEqual({ run: { id: 'run-1' }, state: STATE });
+    expect(readBatchState(root, 'bad_id')).toEqual({ run: { id: 'run-1' }, state: STATE });
+  });
+
+  it('显式 runId 合法但 state.json 缺失 → { run: { id }, state: null }(既有语义)', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    expect(readBatchState(root, 'ghost-run')).toEqual({ run: { id: 'ghost-run' }, state: null });
+  });
+
+  it('显式 runId state.json JSON 损坏 → { run: { id }, state: null }', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    fs.mkdirSync(path.join(root, '.zdev', 'apply', 'runs', 'run-bad'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.zdev', 'apply', 'runs', 'run-bad', 'state.json'), 'not-json{{');
+    expect(readBatchState(root, 'run-bad')).toEqual({ run: { id: 'run-bad' }, state: null });
+  });
+
+  it('显式 runId 带首尾空白 → trim 后合法读取', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    const other = { ...STATE, status: 'paused' as const };
+    writeState(root, 'run-2', other);
+    expect(readBatchState(root, '  run-2  ')).toEqual({ run: { id: 'run-2' }, state: other });
+  });
+
+  it('无 explicitRun 参数 → 走 CURRENT(既有语义不变)', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    const other = { ...STATE, status: 'paused' as const };
+    writeState(root, 'run-2', other);
+    expect(readBatchState(root)).toEqual({ run: { id: 'run-1' }, state: STATE });
+  });
+
+  it('显式 runId 为空字符串 → 视为未提供,走 CURRENT', () => {
+    writeCurrent(root, 'run-1');
+    writeState(root, 'run-1', STATE);
+    expect(readBatchState(root, '')).toEqual({ run: { id: 'run-1' }, state: STATE });
+  });
+});
+
 describe('readBatchState — 边界', () => {
   it('CURRENT 纯空白(trim 后空)→ { run: null, state: null }', () => {
     writeCurrent(root, '   \n  ');

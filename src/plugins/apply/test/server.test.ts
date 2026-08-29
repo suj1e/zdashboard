@@ -79,7 +79,9 @@ async function setup(root: string) {
 }
 
 async function callGet(routes: Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>, path: string) {
-  const handler = routes.get(path);
+  // 路由表按 pathname 注册;query(如 ?run=)仅透传给 handler 的 req.url
+  const pathname = path.split('?')[0]!;
+  const handler = routes.get(pathname);
   const res = makeRes();
   if (!handler) return { registered: false as const, res };
   await handler({ headers: {}, url: path } as unknown as http.IncomingMessage, res as unknown as http.ServerResponse);
@@ -165,6 +167,75 @@ describe('GET /__apply/batch* 只读路由(mock runs fixture)', () => {
     const logs = jsonBody(res);
     expect(logs).toHaveLength(100);
     expect(logs.at(-1).message).toBe('log 149');
+  });
+});
+
+describe('显式 run 寻址(query.run 透传,design ④)', () => {
+  const OTHER_ID = 'run-other';
+  const OTHER_STATE: BatchState = { ...STATE, status: 'paused', currentBatchIndex: 0 };
+  const OTHER_PLAN = '# run-other 执行计划\n';
+
+  function writeRun(runId: string, opts?: { withPlan?: boolean; state?: unknown }): void {
+    const runDir = path.join(root, '.zdev', 'apply', 'runs', runId);
+    fs.mkdirSync(runDir, { recursive: true });
+    fs.writeFileSync(path.join(runDir, 'state.json'), JSON.stringify(opts?.state ?? OTHER_STATE));
+    if (opts?.withPlan !== false) fs.writeFileSync(path.join(runDir, 'plan.md'), OTHER_PLAN);
+  }
+
+  it('/__apply/batch?run=<合法> → 读对应 run 的 state(忽略 CURRENT)', async () => {
+    writeRun(OTHER_ID);
+    const routes = await setup(root);
+    const { res } = await callGet(routes, `/__apply/batch?run=${OTHER_ID}`);
+    expect(jsonBody(res)).toEqual({ run: { id: OTHER_ID }, state: OTHER_STATE });
+  });
+
+  it('/__apply/batch/graph?run=<合法> → 对应 run 的投影', async () => {
+    writeRun(OTHER_ID);
+    const routes = await setup(root);
+    const { res } = await callGet(routes, `/__apply/batch/graph?run=${OTHER_ID}`);
+    expect(jsonBody(res)).toEqual({
+      changes: expect.any(Array),
+      batches: OTHER_STATE.batches,
+      conflicts: OTHER_STATE.conflicts,
+    });
+  });
+
+  it('/__apply/batch/logs?run=<合法> → 对应 run 的日志', async () => {
+    writeRun(OTHER_ID, { state: { ...STATE, logs: [{ timestamp: 't', level: 'info', message: 'other log' }] } });
+    const routes = await setup(root);
+    const { res } = await callGet(routes, `/__apply/batch/logs?run=${OTHER_ID}`);
+    expect(jsonBody(res)).toEqual([{ timestamp: 't', level: 'info', message: 'other log' }]);
+  });
+
+  it('/__apply/batch/plan?run=<合法> → 对应 run 的 plan.md', async () => {
+    writeRun(OTHER_ID);
+    const routes = await setup(root);
+    const { res } = await callGet(routes, `/__apply/batch/plan?run=${OTHER_ID}`);
+    expect(res.statusCode).toBe(200);
+    expect(jsonBody(res)).toEqual({ plan: OTHER_PLAN });
+  });
+
+  it('?run=<非法> → 忽略回退 CURRENT(与 readBatchState 同 pattern)', async () => {
+    writeRun(OTHER_ID);
+    const routes = await setup(root);
+    const { res } = await callGet(routes, '/__apply/batch?run=../evil');
+    expect(jsonBody(res)).toEqual({ run: { id: RUN_ID }, state: STATE });
+  });
+
+  it('?run=<合法但缺失> → { run:{id}, state:null };plan → 404', async () => {
+    writeRun(OTHER_ID);
+    const routes = await setup(root);
+    const batch = await callGet(routes, '/__apply/batch?run=ghost-run');
+    expect(jsonBody(batch.res)).toEqual({ run: { id: 'ghost-run' }, state: null });
+    const plan = await callGet(routes, '/__apply/batch/plan?run=ghost-run');
+    expect(plan.res.statusCode).toBe(404);
+    expect(jsonBody(plan.res)).toHaveProperty('error');
+  });
+
+  it('无 run 参数 → 走 CURRENT(既有语义)', async () => {
+    const routes = await setup(root);
+    const { res } = await callGet(routes, '/__apply/batch');
+    expect(jsonBody(res)).toEqual({ run: { id: RUN_ID }, state: STATE });
   });
 });
 

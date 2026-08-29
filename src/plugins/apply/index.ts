@@ -36,14 +36,18 @@ export const apply = defineBuiltin({
     });
 
     // ── 批量驾驶舱只读路由(数据源 .zdev/apply/runs/<runId>/) ──
-    ctx.route('/__apply/batch', async () => readBatchState(root));
+    // run query 显式寻址(多战线):透传给 readBatchState,非法/缺省回退 CURRENT
+    const queryRun = (req: http.IncomingMessage): string | undefined =>
+      new URL(req.url || '', 'http://x').searchParams.get('run') ?? undefined;
 
-    ctx.route('/__apply/batch/graph', async () => projectGraph(readBatchState(root).state));
+    ctx.route('/__apply/batch', async (req) => readBatchState(root, queryRun(req)));
 
-    ctx.route('/__apply/batch/logs', async () => tailLogs(readBatchState(root).state));
+    ctx.route('/__apply/batch/graph', async (req) => projectGraph(readBatchState(root, queryRun(req)).state));
 
-    ctx.route('/__apply/batch/plan', async (_req, res) => {
-      const snap = readBatchState(root);
+    ctx.route('/__apply/batch/logs', async (req) => tailLogs(readBatchState(root, queryRun(req)).state));
+
+    ctx.route('/__apply/batch/plan', async (req, res) => {
+      const snap = readBatchState(root, queryRun(req));
       const plan = snap.run ? readBatchPlan(root, snap.run.id) : null;
       if (plan == null) return errorResponse(res, 404, 'plan not found');
       return { plan };

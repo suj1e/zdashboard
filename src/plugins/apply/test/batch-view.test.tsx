@@ -241,6 +241,55 @@ describe('BatchView — 容器宽度(与 SingleChangeView 对称撑满)', () => 
   });
 });
 
+describe('BatchView — 多战线寻址(run query 透传 + front 展示,design ④)', () => {
+  it('URL ?run= → 数据 fetch 携带 run query(路由链路送达)', async () => {
+    setLocation('/?p=apply&view=batch&run=run-2');
+    render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+    expect(calls).toContain('/__apply/batch?run=run-2');
+    expect(calls).toContain('/__apply/batch/graph?run=run-2');
+    expect(calls).toContain('/__apply/batch/logs?run=run-2');
+    expect(calls).toContain('/__apply/batch/plan?run=run-2');
+  });
+
+  it('无 run 参数 → fetch 不带 query(走 CURRENT)', async () => {
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+    expect(calls).toContain('/__apply/batch');
+  });
+
+  it('点 change 卡片 → sel 入 URL 且 run 参数保留(navigate patch 合并语义)', async () => {
+    setLocation('/?p=apply&view=batch&run=run-2');
+    render(<BatchView />);
+    fireEvent.click((await screen.findAllByText('alpha'))[0]);
+    const q = new URLSearchParams(window.location.search);
+    expect(q.get('sel')).toBe('alpha');
+    expect(q.get('run')).toBe('run-2');
+  });
+
+  it('state.front 非空 → 概览条渲染 front Chip(截断 + title,与 runId 并列)', async () => {
+    batchPayload = { run: { id: 'run-1' }, state: { ...STATE, front: 'auth-重命名战线' } as never };
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    const overview = await screen.findByTestId('batch-overview');
+    const chipText = within(overview).getByText('auth-重命名战线');
+    expect(chipText).toHaveAttribute('title', 'auth-重命名战线');
+    expect(chipText.closest('[data-slot="chip"]')).not.toBeNull();
+    expect(within(overview).getByText(/run: run-1/)).toBeInTheDocument();
+  });
+
+  it('state.front 缺失/空字符串 → 不渲染 front Chip', async () => {
+    batchPayload = { run: { id: 'run-1' }, state: { ...STATE, front: '' } as never };
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    const overview = await screen.findByTestId('batch-overview');
+    expect(overview.querySelector('[data-slot="chip"]')).toBeNull();
+  });
+});
+
 describe('BatchView — 三段分区(T3)', () => {
   it('概览条首屏元素:状态 Badge/批次 i/n/完成数/并发度/runId', async () => {
     setLocation('/?p=apply&view=batch');

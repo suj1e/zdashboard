@@ -60,6 +60,8 @@ export interface BatchState {
   parallelism: number;
   logs: BatchLog[];
   conflicts: BatchConflict[];
+  /** 战线别名(zskills 0.6.0 可选字段,并行战线时标识本 run;缺失/空则前端不展示) */
+  front?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -98,11 +100,15 @@ function readText(p: string): string | null {
   }
 }
 
-/** 读活动 run 指针与状态快照;任何缺失/非法分支均降级为空态而非抛错 */
-export function readBatchState(root: string): BatchSnapshot {
+/** 读活动 run 指针与状态快照;任何缺失/非法分支均降级为空态而非抛错。
+ *  explicitRun(多战线寻址):先过同一 RUN_ID_PATTERN,非法则忽略回退 CURRENT;
+ *  合法则跳过 CURRENT 直接读 runs/<runId>/state.json(缺失/损坏 → { run: { id }, state: null })。 */
+export function readBatchState(root: string, explicitRun?: string): BatchSnapshot {
   const applyDir = path.join(root, '.zdev', 'apply');
-  const raw = readText(path.join(applyDir, 'CURRENT'));
-  const runId = raw?.trim() ?? '';
+  const requested = explicitRun?.trim() ?? '';
+  const runId = requested && RUN_ID_PATTERN.test(requested)
+    ? requested
+    : (readText(path.join(applyDir, 'CURRENT'))?.trim() ?? '');
   if (!runId || !RUN_ID_PATTERN.test(runId)) {
     return { run: null, state: null };
   }
