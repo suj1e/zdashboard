@@ -171,4 +171,77 @@ describe('SidebarFrame resizer', () => {
     const { container } = renderView();
     expect(varW(rootOf(container))).toBe('280px');
   });
+
+  it('mobile drawer width is capped to viewport via min(...,80vw)', () => {
+    // S1：持久化大宽度（如 480）不得把 375px 手机抽屉放大到近全屏
+    const { container } = renderView();
+    const panel = rootOf(container).firstElementChild as HTMLElement;
+    expect(panel.className).toContain('w-[min(calc(var(--sidebar-w)*0.78),80vw)]');
+  });
+
+  it('separator exposes ARIA value semantics and tracks live width', () => {
+    // S2：aria-valuenow/min/max 让读屏器感知当前宽度
+    const { container } = renderView();
+    const handle = handleOf(container);
+    expect(handle.getAttribute('aria-valuemin')).toBe('220');
+    expect(handle.getAttribute('aria-valuemax')).toBe('480');
+    expect(handle.getAttribute('aria-valuenow')).toBe('280');
+    fireEvent.pointerDown(handle, { clientX: 280 });
+    fireEvent.pointerMove(handle, { clientX: 330 });
+    expect(handle.getAttribute('aria-valuenow')).toBe('330');
+    fireEvent.pointerUp(handle);
+    expect(handle.getAttribute('aria-valuenow')).toBe('330');
+  });
+
+  it('handle sets touch-none so touch drag is not hijacked by scrolling', () => {
+    // S3：<sm 触屏上浏览器默认把 pointermove 当滚动，touch-action:none 才能拖动
+    const { container } = renderView();
+    expect(handleOf(container).className).toContain('touch-none');
+  });
+
+  it('disables transition while dragging on panel and handle', () => {
+    // S4：拖拽期 200ms 宽度过渡会让面板追不上指针
+    const { container } = renderView();
+    const panel = rootOf(container).firstElementChild as HTMLElement;
+    const handle = handleOf(container);
+    expect(panel.className).not.toContain('transition-none');
+    fireEvent.pointerDown(handle, { clientX: 280 });
+    expect(panel.className).toContain('transition-none');
+    expect(handle.className).toContain('transition-none');
+    fireEvent.pointerUp(handle);
+    expect(panel.className).not.toContain('transition-none');
+    expect(handle.className).not.toContain('transition-none');
+  });
+
+  it('ignores double-click reset right after a moved drag (drag tail misfire)', () => {
+    // S5：拖拽松手后浏览器补发 click，紧接的第二下点击会合成 dblclick 误触重置
+    const { container } = renderView();
+    const root = rootOf(container);
+    const handle = handleOf(container);
+    fireEvent.pointerDown(handle, { clientX: 280 });
+    fireEvent.pointerMove(handle, { clientX: 360 });
+    fireEvent.pointerUp(handle);
+    expect(varW(root)).toBe('360px');
+    fireEvent.doubleClick(handle);
+    expect(varW(root)).toBe('360px');
+    expect(storage['zd-sidebar-w']).toBe('360');
+  });
+
+  it('double click still resets after the drag guard window passes', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = renderView();
+      const root = rootOf(container);
+      const handle = handleOf(container);
+      fireEvent.pointerDown(handle, { clientX: 280 });
+      fireEvent.pointerMove(handle, { clientX: 360 });
+      fireEvent.pointerUp(handle);
+      vi.advanceTimersByTime(600);
+      fireEvent.doubleClick(handle);
+      expect(varW(root)).toBe('280px');
+      expect(storage['zd-sidebar-w']).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

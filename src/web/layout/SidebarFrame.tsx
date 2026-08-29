@@ -10,6 +10,8 @@ const MAX_SIDEBAR_W = 480;
 const DEFAULT_SIDEBAR_W = 280;
 const KEYBOARD_STEP = 16;
 const SIDEBAR_W_KEY = 'zd-sidebar-w';
+// 拖拽松手后浏览器补发 click，紧接的第二下点击会合成 dblclick——该窗口内的重置视为误触
+const DOUBLE_CLICK_GUARD_MS = 500;
 
 const clampWidth = (px: number) => Math.min(MAX_SIDEBAR_W, Math.max(MIN_SIDEBAR_W, px));
 
@@ -41,6 +43,7 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
   const widthRef = useRef(width);
   const dragStartRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const detachDragRef = useRef<() => void>(() => {});
+  const lastMovedDragEndRef = useRef<number | null>(null);
 
   const toggle = () => setOpen(prev => !prev);
 
@@ -57,6 +60,9 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
   };
 
   const resetWidth = () => {
+    // 仅记录"有位移"的拖拽收尾：纯双击（两次无位移点击）仍是合法重置入口
+    const lastMovedAt = lastMovedDragEndRef.current;
+    if (lastMovedAt !== null && Date.now() - lastMovedAt < DOUBLE_CLICK_GUARD_MS) return;
     widthRef.current = DEFAULT_SIDEBAR_W;
     setWidth(DEFAULT_SIDEBAR_W);
     try {
@@ -73,8 +79,10 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch { /* 未激活 pointer 时忽略 */ }
 
+    let moved = false;
     const onMove = (ev: PointerEvent) => {
       const start = dragStartRef.current;
+      if (start && ev.clientX !== start.startX) moved = true;
       if (start) applyWidth(start.startWidth + (ev.clientX - start.startX), false);
     };
     const detach = () => {
@@ -87,6 +95,7 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
       dragStartRef.current = null;
       detach();
       setDragging(false);
+      if (moved) lastMovedDragEndRef.current = Date.now();
       applyWidth(widthRef.current, true); // 持久化最终宽度
     };
     detachDragRef.current = detach;
@@ -116,8 +125,9 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
       <div
         className={[
           'bg-background overflow-hidden',
-          'fixed left-0 top-0 h-full w-[calc(var(--sidebar-w)*0.78)] max-w-[var(--sidebar-w)] z-40 shadow-lg',
-          'transition-[width,transform] duration-200 ease-out',
+          'fixed left-0 top-0 h-full w-[min(calc(var(--sidebar-w)*0.78),80vw)] max-w-[var(--sidebar-w)] z-40 shadow-lg',
+          // 拖拽期禁用过渡（否则 200ms 宽度动画让面板追不上指针）
+          dragging ? 'transition-none' : 'transition-[width,transform] duration-200 ease-out',
           show ? 'translate-x-0' : '-translate-x-full',
           'sm:max-w-none sm:translate-x-0 sm:h-full sm:top-auto sm:left-auto',
           // 桌面三态（以 show 判宽度，open 区分 in-flow 与 overlay）：
@@ -140,14 +150,18 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
             role="separator"
             aria-orientation="vertical"
             aria-label="调整侧栏宽度"
+            aria-valuemin={MIN_SIDEBAR_W}
+            aria-valuemax={MAX_SIDEBAR_W}
+            aria-valuenow={width}
             tabIndex={0}
             onPointerDown={handlePointerDown}
             onDoubleClick={resetWidth}
             onKeyDown={handleKeyDown}
             className={[
-              'absolute right-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize select-none',
-              'sm:block transition-colors',
+              'absolute right-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize select-none touch-none',
+              'sm:block',
               dragging ? 'bg-primary/20' : 'hover:bg-primary/20',
+              dragging ? 'transition-none' : 'transition-colors',
             ].join(' ')}
           />
         )}
