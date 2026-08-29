@@ -21,7 +21,6 @@ import {
 } from './core/instance.js';
 import { openUrl } from './core/open-url.js';
 import { apply as justApply } from './plugins/just/index.js';
-import { apply as applyApply } from './plugins/apply/index.js';
 import { apply as designApply } from './plugins/design/index.js';
 import { apply as viewApply } from './plugins/view/index.js';
 import { apply as statsApply } from './plugins/stats/index.js';
@@ -137,8 +136,7 @@ async function main() {
   const appDir = path.resolve(__dirname, 'web');
 
   // built-in plugins:统一数组注册(未来迁移为 definePlugin 产出后无需改动此处)
-  // apply-batch 已并入 apply(mode apply,view=batch Tab 只读驾驶舱),见 2026-08-28-apply-merge-progress
-  const BUILTIN_PLUGINS = [statsApply, justApply, applyApply, designApply, viewApply];
+  const BUILTIN_PLUGINS = [statsApply, justApply, designApply, viewApply];
 
   // 约定化扫描:启动一次性剥离 dashboard.json 里内置插件的死配置键(未声明 config 即清,external/未知保留)
   if (stripDeadPluginConfig(root, BUILTIN_PLUGINS.map((p) => p.manifest))) {

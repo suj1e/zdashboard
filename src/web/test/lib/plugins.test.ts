@@ -70,7 +70,7 @@ describe('comparePlugins — manifest.order 排序', () => {
   });
 
   it('同 order 时按字母序稳定', () => {
-    const a = { mode: 'apply', order: 10 } as WebPlugin;
+    const a = { mode: 'alpha', order: 10 } as WebPlugin;
     const b = { mode: 'zeta', order: 10 } as WebPlugin;
     expect(comparePlugins(a, b)).toBeLessThan(0);
   });

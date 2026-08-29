@@ -14,8 +14,6 @@ export default defineConfig({
       '/__stop': 'http://localhost:4190',
       '/__detect': 'http://localhost:4190',
       '/__just': 'http://localhost:4190',
-      '/__apply': 'http://localhost:4190',
-      '/__apply-batch': 'http://localhost:4190',
       '/__design': 'http://localhost:4190',
       '/__plugins': 'http://localhost:4190',
       '/__stats': 'http://localhost:4190',

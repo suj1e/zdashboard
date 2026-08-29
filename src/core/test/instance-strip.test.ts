@@ -28,9 +28,9 @@ function rawRecord(root: string): Record<string, unknown> {
   return JSON.parse(fs.readFileSync(path.join(root, RECORD_FILE), 'utf-8'));
 }
 
-/** 内置插件投影:均不声明 config(design/view/stats/apply/just 现状) */
+/** 内置插件投影:均不声明 config(design/view/stats/just 现状) */
 const BUILTIN_NO_CONFIG: ConfigSchemaInfo[] = [
-  { mode: 'stats' }, { mode: 'view' }, { mode: 'design' }, { mode: 'apply' }, { mode: 'just' },
+  { mode: 'stats' }, { mode: 'view' }, { mode: 'design' }, { mode: 'just' },
 ];
 
 afterEach(() => {

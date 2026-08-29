@@ -1,7 +1,7 @@
 /**
- * 六插件 manifest 契约(design.md「URL 参数契约」表驱动):
+ * 内置插件 manifest 契约(design.md「URL 参数契约」表驱动):
  * 每插件 manifest.ts 单源 —— manifest 字段完整 + params schema 与契约表一致。
- * 一例数据断言全部六插件;新增插件须在此表登记。
+ * 一例数据断言全部内置插件;新增插件须在此表登记。
  */
 import { describe, it, expect } from 'vitest';
 import type { PluginManifest } from '../../core/manifest.js';
@@ -9,20 +9,18 @@ import type { ParamSchema } from '../../sdk/shared.js';
 
 import { manifest as statsManifest, params as statsParams } from '../stats/manifest.js';
 import { manifest as viewManifest, params as viewParams } from '../view/manifest.js';
-import { manifest as applyManifest, params as applyParams } from '../apply/manifest.js';
 import { manifest as designManifest, params as designParams } from '../design/manifest.js';
 import { manifest as justManifest, params as justParams } from '../just/manifest.js';
 
-/** design.md 契约表:mode → 参数名(有序);apply-batch 已并入 apply(2026-08-28-apply-merge-progress) */
+/** design.md 契约表:mode → 参数名(有序) */
 const CONTRACT: Record<string, { manifest: PluginManifest; params: ParamSchema; order: number }> = {
   stats: { manifest: statsManifest, params: statsParams, order: 10 },
   view: { manifest: viewManifest, params: viewParams, order: 20 },
   design: { manifest: designManifest, params: designParams, order: 30 },
-  apply: { manifest: applyManifest, params: applyParams, order: 40 },
   just: { manifest: justManifest, params: justParams, order: 50 },
 };
 
-describe('六插件 manifest 单源契约', () => {
+describe('内置插件 manifest 单源契约', () => {
   it('字段完整:mode/label/icon/description/order 齐备且与契约表一致', () => {
     for (const [mode, entry] of Object.entries(CONTRACT)) {
       expect(entry.manifest.mode, mode).toBe(mode);
@@ -33,11 +31,9 @@ describe('六插件 manifest 单源契约', () => {
     }
   });
 
-  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,apply=change/view/sel/run,just=recipe/task,design=type/asset/folder,stats=card)', () => {
+  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,just=recipe/task,design=type/asset/folder,stats=card)', () => {
     expect(names(statsParams)).toEqual(['card']);
     expect(names(viewParams)).toEqual(['wt', 'file', 'filter']);
-    // run:批量驾驶舱显式 runId(多战线寻址,2026-08-29-apply-batch-hardening 新增)
-    expect(names(applyParams)).toEqual(['change', 'view', 'sel', 'run']);
     expect(names(justParams)).toEqual(['recipe', 'task']);
     expect(names(designParams)).toEqual(['type', 'asset', 'folder']);
   });

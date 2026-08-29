@@ -4,13 +4,13 @@ import { MODE_ICON_MAP, ICON_MAP, useModeIcon } from '../../lib/icons.js';
 import type { ReactNode } from 'react';
 
 describe('mode→icon 平台映射', () => {
-  it('合并后注册表无 apply-batch mode(执行进度仅 apply 一个入口)', () => {
+  it('已删 apply 后注册表无 apply/apply-batch mode', () => {
+    expect(MODE_ICON_MAP['apply']).toBeUndefined();
     expect(MODE_ICON_MAP['apply-batch']).toBeUndefined();
   });
 
-  it('覆盖五个内置插件且键都在 ICON_MAP 中注册', () => {
-    // apply-batch 已并入 apply(2026-08-28-apply-merge-progress):执行进度仅一个入口
-    const modes = ['stats', 'view', 'design', 'apply', 'just'];
+  it('覆盖全部内置插件且键都在 ICON_MAP 中注册', () => {
+    const modes = ['stats', 'view', 'design', 'just'];
     for (const m of modes) {
       const key = MODE_ICON_MAP[m];
       expect(key, `mode ${m} 应有映射`).toBeDefined();

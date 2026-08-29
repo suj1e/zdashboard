@@ -118,10 +118,10 @@ describe('useSSEEvent — 动态频道接线', () => {
     (globalThis as Record<string, unknown>).EventSource = FakeES;
     let n = 10;
     const fetcher = vi.fn().mockImplementation(async () => ++n);
-    const data = renderHook(() => usePluginData<number>('es-key', fetcher, { subscribe: 'plugin:apply:x' }));
+    const data = renderHook(() => usePluginData<number>('es-key', fetcher, { subscribe: 'plugin:stub:x' }));
     await waitFor(() => expect(data.result.current.data).toBe(11));
     const es = FakeES.instances.at(-1)!;
-    es.emit('plugin:apply:x', '');
+    es.emit('plugin:stub:x', '');
     await waitFor(() => expect(data.result.current.data).toBe(12));
   });
 });
