@@ -1,6 +1,6 @@
 # 任务:apply 批量页加固与宽度统一
 
-- [ ] 1. 宽度统一 + 删文案:SingleChangeView 容器去 `mx-auto max-w-6xl`(撑满,与 BatchView 对称);BatchView 空态删「旧 .zapply/batch-state.json 历史数据不迁移,仅留档」行;既有测试断言同步
+- [x] 1. 宽度统一 + 删文案:SingleChangeView 容器去 `mx-auto max-w-6xl`(撑满,与 BatchView 对称);BatchView 空态删「旧 .zapply/batch-state.json 历史数据不迁移,仅留档」行;既有测试断言同步
   - 验收:组件断言两视图容器均无限宽类;含旧文案的断言更新;测试先红后绿
 - [ ] 2. batch.ts 字段容忍:projectGraph 对 changes/batches/conflicts 及每个 change.dependencies 缺失/非数组投影为空数组;BatchView 概览条统计收敛到防御后的 changes 局部变量
   - 验收:单测三分支(缺 conflicts/缺 changes/changes 非数组)不抛错且形状正确;概览条渲染 0 计数不崩

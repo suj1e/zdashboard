@@ -111,14 +111,15 @@ afterEach(() => {
 });
 
 describe('BatchView — 空态引导(design 风险节文案)', () => {
-  it('无 run → 空态引导:提示在 zapply batch 中启动 + 新约定路径说明', async () => {
+  it('无 run → 空态引导:提示在 zapply batch 中启动 + 新约定路径说明(旧迁移文案已删)', async () => {
     batchPayload = NO_RUN;
     setLocation('/?p=apply&view=batch');
     render(<BatchView />);
     expect(await screen.findByText('暂无批量执行数据')).toBeInTheDocument();
     expect(screen.getByText(/zapply batch/)).toBeInTheDocument();
     expect(screen.getByText(/\.zdev\/apply\/runs\//)).toBeInTheDocument();
-    expect(screen.getByText(/历史数据不迁移/)).toBeInTheDocument();
+    // 旧 .zapply/batch-state.json 迁移提示行已删除,不再出现
+    expect(screen.queryByText(/历史数据不迁移/)).not.toBeInTheDocument();
   });
 
   it('run 存在但 state 缺失/损坏 → 空态并注明历史 run 只读', async () => {
@@ -220,6 +221,18 @@ describe('BatchView — files 频道刷新', () => {
       const after = fetchMock.mock.calls.filter((c) => String(c[0]) === '/__apply/batch').length;
       expect(after).toBeGreaterThan(before);
     });
+  });
+});
+
+describe('BatchView — 容器宽度(与 SingleChangeView 对称撑满)', () => {
+  it('根容器无限宽类(无 mx-auto/max-w-6xl,h-full 撑满)', async () => {
+    setLocation('/?p=apply&view=batch');
+    const { container } = render(<BatchView />);
+    await screen.findByText('zapply batch');
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).not.toContain('max-w-6xl');
+    expect(root.className).not.toContain('mx-auto');
+    expect(root.className).toContain('h-full');
   });
 });
 

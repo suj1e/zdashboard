@@ -179,7 +179,7 @@ export default function SingleChangeView({ onStatus }: { onStatus?: (s: PageStat
   const select = (name: string) => route.navigate({ change: name });
 
   return (
-    <div className="mx-auto h-full max-w-6xl flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
+    <div className="h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
       <ViewHeader title="进行中的 change" actions={<WorktreeOverview />} />
       {list.loading && !changes.length ? (
         <div className="p-4"><Skeleton rows={4} /></div>

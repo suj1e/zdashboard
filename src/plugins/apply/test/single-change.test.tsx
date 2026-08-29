@@ -49,6 +49,21 @@ afterEach(() => {
   setLocation('/');
 });
 
+describe('SingleChangeView — 容器宽度(与 BatchView 对称撑满)', () => {
+  it('根容器去 mx-auto max-w-6xl(无限宽类,与 BatchView 同为 h-full 撑满)', async () => {
+    setLocation('/?p=apply&change=alpha');
+    const { container } = render(<SingleChangeView />);
+    await screen.findByText('进行中的 change');
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).not.toBeNull();
+    expect(root.className).not.toContain('max-w-6xl');
+    expect(root.className).not.toContain('mx-auto');
+    expect(root.className).toContain('h-full');
+    // 整个视图渲染树无任何限宽类
+    expect(container.querySelector('.max-w-6xl')).toBeNull();
+  });
+});
+
 describe('SingleChangeView — 🔧[人工] 口径', () => {
   it('manual > 0 显示「待人工 x 项」徽标,进度 100%(全勾非人工时)', async () => {
     setLocation('/?p=apply&change=alpha');
