@@ -16,10 +16,14 @@ import { manifest } from './manifest.js';
 function viewerFor(path: string) {
   const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
   if (name === 'justfile' || name === 'makefile') return CodeViewer;
-  const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
+  // 扩展名只从文件名段截取(路径含 .zdev 等点前缀目录时按整段截取会误判)
+  const dotAt = name.lastIndexOf('.');
+  const ext = dotAt >= 0 ? name.slice(dotAt) : '';
   if (ext === '.md' || ext === '.markdown') return MdViewer;
   if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;
   if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
+  // 无扩展名文件(如 .zdev/apply/CURRENT)按纯文本预览
+  if (dotAt === -1) return CodeViewer;
   return UnsupportedViewer;
 }
 

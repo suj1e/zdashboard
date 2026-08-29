@@ -31,7 +31,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/__file-content')) {
-      return { text: async () => '# 深链接预览内容' } as Response;
+      // ok:CodeViewer 校验 r.ok;MdViewer 不校验
+      return { ok: true, text: async () => '# 深链接预览内容' } as unknown as Response;
     }
     throw new Error(`unexpected fetch: ${url}`);
   }));
@@ -50,6 +51,21 @@ describe('view Workspace — 深链接直达', () => {
     expect(await screen.findByText('深链接预览内容')).toBeInTheDocument();
     // 面包屑携带 worktree 与文件路径
     expect(screen.getByText(/\/wt\/a \/ docs\/guide\.md/)).toBeInTheDocument();
+  });
+
+  it('.zdev/apply/CURRENT(无扩展名,点前缀目录)按纯文本预览,不落「无法预览」', async () => {
+    setLocation('/?p=view&file=.zdev%2Fapply%2FCURRENT');
+    render(<Workspace params={new URLSearchParams('?p=view&file=.zdev%2Fapply%2FCURRENT')} />);
+    // CodeViewer 不解析 markdown,stub 内容原样呈现
+    expect(await screen.findByText(/# 深链接预览内容/)).toBeInTheDocument();
+    expect(screen.queryByText('该格式无法预览')).not.toBeInTheDocument();
+  });
+
+  it('.zdev/apply/runs/<id>/state.json 以代码查看器预览', async () => {
+    setLocation('/?p=view&file=.zdev%2Fapply%2Fruns%2Fr1%2Fstate.json');
+    render(<Workspace params={new URLSearchParams('?p=view&file=.zdev%2Fapply%2Fruns%2Fr1%2Fstate.json')} />);
+    expect(await screen.findByText(/# 深链接预览内容/)).toBeInTheDocument();
+    expect(screen.queryByText('该格式无法预览')).not.toBeInTheDocument();
   });
 
   it('URL 无 file 时展示 kit 空态', () => {
