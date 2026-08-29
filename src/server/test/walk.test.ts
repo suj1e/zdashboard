@@ -57,6 +57,17 @@ describe('walkDir — allowDotDirs 点目录例外', () => {
     ]);
   });
 
+  it('allowDotDirs:true 放行目录内部嵌套点前缀子目录随子树一并进树(walk 全程生效)', () => {
+    const root = makeRoot();
+    write(root, '.zdev/apply/.cache/inner.txt');
+    write(root, '.zdev/apply/runs/r1/state.json');
+
+    expect(collect(root, { allowDotDirs: true })).toEqual([
+      '.zdev/apply/.cache/inner.txt',
+      '.zdev/apply/runs/r1/state.json',
+    ]);
+  });
+
   it('allowDotDirs:true 点前缀文件仍跳过(仅目录例外)', () => {
     const root = makeRoot();
     write(root, '.dotfile');
