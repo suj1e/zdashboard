@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>灵感市场数据流</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--accent:#eb6c36;--link:#2e5aa8;
+      --sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}
+    body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem 2rem}
+    .frame{max-width:1200px;width:100%}
+    .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+    h1{font-family:var(--serif);font-size:clamp(1.5rem,2.4vw + .75rem,2rem);font-weight:400;margin-bottom:1.5rem}
+    svg{width:100%;min-width:900px;display:block}
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Data Flow · Diagram Design</p>
+    <h1>灵感市场数据流</h1>
+    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="mkt-title mkt-desc">
+      <title id="mkt-title">灵感市场数据流</title>
+      <desc id="mkt-desc">三个市场目录经内置数据与 CDN 代理到达网格视图,选中资产生成提示词复制到剪贴板。</desc>
+      <defs>
+        <marker id="mkt-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="mkt-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="mkt-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- sources zone -->
+      <rect x="48" y="64" width="240" height="400" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)"/>
+      <text x="64" y="88" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">开源来源</text>
+      <rect x="72" y="112" width="192" height="72" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="168" y="140" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">Simple Icons</text>
+      <text x="168" y="160" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">cdn.jsdelivr.net</text>
+      <rect x="72" y="208" width="192" height="72" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="168" y="236" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">animate.css 等</text>
+      <text x="168" y="256" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">css 库 · MIT</text>
+      <rect x="72" y="304" width="192" height="72" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="168" y="332" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">开源站点精选</text>
+      <text x="168" y="352" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">内置目录 · 新窗口</text>
+
+      <!-- plugin zone -->
+      <rect x="380" y="64" width="280" height="400" rx="8" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="396" y="88" fill="#eb6c36" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">MARKET 插件</text>
+      <rect x="404" y="112" width="232" height="64" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="520" y="140" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">server 代理 + catalog</text>
+      <text x="520" y="160" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">allowlist · 缓存 · 超时</text>
+      <rect x="404" y="200" width="232" height="64" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="520" y="228" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">三市场 Tab 视图</text>
+      <text x="520" y="248" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">网格 · 搜索 · 详情</text>
+      <rect x="404" y="288" width="232" height="64" rx="6" fill="rgba(235,108,54,0.07)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="520" y="316" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">PromptPanel</text>
+      <text x="520" y="336" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">模板 · 编辑 · 复制</text>
+
+      <!-- user -->
+      <rect x="760" y="176" width="192" height="80" rx="6" fill="#fff" stroke="#2d3142"/>
+      <text x="856" y="210" text-anchor="middle" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist',sans-serif">zdesign / AI 对话</text>
+      <text x="856" y="232" text-anchor="middle" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace">粘贴提示词生成同类作品</text>
+
+      <!-- arrows: sources -> proxy (link blue) -->
+      <path d="M264,148 H400" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#mkt-arrow-link)"/>
+      <path d="M264,244 H400" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#mkt-arrow-link)"/>
+      <path d="M264,340 H400" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#mkt-arrow-link)"/>
+      <!-- proxy -> tabs -->
+      <path d="M520,176 V196" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#mkt-arrow)"/>
+      <!-- tabs -> prompt (accent) -->
+      <path d="M520,264 V284" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#mkt-arrow-accent)"/>
+      <!-- prompt -> user -->
+      <path d="M636,320 H760" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#mkt-arrow)"/>
+      <rect x="648" y="292" width="104" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="700" y="301" text-anchor="middle" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace">剪贴板</text>
+
+      <!-- legend -->
+      <line x1="48" y1="496" x2="952" y2="496" stroke="rgba(45,49,66,0.10)"/>
+      <text x="48" y="520" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">LEGEND</text>
+      <line x1="144" y1="517" x2="176" y2="517" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#mkt-arrow-link)"/>
+      <text x="184" y="521" fill="#4f5d75" font-size="9" font-family="'Geist',sans-serif">经代理取数(allowlist)</text>
+      <line x1="408" y1="517" x2="440" y2="517" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#mkt-arrow-accent)"/>
+      <text x="448" y="521" fill="#4f5d75" font-size="9" font-family="'Geist',sans-serif">核心闭环:转提示词</text>
+      <line x1="648" y1="517" x2="680" y2="517" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#mkt-arrow)"/>
+      <text x="688" y="521" fill="#4f5d75" font-size="9" font-family="'Geist',sans-serif">本地剪贴板</text>
+      <text x="48" y="548" fill="#4f5d75" font-size="12" font-family="'Instrument Serif',serif" font-style="italic">浏览开源 → 选中 → 一键转提示词 → 喂给 zdesign。</text>
+    </svg>
+  </div>
+</body>
+</html>
