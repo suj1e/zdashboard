@@ -6,5 +6,5 @@
   - 验收:单测三分支(缺 conflicts/缺 changes/changes 非数组)不抛错且形状正确;概览条渲染 0 计数不崩
 - [x] 3. 多战线寻址:batch.ts `readBatchState(root, explicitRun?)`(非法 pattern 忽略回退 CURRENT,合法缺失 → {run:{id},state:null});view/manifest.ts params 增 `run`;apply/index.ts 四条 batch 路由透传 query.run;BatchView 概览条展示 `front`(非空才显示,Chip 截断+title)
   - 验收:单测(override 生效/非法回退/显式缺失);组件测试(mock 断言 run query 送达、front 渲染/缺失)
-- [ ] 4. 回归 + 冒烟:`pnpm typecheck && pnpm test && pnpm build` 全绿;手工:两 Tab 切换宽度稳定、空态无旧文案、`?p=apply&view=batch&run=<历史runId>` 直达、无 run 参数走 CURRENT、控制台零错误
+- [x] 4. 回归 + 冒烟:`pnpm typecheck && pnpm test && pnpm build` 全绿;手工:两 Tab 切换宽度稳定、空态无旧文案、`?p=apply&view=batch&run=<历史runId>` 直达、无 run 参数走 CURRENT、控制台零错误
   - 验收:全绿 + 冒烟 checklist 入报告
