@@ -128,10 +128,10 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
       {/* ── 顶部:统一 header + 概览条(shrink-0 首屏恒可见) ── */}
       <ViewHeader title="zapply batch" />
       <div data-testid="batch-overview" className="flex-none px-4 py-2 border-b border-border flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-        <Badge variant={STATUS_VARIANT[state.status]}>{state.status}</Badge>
-        <span>第 {state.currentBatchIndex + 1}/{state.batches.length} 批</span>
+        <Badge variant={STATUS_VARIANT[state.status] ?? 'default'}>{state.status}</Badge>
+        <span>第 {Number(state.currentBatchIndex ?? 0) + 1}/{(Array.isArray(state.batches) ? state.batches.length : 0) || '?'} 批</span>
         <span>{counts.completed}/{total} 完成</span>
-        <span>并行度: {state.parallelism}</span>
+        {Number.isFinite(Number(state.parallelism)) && <span>并行度: {state.parallelism}</span>}
         <span>🔄 {counts.running} 运行中</span>
         <span>❌ {counts.failed} 失败</span>
         <span>⏸️ {counts.parked} parked</span>

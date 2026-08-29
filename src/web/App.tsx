@@ -91,7 +91,7 @@ export default function App() {
             {known && plugin ? (
               plugin.manifest ? (
                 // SDK 插件:Workspace 自持 PluginPage(manifest 单源),宿主只做分包边界
-                <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
+                <Suspense fallback={<Skeleton rows={6} />}>
                   <div key={known} className="h-full animate-in fade-in duration-200">
                     <plugin.Workspace params={route.params} />
                   </div>
@@ -99,7 +99,7 @@ export default function App() {
               ) : (
                 // 兼容壳:legacy/外部插件(无 manifest)仍由宿主套 PluginPage
                 <PluginPageShell mode={known} label={plugin.label} description={plugin.description} icon={plugin.icon}>
-                  <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
+                  <Suspense fallback={<Skeleton rows={6} />}>
                     <plugin.Workspace params={route.params} />
                   </Suspense>
                 </PluginPageShell>

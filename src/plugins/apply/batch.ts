@@ -154,7 +154,8 @@ export function projectGraph(state: BatchState | null): BatchGraph {
 export const BATCH_LOGS_TAIL = 100;
 
 export function tailLogs(state: BatchState | null): BatchLog[] {
-  return (state?.logs ?? []).slice(-BATCH_LOGS_TAIL);
+  const logs = state?.logs;
+  return (Array.isArray(logs) ? logs : []).slice(-BATCH_LOGS_TAIL);
 }
 
 /** 读活动 run 的 plan.md 文本;缺失返回 null(路由层转 404,前端空态承接) */

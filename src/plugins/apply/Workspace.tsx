@@ -55,7 +55,7 @@ export default function Workspace(_props: PluginWorkspaceProps) {
           ))}
         </div>
         <div className="flex-1 min-h-0">
-          <Suspense fallback={<Skeleton rows={6} className="mx-auto max-w-6xl" />}>
+          <Suspense fallback={<Skeleton rows={6} />}>
             {view === 'single' ? (
               <SingleChangeView onStatus={handleStatus} />
             ) : (
