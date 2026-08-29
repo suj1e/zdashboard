@@ -4,8 +4,9 @@
  * - 约定目录缺失 → 静默跳过,不产生空组;
  * - 展开深度固定(默认 2),超过深度的目录 defaultCollapsed;
  * - 文件 path 带约定目录前缀(与 /__files 契约一致,预览按相对根解析);
- * - ScanTreeOptions 收敛为仅 { defaultExpandDepth } — showHidden/hiddenDirs 已删除,
- *   传入也不生效(隐藏文件恒不进树),类型面由 typecheck 钉住。
+ * - ScanTreeOptions 收敛为 { defaultExpandDepth, dotDirs } — showHidden/hiddenDirs 已删除,
+ *   传入也不生效(隐藏文件恒不进树),类型面由 typecheck 钉住;
+ * - 点前缀 scanDir 须经 dotDirs 显式声明才可扫(如 .zdev/apply),未声明整组跳过。
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
@@ -13,9 +14,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { scanTree, type ScanTreeOptions } from '../spec-scan.js';
 
-/** 选项面收敛的编译期钉:除 defaultExpandDepth 外不得有其他键 */
+/** 选项面收敛的编译期钉:除 defaultExpandDepth/dotDirs 外不得有其他键 */
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
-const _optionsConverged: Equal<keyof ScanTreeOptions, 'defaultExpandDepth'> = true;
+const _optionsConverged: Equal<keyof ScanTreeOptions, 'defaultExpandDepth' | 'dotDirs'> = true;
 
 const tmpDirs: string[] = [];
 function makeRoot(): string {
@@ -138,5 +139,55 @@ describe('scanTree — 约定目录白名单扫描', () => {
     const files = JSON.stringify(tree);
     expect(files).toContain('openspec/a.md');
     expect(files).toContain('openspec/sub/b.md');
+  });
+});
+
+describe('scanTree — dotDirs 点前缀 scanDir 显式声明(.zdev/apply)', () => {
+  it('dotDirs 声明 → 分组以原名出现且含 CURRENT/state.json(maxDepth 4 覆盖 runs/<id> 三层)', () => {
+    const root = makeRoot();
+    write(root, '.zdev/apply/CURRENT', 'runs/2026-08-28-2128');
+    write(root, '.zdev/apply/runs/2026-08-28-2128/state.json', '{}');
+    write(root, '.zdev/apply/runs/2026-08-28-2128/plan.md', '# plan');
+
+    const tree = scanTree(root, ['openspec', '.zdev/apply'], { dotDirs: ['.zdev/apply'] });
+
+    const group = tree.find((n) => n.name === '.zdev/apply (2)');
+    expect(group, '组名用目录原名 + 计数(顶层 children:CURRENT + runs)').toBeDefined();
+    const files = JSON.stringify(group);
+    expect(files).toContain('.zdev/apply/CURRENT');
+    expect(files).toContain('.zdev/apply/runs/2026-08-28-2128/state.json');
+    expect(files).toContain('.zdev/apply/runs/2026-08-28-2128/plan.md');
+  });
+
+  it('未声明 dotDirs 的点前缀目录 → 整组跳过不出现(声明才可扫)', () => {
+    const root = makeRoot();
+    write(root, '.zdev/apply/CURRENT');
+    write(root, '.zdev/apply/runs/r1/state.json');
+
+    const tree = scanTree(root, ['.zdev/apply']);
+
+    expect(tree).toEqual([]);
+  });
+
+  it('dotDirs 只放行声明目录:未声明的其他点前缀目录仍跳过', () => {
+    const root = makeRoot();
+    write(root, '.zdev/apply/CURRENT');
+    write(root, '.other/secret.txt');
+
+    const tree = scanTree(root, ['.zdev/apply', '.other'], { dotDirs: ['.zdev/apply'] });
+
+    expect(tree.map((n) => n.name)).toEqual(['.zdev/apply (1)']);
+  });
+
+  it('dotDirs 放行目录内的点前缀文件仍不进树(例外仅目录)', () => {
+    const root = makeRoot();
+    write(root, '.zdev/apply/CURRENT');
+    write(root, '.zdev/apply/.dotfile');
+
+    const tree = scanTree(root, ['.zdev/apply'], { dotDirs: ['.zdev/apply'] });
+
+    const files = JSON.stringify(tree);
+    expect(files).toContain('CURRENT');
+    expect(files).not.toContain('.dotfile');
   });
 });

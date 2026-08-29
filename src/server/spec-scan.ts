@@ -58,6 +58,8 @@ function buildTree(paths: string[], defaultExpandDepth = 2): TreeNode[] {
 
 export interface ScanTreeOptions {
   defaultExpandDepth?: number;
+  /** 允许点前缀的 scanDirs(如 .zdev/apply):声明后才扫描,且 walk 放行其内点前缀子目录;未声明的点前缀目录整组跳过 */
+  dotDirs?: string[];
 }
 
 function prefixPaths(nodes: TreeNode[], prefix: string): TreeNode[] {
@@ -76,12 +78,15 @@ function prefixPaths(nodes: TreeNode[], prefix: string): TreeNode[] {
 export function scanTree(root: string, scanDirs: string[], opts?: ScanTreeOptions): TreeNode[] {
   const tree: TreeNode[] = [];
   const defaultExpandDepth = typeof opts?.defaultExpandDepth === 'number' ? opts.defaultExpandDepth : 2;
+  const dotDeclared = new Set(Array.isArray(opts?.dotDirs) ? opts.dotDirs : []);
   const dirs = Array.isArray(scanDirs) ? scanDirs.filter((d) => typeof d === 'string' && d) : [];
   for (const dir of dirs) {
+    // 点前缀目录须显式列入 dotDirs 才可扫(最小例外);未声明整组跳过
+    if (dir.startsWith('.') && !dotDeclared.has(dir)) continue;
     const dirPath = path.join(root, dir);
     if (!fs.existsSync(dirPath)) continue;
     const paths: string[] = [];
-    walkDir(dirPath, { maxDepth: 4, onFile: (_, rel) => paths.push(rel) });
+    walkDir(dirPath, { maxDepth: 4, allowDotDirs: dotDeclared.has(dir), onFile: (_, rel) => paths.push(rel) });
     const prefix = dir;
     const children = prefixPaths(buildTree(paths, defaultExpandDepth), prefix);
     if (children.length) {

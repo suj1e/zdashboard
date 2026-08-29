@@ -1,7 +1,8 @@
 /**
  * /__files 约定化扫描路由验收(view 约定化扫描 change):
- * - 扫描目录写死约定 ['openspec','docs'],不再读 dashboard.getConfig('view');
- *   根下其他目录(src 等)与隐藏目录一律不进树;
+ * - 扫描目录写死约定 ['openspec','docs','.zdev/apply'](点前缀目录经 dotDirs 显式放行),
+ *   不再读 dashboard.getConfig('view');
+ *   根下其他目录(src 等)与未列入约定的隐藏目录一律不进树;
  * - wt 参数指向 worktree 绝对路径 → 扫描该根,行为不变;
  * - 无 wt → 扫描项目根。
  */
@@ -150,6 +151,24 @@ describe('/__files — 约定目录扫描', () => {
       expect(res.status).toBe(200);
       const { tree } = JSON.parse(res.body) as { tree: TreeNode[] };
       expect(tree).toEqual([]);
+    } finally {
+      dispose();
+    }
+  });
+
+  it('.zdev/apply 点前缀约定目录(dotDirs 放行)→ 分组出现且可深达 runs/<id>/state.json', async () => {
+    const root = makeProject();
+    write(root, '.zdev/apply/CURRENT', 'runs/2026-08-28-2128');
+    write(root, '.zdev/apply/runs/2026-08-28-2128/state.json', '{}');
+    write(root, '.zdev/apply/runs/2026-08-28-2128/plan.md');
+
+    const { port, dispose } = await boot(root);
+    try {
+      const res = await get(port, '/__files');
+      const { tree } = JSON.parse(res.body) as { tree: TreeNode[] };
+      expect(groupNames(tree)).toContain('.zdev/apply');
+      expect(res.body).toContain('.zdev/apply/runs/2026-08-28-2128/state.json');
+      expect(res.body).toContain('CURRENT');
     } finally {
       dispose();
     }
