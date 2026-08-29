@@ -145,3 +145,62 @@ describe('projectGraph — 投影形状(同原 /__apply-batch/graph)', () => {
     expect(projectGraph(null)).toEqual({ changes: [], batches: [], conflicts: [] });
   });
 });
+
+describe('projectGraph — 字段容忍(外部写入缺字段/非数组不抛错,投影空数组)', () => {
+  it('state 缺 conflicts → conflicts 空数组,changes/batches 投影不受影响', () => {
+    const partial = { ...STATE, conflicts: undefined } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    const g = projectGraph(partial);
+    expect(g.conflicts).toEqual([]);
+    expect(g.changes).toHaveLength(2);
+    expect(g.batches).toEqual(STATE.batches);
+  });
+
+  it('state 缺 changes → changes 空数组,batches/conflicts 原样', () => {
+    const partial = { ...STATE, changes: undefined } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    const g = projectGraph(partial);
+    expect(g.changes).toEqual([]);
+    expect(g.batches).toEqual(STATE.batches);
+    expect(g.conflicts).toEqual(STATE.conflicts);
+  });
+
+  it('state.changes 非数组(字符串)→ changes 空数组,不抛错', () => {
+    const partial = { ...STATE, changes: 'oops' } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    expect(projectGraph(partial).changes).toEqual([]);
+  });
+
+  it('state.batches 非数组(对象)→ batches 空数组,不抛错', () => {
+    const partial = { ...STATE, batches: { index: 0 } } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    expect(projectGraph(partial).batches).toEqual([]);
+  });
+
+  it('state.conflicts 非数组(数字)→ conflicts 空数组,不抛错', () => {
+    const partial = { ...STATE, conflicts: 3 } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    expect(projectGraph(partial).conflicts).toEqual([]);
+  });
+
+  it('change.dependencies 非数组(字符串)→ 该 change 投影 dependencies 为空数组,不抛错', () => {
+    const partial = {
+      ...STATE,
+      changes: [{ ...STATE.changes[1], dependencies: 'alpha' }] as never,
+    } as unknown as BatchState;
+    expect(() => projectGraph(partial)).not.toThrow();
+    expect(projectGraph(partial).changes).toEqual([
+      { name: 'beta', status: 'pending', dependencies: [], batchIndex: 1 },
+    ]);
+  });
+
+  it('change.dependencies 缺失 → 投影 dependencies 为空数组', () => {
+    const partial = {
+      ...STATE,
+      changes: [{ ...STATE.changes[1], dependencies: undefined }] as never,
+    } as unknown as BatchState;
+    expect(projectGraph(partial).changes).toEqual([
+      { name: 'beta', status: 'pending', dependencies: [], batchIndex: 1 },
+    ]);
+  });
+});

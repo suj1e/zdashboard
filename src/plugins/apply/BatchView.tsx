@@ -90,13 +90,15 @@ export default function BatchView({ onStatus }: { onStatus?: (s: PageStatus) => 
   const state = snapshot.data?.state ?? null;
   const run = snapshot.data?.run ?? null;
 
+  // 字段容忍:state 由 zapply 外部写入,changes 缺失/非数组 → 统一投影空数组再统计(概览条 0 计数不崩)
+  const changes = (Array.isArray(state?.changes) ? state?.changes : []) as BatchChange[];
   const counts = {
-    completed: state?.changes.filter((c: BatchChange) => c.status === 'completed').length ?? 0,
-    failed: state?.changes.filter((c: BatchChange) => c.status === 'failed').length ?? 0,
-    parked: state?.changes.filter((c: BatchChange) => c.status === 'parked').length ?? 0,
-    running: state?.changes.filter((c: BatchChange) => c.status === 'running').length ?? 0,
+    completed: changes.filter((c: BatchChange) => c.status === 'completed').length,
+    failed: changes.filter((c: BatchChange) => c.status === 'failed').length,
+    parked: changes.filter((c: BatchChange) => c.status === 'parked').length,
+    running: changes.filter((c: BatchChange) => c.status === 'running').length,
   };
-  const total = state?.changes.length ?? 0;
+  const total = changes.length;
 
   useEffect(() => {
     onStatus?.(total ? { label: `${counts.completed + counts.failed}/${total}`, tone: counts.failed ? 'warning' : 'info' } : undefined);

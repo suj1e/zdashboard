@@ -127,15 +127,20 @@ export function projectGraph(state: BatchState | null): BatchGraph {
   if (!state) {
     return { changes: [], batches: [], conflicts: [] };
   }
+  // 字段容忍:state 由 zapply skill 外部写入、无 schema 校验层(zskills 0.6.0 中 conflicts 非必填),
+  // changes/batches/conflicts 及 change.dependencies 缺失/非数组一律投影为空数组而非抛错。
+  const rawChanges: unknown = state.changes;
+  const rawBatches: unknown = state.batches;
+  const rawConflicts: unknown = state.conflicts;
   return {
-    changes: state.changes.map((c) => ({
+    changes: (Array.isArray(rawChanges) ? rawChanges : []).map((c: BatchChange) => ({
       name: c.name,
       status: c.status,
-      dependencies: c.dependencies,
+      dependencies: Array.isArray(c?.dependencies) ? c.dependencies : [],
       batchIndex: c.batchIndex,
     })),
-    batches: state.batches,
-    conflicts: state.conflicts,
+    batches: Array.isArray(rawBatches) ? rawBatches : [],
+    conflicts: Array.isArray(rawConflicts) ? rawConflicts : [],
   };
 }
 

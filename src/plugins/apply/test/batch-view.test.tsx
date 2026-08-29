@@ -72,22 +72,27 @@ let batchFail: boolean;
 function stubFetch() {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+    const u = new URL(url, 'http://x');
     const json = (v: unknown) => ({ json: async () => v, ok: true }) as Response;
-    if (url === '/__apply/batch') {
+    if (u.pathname === '/__apply/batch') {
       if (batchFail) throw new Error('network down');
       return json(batchPayload);
     }
-    if (url === '/__apply/batch/graph') {
-      return json(batchPayload.state
-        ? {
-            changes: batchPayload.state.changes.map((c) => ({ name: c.name, status: c.status, dependencies: c.dependencies, batchIndex: c.batchIndex })),
-            batches: batchPayload.state.batches,
-            conflicts: batchPayload.state.conflicts,
-          }
-        : { changes: [], batches: [], conflicts: [] });
+    if (u.pathname === '/__apply/batch/graph') {
+      // 与服务端 projectGraph 字段容忍一致:缺字段/非数组投影空数组
+      const s = batchPayload.state as Record<string, unknown> | null;
+      const changes = Array.isArray(s?.changes) ? (s!.changes as typeof STATE.changes) : [];
+      return json({
+        changes: changes.map((c) => ({ name: c.name, status: c.status, dependencies: c.dependencies, batchIndex: c.batchIndex })),
+        batches: Array.isArray(s?.batches) ? s!.batches : [],
+        conflicts: Array.isArray(s?.conflicts) ? s!.conflicts : [],
+      });
     }
-    if (url === '/__apply/batch/logs') return json(batchPayload.state?.logs ?? []);
-    if (url === '/__apply/batch/plan') {
+    if (u.pathname === '/__apply/batch/logs') {
+      const s = batchPayload.state as Record<string, unknown> | null;
+      return json(Array.isArray(s?.logs) ? s!.logs : []);
+    }
+    if (u.pathname === '/__apply/batch/plan') {
       return planStatus === 200 ? json({ plan: PLAN }) : { ok: false, status: 404, json: async () => ({ error: 'plan not found' }) } as Response;
     }
     throw new Error(`unexpected fetch: ${url}`);
@@ -249,6 +254,17 @@ describe('BatchView — 三段分区(T3)', () => {
     // S2:「n/n 完成」已表达完成数,「✅ n 成功」段删除,概览条不再出现「成功」
     expect(within(overview).queryByText(/成功/)).not.toBeInTheDocument();
     expect(within(overview).getByText(/run: run-1/)).toBeInTheDocument();
+  });
+
+  it('state.changes 缺失(外部写入防御)→ 概览条渲染 0 计数不崩', async () => {
+    batchPayload = { run: { id: 'run-1' }, state: { ...STATE, changes: undefined } as never };
+    setLocation('/?p=apply&view=batch');
+    render(<BatchView />);
+    const overview = await screen.findByTestId('batch-overview');
+    expect(within(overview).getByText('0/0 完成')).toBeInTheDocument();
+    expect(within(overview).getByText(/0 运行中/)).toBeInTheDocument();
+    expect(within(overview).getByText(/0 失败/)).toBeInTheDocument();
+    expect(within(overview).getByText(/0 parked/)).toBeInTheDocument();
   });
 
   it('日志区固定高独立滚动容器(h-48 shrink-0 overflow-auto border-t)', async () => {
