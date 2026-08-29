@@ -3,6 +3,9 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import typography from '@tailwindcss/typography';
 
 export default {
+  // dark: variant 必须跟 data-mode(页面手动切换)而不是默认的 media(系统),
+  // 否则系统深色+页面浅色时 prose-invert 等 dark: 样式错配浅底,内容发白不可读
+  darkMode: ['selector', '[data-mode="dark"]'],
   content: ['./index.html', './src/web/**/*.{ts,tsx}', './src/plugins/**/*.{ts,tsx}'],
   theme: {
     extend: {
