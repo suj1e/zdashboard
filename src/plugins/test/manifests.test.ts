@@ -11,12 +11,14 @@ import { manifest as statsManifest, params as statsParams } from '../stats/manif
 import { manifest as viewManifest, params as viewParams } from '../view/manifest.js';
 import { manifest as designManifest, params as designParams } from '../design/manifest.js';
 import { manifest as justManifest, params as justParams } from '../just/manifest.js';
+import { manifest as marketManifest, params as marketParams } from '../market/manifest.js';
 
 /** design.md 契约表:mode → 参数名(有序) */
 const CONTRACT: Record<string, { manifest: PluginManifest; params: ParamSchema; order: number }> = {
   stats: { manifest: statsManifest, params: statsParams, order: 10 },
   view: { manifest: viewManifest, params: viewParams, order: 20 },
   design: { manifest: designManifest, params: designParams, order: 30 },
+  market: { manifest: marketManifest, params: marketParams, order: 40 },
   just: { manifest: justManifest, params: justParams, order: 50 },
 };
 
@@ -31,11 +33,12 @@ describe('内置插件 manifest 单源契约', () => {
     }
   });
 
-  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,just=recipe/task,design=type/asset/folder,stats=card)', () => {
+  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,just=recipe/task,design=type/asset/folder,stats=card,market=tab/q/entry)', () => {
     expect(names(statsParams)).toEqual(['card']);
     expect(names(viewParams)).toEqual(['wt', 'file', 'filter']);
     expect(names(justParams)).toEqual(['recipe', 'task']);
     expect(names(designParams)).toEqual(['type', 'asset', 'folder']);
+    expect(names(marketParams)).toEqual(['tab', 'q', 'entry']);
   });
 
   it('params 字段类型均为 string 且带 label 便于 UI 提示', () => {

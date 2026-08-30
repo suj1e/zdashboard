@@ -74,7 +74,8 @@ type GenericKey =
   | 'bar-chart-3' | 'folder-tree' | 'git-pull-request'
   | 'chevron-left' | 'file-question'
   | 'chevron-right' | 'blocks' | 'type' | 'eye'
-  | 'file-text' | 'settings' | 'terminal';
+  | 'file-text' | 'settings' | 'terminal'
+  | 'sparkles';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
@@ -83,6 +84,7 @@ export const MODE_ICON_MAP: Record<string, IconKey> = {
   stats: 'bar-chart-3',
   view: 'folder-tree',
   design: 'palette',
+  market: 'sparkles',
   just: 'terminal',
 };
 
@@ -171,6 +173,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   'file-text': 'FileText',
   'settings': 'Settings',
   'terminal': 'Terminal',
+  'sparkles': 'Sparkles',
 };
 
 // ---------------------------------------------------------------------------

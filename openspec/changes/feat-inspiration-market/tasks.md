@@ -1,6 +1,6 @@
 # 任务:灵感市场插件(feat-inspiration-market)
 
-- [ ] T1 骨架 + 目录数据:market 插件骨架(manifest/index/web/Workspace 三 Tab);sources/ 三目录数据文件(logotypes ~200 / motions ~60 / inspirations ~40);PromptPanel 组件(三模板 + 编辑 + 复制 + 最近 5 条)
+- [x] T1 骨架 + 目录数据:market 插件骨架(manifest/index/web/Workspace 三 Tab);sources/ 三目录数据文件(logotypes ~200 / motions ~60 / inspirations ~40);PromptPanel 组件(三模板 + 编辑 + 复制 + 最近 5 条)
   - 验收:?p=market 三 Tab 切换(URL 驱动);模板单测三市场各一(插值/源码内嵌/最近记录环形);PromptPanel 编辑后复制 = textarea 值(clipboard mock)
 - [ ] T2 server 代理 + catalog 路由:GET /__market/proxy(allowlist cdn.jsdelivr.net|data.jsdelivr.com、8s 超时、内存缓存 ≤200 条 TTL 10min、X-Market-Cache 头);GET /__market/catalog/<market>(未知 404)
   - 验收:单测:白名单外 403、透传 Content-Type、上游失败 502、缓存命中 hit、超时降级(fake timers)、catalog 形状/404
