@@ -121,6 +121,34 @@ describe('GET /__market/proxy — 安全白名单', () => {
     }
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('白名单 host 携非标准端口 → 403,且不发起上游请求(防固定 IP 端口探测)', async () => {
+    const fetchMock = vi.fn();
+    const call = await makeProxyCaller(fetchMock);
+    for (const bad of [
+      'https://cdn.jsdelivr.net:8443/a.svg',
+      'http://data.jsdelivr.com:1337/v1/x',
+      'https://cdn.jsdelivr.net:8080/npm/animate.css',
+    ]) {
+      const res = await call('url=' + encodeURIComponent(bad));
+      expect(res.statusCode, bad).toBe(403);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('白名单 host 标准端口(缺省/80/443)放行,不误伤', async () => {
+    const fetchMock = vi.fn(async () => upstreamMock({}));
+    const call = await makeProxyCaller(fetchMock);
+    for (const ok of [
+      'https://cdn.jsdelivr.net/a.svg', // 缺省端口
+      'https://data.jsdelivr.com:443/v1/x',
+      'http://cdn.jsdelivr.net:80/a.svg',
+    ]) {
+      const res = await call('url=' + encodeURIComponent(ok));
+      expect(res.statusCode, ok).toBe(200);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('GET /__market/proxy — 透传与缓存', () => {
@@ -159,6 +187,26 @@ describe('GET /__market/proxy — 透传与缓存', () => {
 });
 
 describe('GET /__market/proxy — 降级', () => {
+  it('上游请求必须带 redirect: "error"(30x 跨 host 跳转不经 allowlist 复核,禁止跟随)', async () => {
+    const fetchMock = vi.fn(async () => upstreamMock({}));
+    const call = await makeProxyCaller(fetchMock);
+    const url = 'https://cdn.jsdelivr.net/npm/simple-icons@13/icons/react.svg';
+    await call('url=' + encodeURIComponent(url));
+    expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({ redirect: 'error' }));
+  });
+
+  it('上游 30x 被 redirect:"error" 拒绝(fetch 抛错)→ 502,不跟随跳转', async () => {
+    // 模拟真实 fetch 语义:redirect:'error' 时遇 30x 抛 TypeError;未设则返回 302 响应
+    const fetchMock = vi.fn(async (_url: string | URL, init?: { redirect?: string }) => {
+      if (init?.redirect === 'error') throw new TypeError('Failed to fetch');
+      return upstreamMock({ status: 302, body: 'Moved' });
+    });
+    const call = await makeProxyCaller(fetchMock);
+    const res = await call('url=' + encodeURIComponent('https://cdn.jsdelivr.net/x.svg'));
+    expect(res.statusCode).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('上游非 2xx(500)→ 502', async () => {
     const fetchMock = vi.fn(async () => upstreamMock({ status: 500, body: 'boom' }));
     const call = await makeProxyCaller(fetchMock);

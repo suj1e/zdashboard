@@ -64,6 +64,16 @@ describe('extractKeyframes — 括号配平提取', () => {
     expect(kf).toBe('@keyframes bounce{0%{transform:translateY(0)}50%{transform:translateY(-25%)}}');
   });
 
+  it('词边界:bounce 不串 bounceIn(目录中 bounceIn 前置)', () => {
+    const css = [
+      '@keyframes bounceIn{0%{opacity:0;transform:scale(.3)}100%{opacity:1}}',
+      '@keyframes bounce{0%{transform:translateY(0)}50%{transform:translateY(-25%)}}',
+    ].join('\n');
+    expect(extractKeyframes(css, 'bounce')).toBe(
+      '@keyframes bounce{0%{transform:translateY(0)}50%{transform:translateY(-25%)}}',
+    );
+  });
+
   it('不存在 → null', () => {
     expect(extractKeyframes(ANIMATE_SAMPLE, 'nope')).toBeNull();
   });

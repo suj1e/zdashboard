@@ -37,10 +37,12 @@ export function extractClassRule(css: string, cls: string): string | null {
   return fallback;
 }
 
-/** 括号配平提取 @keyframes(嵌套花括号安全);不存在 → null */
+/** 括号配平提取 @keyframes(嵌套花括号安全);不存在 → null。
+ *  词边界匹配 `@keyframes\s+<name>\s*{`,防 bounce 命中前置的 bounceIn。 */
 export function extractKeyframes(css: string, name: string): string | null {
-  const idx = css.indexOf(`@keyframes ${name}`);
-  if (idx < 0) return null;
+  const m = new RegExp(`@keyframes\\s+${escapeRe(name)}\\s*\\{`).exec(css);
+  if (!m) return null;
+  const idx = m.index;
   const open = css.indexOf('{', idx);
   if (open < 0) return null;
   let depth = 0;

@@ -12,6 +12,9 @@ import { catalogFor, isMarketName } from './sources/index.js';
 /** 代理 allowlist:仅此双 host(任意外发 = 0,design 安全红线) */
 export const ALLOWED_PROXY_HOSTS = ['cdn.jsdelivr.net', 'data.jsdelivr.com'] as const;
 
+/** 端口限定:仅缺省/80/443 放行,防 CDN 域名解析到固定 IP 后的非标端口探测 */
+const ALLOWED_PROXY_PORTS = new Set(['', '80', '443']);
+
 const PROXY_TIMEOUT_MS = 8_000; // 上游超时,超时降级 502
 const PROXY_CACHE_MAX_ENTRIES = 200; // 内存缓存条目上限,超出淘汰最旧
 const PROXY_CACHE_TTL_MS = 10 * 60 * 1000; // 缓存有效期 10min
@@ -36,6 +39,7 @@ export const apply = defineBuiltin({
       try { target = new URL(raw); } catch { res.writeHead(400); res.end('bad url'); return; }
       if (target.protocol !== 'https:' && target.protocol !== 'http:') { res.writeHead(403); res.end('scheme not allowed'); return; }
       if (!(ALLOWED_PROXY_HOSTS as readonly string[]).includes(target.hostname)) { res.writeHead(403); res.end('host not allowed'); return; }
+      if (!ALLOWED_PROXY_PORTS.has(target.port)) { res.writeHead(403); res.end('port not allowed'); return; }
 
       // 缓存命中:未过 TTL 直接回源副本,零上游请求
       const hit = cache.get(raw);
@@ -49,7 +53,8 @@ export const apply = defineBuiltin({
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
       try {
-        const upstream = await fetch(raw, { signal: controller.signal });
+        // redirect: 'error' — jsdelivr 直链无跨域重定向需求,30x 跨 host 跳转不经 allowlist 复核,拒绝跟随
+        const upstream = await fetch(raw, { signal: controller.signal, redirect: 'error' });
         if (!upstream.ok) { res.writeHead(502); res.end('upstream error'); return; }
         const body = await upstream.text();
         const contentType = upstream.headers.get('content-type') ?? 'application/octet-stream';

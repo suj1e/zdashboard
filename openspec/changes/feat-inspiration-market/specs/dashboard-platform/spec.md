@@ -12,7 +12,7 @@
 #### Scenario: 外部内容经白名单代理
 
 - **WHEN** 插件请求外部资源
-- **THEN** 仅 `cdn.jsdelivr.net` 与 `data.jsdelivr.net` 经 `/__market/proxy` 获取(带超时与内存缓存,响应头 X-Market-Cache);其他 host 一律 403,无任意 URL 转发
+- **THEN** 仅 `cdn.jsdelivr.net` 与 `data.jsdelivr.com` 经 `/__market/proxy` 获取(带超时与内存缓存,响应头 X-Market-Cache);其他 host 一律 403,无任意 URL 转发
 
 #### Scenario: 转提示词闭环
 

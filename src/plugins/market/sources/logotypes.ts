@@ -11,7 +11,7 @@ export interface LogotypeEntry {
 }
 
 export const LOGOTYPES: LogotypeEntry[] = [
-  // ---- tech 消费与硬件(26) ----
+  // ---- tech 消费与硬件 ----
   { id: 'apple', name: 'Apple', category: 'tech' },
   { id: 'google', name: 'Google', category: 'tech' },
   { id: 'samsung', name: 'Samsung', category: 'tech' },
@@ -35,7 +35,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'oneplus', name: 'OnePlus', category: 'tech' },
   { id: 'oppo', name: 'OPPO', category: 'tech' },
 
-  // ---- social 社交内容(20) ----
+  // ---- social 社交内容 ----
   { id: 'facebook', name: 'Facebook', category: 'social' },
   { id: 'instagram', name: 'Instagram', category: 'social' },
   { id: 'whatsapp', name: 'WhatsApp', category: 'social' },
@@ -57,7 +57,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'bilibili', name: 'bilibili', category: 'social' },
   { id: 'tencentqq', name: 'Tencent QQ', category: 'social' },
 
-  // ---- dev 开发(54) ----
+  // ---- dev 开发 ----
   { id: 'github', name: 'GitHub', category: 'dev' },
   { id: 'gitlab', name: 'GitLab', category: 'dev' },
   { id: 'bitbucket', name: 'Bitbucket', category: 'dev' },
@@ -110,10 +110,10 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'archlinux', name: 'Arch Linux', category: 'dev' },
   { id: 'vim', name: 'Vim', category: 'dev' },
   { id: 'xcode', name: 'Xcode', category: 'dev' },
-
   { id: 'dotnet', name: '.NET', category: 'dev' },
   { id: 'sublimetext', name: 'Sublime Text', category: 'dev' },
-  // ---- cloud 云服务(14) ----
+
+  // ---- cloud 云服务 ----
   { id: 'googlecloud', name: 'Google Cloud', category: 'cloud' },
   { id: 'cloudflare', name: 'Cloudflare', category: 'cloud' },
   { id: 'vercel', name: 'Vercel', category: 'cloud' },
@@ -128,7 +128,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'alibabacloud', name: 'Alibaba Cloud', category: 'cloud' },
   { id: 'scaleway', name: 'Scaleway', category: 'cloud' },
 
-  // ---- finance 金融支付(15) ----
+  // ---- finance 金融支付 ----
   { id: 'visa', name: 'Visa', category: 'finance' },
   { id: 'mastercard', name: 'Mastercard', category: 'finance' },
   { id: 'paypal', name: 'PayPal', category: 'finance' },
@@ -144,7 +144,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'coinbase', name: 'Coinbase', category: 'finance' },
   { id: 'americanexpress', name: 'American Express', category: 'finance' },
 
-  // ---- media 媒体娱乐(14) ----
+  // ---- media 媒体娱乐 ----
   { id: 'netflix', name: 'Netflix', category: 'media' },
   { id: 'spotify', name: 'Spotify', category: 'media' },
   { id: 'applemusic', name: 'Apple Music', category: 'media' },
@@ -160,7 +160,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'substack', name: 'Substack', category: 'media' },
   { id: 'pixiv', name: 'pixiv', category: 'media' },
 
-  // ---- gaming 游戏(14) ----
+  // ---- gaming 游戏 ----
   { id: 'steam', name: 'Steam', category: 'gaming' },
   { id: 'epicgames', name: 'Epic Games', category: 'gaming' },
   { id: 'playstation', name: 'PlayStation', category: 'gaming' },
@@ -175,7 +175,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'dota2', name: 'Dota 2', category: 'gaming' },
   { id: 'ea', name: 'EA', category: 'gaming' },
 
-  // ---- design 设计创作(16) ----
+  // ---- design 设计创作 ----
   { id: 'figma', name: 'Figma', category: 'design' },
   { id: 'sketch', name: 'Sketch', category: 'design' },
   { id: 'canva', name: 'Canva', category: 'design' },
@@ -193,7 +193,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'excalidraw', name: 'Excalidraw', category: 'design' },
   { id: 'miro', name: 'Miro', category: 'design' },
 
-  // ---- shopping 电商零售(10) ----
+  // ---- shopping 电商零售 ----
   { id: 'shopify', name: 'Shopify', category: 'shopping' },
   { id: 'woocommerce', name: 'WooCommerce', category: 'shopping' },
   { id: 'magento', name: 'Magento', category: 'shopping' },
@@ -205,7 +205,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'walmart', name: 'Walmart', category: 'shopping' },
   { id: 'zalando', name: 'Zalando', category: 'shopping' },
 
-  // ---- productivity 效率办公(16) ----
+  // ---- productivity 效率办公 ----
   { id: 'notion', name: 'Notion', category: 'productivity' },
   { id: 'todoist', name: 'Todoist', category: 'productivity' },
   { id: 'asana', name: 'Asana', category: 'productivity' },
@@ -222,7 +222,7 @@ export const LOGOTYPES: LogotypeEntry[] = [
   { id: 'zoom', name: 'Zoom', category: 'productivity' },
   { id: 'googlemeet', name: 'Google Meet', category: 'productivity' },
 
-  // ---- ai 人工智能(12) ----
+  // ---- ai 人工智能 ----
   { id: 'openai', name: 'OpenAI', category: 'ai' },
   { id: 'anthropic', name: 'Anthropic', category: 'ai' },
   { id: 'huggingface', name: 'Hugging Face', category: 'ai' },
