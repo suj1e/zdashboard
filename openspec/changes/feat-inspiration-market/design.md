@@ -22,7 +22,7 @@ src/plugins/market/
   PromptPanel.tsx    # 转提示词:模板填充 + 可编辑 textarea + 复制(toast)
   sources/
     logotypes.ts     # simple-icons slug 精选目录(v1 ~200 常用品牌,按类别分组)
-    motions.ts       # animate.css/hover.css/OpenProps 精选目录(v1 ~60 项:name/class/desc/标签/源库)
+    motions.ts       # animate.css/hover.css 精选目录(v1 69 项:name/class/desc/标签/源库)
     inspirations.ts  # 设计灵感内置目录(v1 ~40 条:name/desc/url/标签)
   test/
 ```
