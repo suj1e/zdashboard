@@ -51,7 +51,7 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
       <div className="mx-auto h-full bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
         {tab === 'logos' && <LogoTab entry={entry} onSelect={selectEntry} q={q} onSearch={search} />}
         {tab === 'motions' && <MotionTab entry={entry} onSelect={selectEntry} />}
-        {tab === 'inspirations' && <InspirationTab entry={entry} onSelect={selectEntry} />}
+        {tab === 'inspirations' && <InspirationTab entry={entry} onSelect={selectEntry} q={q} onSearch={search} />}
       </div>
     </PluginPage>
   );

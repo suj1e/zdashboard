@@ -134,8 +134,8 @@ describe('MotionTab — 断网降级', () => {
     // 目录照常
     expect(await screen.findByText('弹跳')).toBeInTheDocument();
     expect(screen.getByText('上浮')).toBeInTheDocument();
-    // 降级明示
-    expect(screen.getByText(/动效库 CSS 加载失败/)).toBeInTheDocument();
+    // 降级明示(库 css 拉取失败异步到达)
+    expect(await screen.findByText(/动效库 CSS 加载失败/)).toBeInTheDocument();
   });
 
   it('离线时提示词仍可生成(源码占位,不空白模板)', async () => {
