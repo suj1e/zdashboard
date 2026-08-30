@@ -6,7 +6,7 @@
   - 验收:单测:白名单外 403、透传 Content-Type、上游失败 502、缓存命中 hit、超时降级(fake timers)、catalog 形状/404
 - [x] T3 Logo Tab:slug 目录网格(懒加载)+ 前端搜索 + 详情(大图/SVG 源码 CodeViewer)+ 转提示词
   - 验收:组件:搜索过滤、详情渲染、proxy 失败占位;深链接 ?entry= 直达
-- [ ] T4 动效 Tab:motions 目录网格(demo 方块实时播放,hover 重播)+ 源码查看 + 转提示词(CSS 内嵌);proxy 拉库 css 解析类名
+- [x] T4 动效 Tab:motions 目录网格(demo 方块实时播放,hover 重播)+ 源码查看 + 转提示词(CSS 内嵌);proxy 拉库 css 解析类名
   - 验收:组件:demo class 切换、解析类名单测、断网降级(目录仍可浏览)
 - [ ] T5 灵感 Tab:目录网格(标签过滤)+ 详情 + 新窗口打开 + 转提示词(元数据模板 + 用户补充输入)
   - 验收:组件:标签过滤、模板含用户补充段、新窗口 target 语义
