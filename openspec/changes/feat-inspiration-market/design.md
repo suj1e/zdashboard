@@ -80,6 +80,10 @@ src/plugins/market/
 
 - 代理内存缓存(同 URL 二次命中零上游请求);网格懒加载(img loading="lazy");目录量级内存过滤无压力。
 
+## 实施期修订记录（OpenProps descope）
+
+初版动效来源含 OpenProps。实施复核：OpenProps 为 CSS 变量/keyframes 库、无工具类，不适配「类名 → demo 播放」的 cls 模型（需独立成组与解析器）。裁决：v1 收敛为 animate.css + hover.css 两库（69 条精选覆盖主流动效），OpenProps 留待后续以独立分组形态另立。
+
 ## 风险与 Trade-off
 
 - **第三方源不可控**(simple-icons 目录接口已现不稳):slug 目录内置兜底,源接口只作增强。
