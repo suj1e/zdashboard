@@ -14,7 +14,7 @@
 | 市场 | 来源 | 获取方式 | 为什么 |
 |---|---|---|---|
 | **Logo 市场** | Simple Icons(≈5000+ 品牌 SVG,CC0)| jsdelivr CDN 直取单个 SVG;图标名册走 `data.jsdelivr.com` 目录接口 | 完全开源、零维护、无需 npm 依赖 |
-| **动效市场** | animate.css / hover.css / OpenProps(v4 稳定 CSS 库)| jsdelivr 直取库 CSS,插件内置**精选目录**(名称/类名/描述/标签) | CSS 即事实源,预览器实时播放,提示词可直接内嵌源码 |
+| **动效市场** | animate.css / hover.css(MIT 稳定 CSS 库)| jsdelivr 直取库 CSS,插件内置**精选目录**(名称/类名/描述/标签) | CSS 即事实源,预览器实时播放,提示词可直接内嵌源码 |
 | **设计灵感** | 精选开源站点/模式目录(GitHub awesome 系、知名开源项目官网)| **内置目录 JSON**(v1 约 30–50 条:url/名称/描述/标签)| 第三方站点多数禁止 iframe(X-Frame-Options),诚实做法是「元数据浏览 + 新窗口打开」,不做内嵌截图抓取 |
 
 ## 要解决的问题
