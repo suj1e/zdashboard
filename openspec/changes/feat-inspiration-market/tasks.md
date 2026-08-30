@@ -4,7 +4,7 @@
   - 验收:?p=market 三 Tab 切换(URL 驱动);模板单测三市场各一(插值/源码内嵌/最近记录环形);PromptPanel 编辑后复制 = textarea 值(clipboard mock)
 - [x] T2 server 代理 + catalog 路由:GET /__market/proxy(allowlist cdn.jsdelivr.net|data.jsdelivr.com、8s 超时、内存缓存 ≤200 条 TTL 10min、X-Market-Cache 头);GET /__market/catalog/<market>(未知 404)
   - 验收:单测:白名单外 403、透传 Content-Type、上游失败 502、缓存命中 hit、超时降级(fake timers)、catalog 形状/404
-- [ ] T3 Logo Tab:slug 目录网格(懒加载)+ 前端搜索 + 详情(大图/SVG 源码 CodeViewer)+ 转提示词
+- [x] T3 Logo Tab:slug 目录网格(懒加载)+ 前端搜索 + 详情(大图/SVG 源码 CodeViewer)+ 转提示词
   - 验收:组件:搜索过滤、详情渲染、proxy 失败占位;深链接 ?entry= 直达
 - [ ] T4 动效 Tab:motions 目录网格(demo 方块实时播放,hover 重播)+ 源码查看 + 转提示词(CSS 内嵌);proxy 拉库 css 解析类名
   - 验收:组件:demo class 切换、解析类名单测、断网降级(目录仍可浏览)

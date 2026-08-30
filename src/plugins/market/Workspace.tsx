@@ -29,6 +29,8 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
 
   const selectEntry = (id: string | null) => route.navigate({ entry: id ?? null });
   const switchTab = (key: string) => route.navigate({ tab: key, q: null, entry: null });
+  /** 搜索/过滤词写回 URL(replace 语义,不刷历史栈);空串删键 */
+  const search = (text: string) => route.navigate({ q: text || null }, { replace: true });
 
   return (
     <PluginPage
@@ -47,7 +49,7 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
       }
     >
       <div className="mx-auto h-full bg-background border rounded-lg shadow-sm overflow-hidden flex flex-col">
-        {tab === 'logos' && <LogoTab entry={entry} onSelect={selectEntry} />}
+        {tab === 'logos' && <LogoTab entry={entry} onSelect={selectEntry} q={q} onSearch={search} />}
         {tab === 'motions' && <MotionTab entry={entry} onSelect={selectEntry} />}
         {tab === 'inspirations' && <InspirationTab entry={entry} onSelect={selectEntry} />}
       </div>
