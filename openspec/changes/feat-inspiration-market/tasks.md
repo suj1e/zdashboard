@@ -10,5 +10,5 @@
   - 验收:组件:demo class 切换、解析类名单测、断网降级(目录仍可浏览)
 - [x] T5 灵感 Tab:目录网格(标签过滤)+ 详情 + 新窗口打开 + 转提示词(元数据模板 + 用户补充输入)
   - 验收:组件:标签过滤、模板含用户补充段、新窗口 target 语义
-- [ ] T6 回归 + 冒烟:`pnpm typecheck && pnpm test && pnpm build` 全绿;playwright 手工:三市场端到端(搜品牌→详情→转提示词→剪贴板)、三主题×明暗、断网降级、剪贴板拒绝 fallback、零 console error
+- [x] T6 回归 + 冒烟:`pnpm typecheck && pnpm test && pnpm build` 全绿;playwright 手工:三市场端到端(搜品牌→详情→转提示词→剪贴板)、三主题×明暗、断网降级、剪贴板拒绝 fallback、零 console error
   - 验收:全绿 + checklist 入报告
