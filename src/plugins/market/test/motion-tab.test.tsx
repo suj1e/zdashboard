@@ -12,8 +12,10 @@ import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
 import { __resetMotionLibCssForTest } from '../tabs/MotionTab.js';
 
 const ANIMATE_CSS = [
-  '.animate__animated.animate__bounce{animation:bounce 1s infinite both}',
-  '@keyframes bounce{0%{transform:translateY(0)}50%{transform:translateY(-25%)}}',
+  // 真实 animate.css@4.1.1 结构:duration 在 .animate__animated 基类,entry 类仅 name/origin
+  '.animate__animated{-webkit-animation-duration:1s;animation-duration:1s;-webkit-animation-fill-mode:both;animation-fill-mode:both}',
+  '.animate__bounce{-webkit-animation-name:bounce;animation-name:bounce;-webkit-transform-origin:center bottom;transform-origin:center bottom}',
+  '@keyframes bounce{0%{transform:translateY(0);-webkit-animation-timing-function:cubic-bezier(.215,.61,.355,1);animation-timing-function:cubic-bezier(.215,.61,.355,1)}}',
 ].join('\n');
 
 const HOVER_CSS = [
@@ -97,7 +99,7 @@ describe('MotionTab — demo 播放与 hover 重播', () => {
 });
 
 describe('MotionTab — 详情(源码 + 转提示词)', () => {
-  it('?entry= 直达:源码含规则与 keyframes,时序参数可见', async () => {
+  it('?entry= 直达:源码含规则与 keyframes,时序参数含基类时长与关键帧缓动', async () => {
     setLocation('/?p=market&tab=motions&entry=animate-bounce');
     render(<Host />);
     const src = await vi.waitFor(() => {
@@ -105,9 +107,10 @@ describe('MotionTab — 详情(源码 + 转提示词)', () => {
       expect(el).toContain('@keyframes bounce');
       return el as string;
     });
-    expect(src).toContain('animation:bounce 1s infinite both');
+    expect(src).toContain('animation-name:bounce');
+    // 时序参数表:基类时长 1s + 关键帧缓动
     expect(screen.getByText('1s')).toBeInTheDocument();
-    expect(screen.getByText('infinite')).toBeInTheDocument();
+    expect(screen.getByText('cubic-bezier(.215,.61,.355,1)')).toBeInTheDocument();
   });
 
   it('转提示词:CSS 源码内嵌 + prefers-reduced-motion 要求', async () => {

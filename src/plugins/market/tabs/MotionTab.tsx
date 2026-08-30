@@ -9,7 +9,7 @@ import { ANIMATE_CSS_URL, HOVER_CSS_URL, proxyUrl } from '../urls.js';
 import { useCatalog } from '../useCatalog.js';
 import { motionPrompt } from '../prompt.js';
 import { PromptPanel } from '../PromptPanel.js';
-import { extractTiming, motionSourceOf } from '../motion-css.js';
+import { extractClassRule, extractTiming, motionSourceOf } from '../motion-css.js';
 import type { MotionEntry } from '../sources/index.js';
 
 /** demo 元素最终 class:animate.css 需叠加 animate__animated 基类,hover.css 直接用库类 */
@@ -112,9 +112,14 @@ export default function MotionTab({ entry, onSelect }: { entry: string | null; o
   const cssFailed = libs.length > 0 && libs.some((l) => libState(l).failed);
 
   const selected = entry ? entries.find((e) => e.id === entry) ?? null : null;
+  const selectedLib = selected?.lib;
   const selectedCss = selected ? libState(selected.lib).css : null;
   const source = selected && selectedCss ? motionSourceOf(selectedCss, selected.cls) : null;
-  const timing = source ? extractTiming(source) : {};
+  // 时序参数 = 基类时长(animate.css 的 .animate__animated)∪ entry 源码参数(关键帧缓动等,后者覆盖同名)
+  const baseTiming = selectedLib === 'animate.css' && selectedCss
+    ? extractTiming(extractClassRule(selectedCss, 'animate__animated') ?? '')
+    : {};
+  const timing = { ...baseTiming, ...extractTiming(source ?? '') };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-tab="motions">
