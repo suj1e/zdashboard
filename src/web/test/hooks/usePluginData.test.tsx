@@ -7,6 +7,7 @@ import {
   __resetPluginDataForTest,
 } from '../../hooks/usePluginData.js';
 import { useSSEEvent } from '../../hooks/useSSE.js';
+import { FakeES } from '../helpers/fake-es.js';
 
 beforeEach(() => { __resetPluginDataForTest(); });
 afterEach(() => { vi.restoreAllMocks(); });
@@ -125,20 +126,6 @@ describe('usePluginData', () => {
 
 describe('useSSEEvent — 动态频道接线', () => {
   afterEach(() => { delete (globalThis as Record<string, unknown>).EventSource; });
-
-  class FakeES {
-    static instances: FakeES[] = [];
-    listeners = new Map<string, Set<(e: unknown) => void>>();
-    closed = false;
-    constructor(public url: string) { FakeES.instances.push(this); }
-    addEventListener(name: string, fn: (e: unknown) => void) {
-      if (!this.listeners.has(name)) this.listeners.set(name, new Set());
-      this.listeners.get(name)!.add(fn);
-    }
-    removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
-    close() { this.closed = true; }
-    emit(name: string, data: unknown) { this.listeners.get(name)?.forEach((fn) => fn({ data })); }
-  }
 
   it('注册的 listener 收到插件频道事件,卸载时移除', async () => {
     (globalThis as Record<string, unknown>).EventSource = FakeES;

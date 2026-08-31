@@ -2,7 +2,7 @@
 import { useViewerFreshness, RefreshButton } from '../../../web/viewers/freshness.js';
 
 export default function PageViewer({ path }: { path: string }) {
-  // files SSE(300ms 防抖)/手动刷新命中当前资产时,仅给 src 追加时间戳参数强制重载(不做 key 重挂)
+  // files SSE(300ms 防抖)/手动刷新命中当前资产时,仅给 src 追加失效版本号参数强制重载(不做 key 重挂)
   const [v, refresh] = useViewerFreshness();
   const src = '/__design/asset?path=' + encodeURIComponent(path) + (v ? '&v=' + v : '');
   return (

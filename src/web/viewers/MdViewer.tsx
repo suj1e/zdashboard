@@ -53,6 +53,9 @@ export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string
       loadedPathRef.current = path;
       setText(null);
       setErr(null);
+    } else if (text === null) {
+      // 无内容的重取(错误态重试/SSE 失效):先清 err 进加载态,给出过程反馈
+      setErr(null);
     }
     fetchText(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((t) => { if (alive) { setText(t); setErr(null); } })

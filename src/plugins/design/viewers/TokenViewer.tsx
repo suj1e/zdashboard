@@ -51,6 +51,9 @@ export default function TokenViewer({ path }: { path: string }) {
     if (pathChanged) {
       setSections(null);
       setErr(null);
+    } else if (sections === null) {
+      // 无内容的重取(错误态重试/SSE 失效):先清 err 进加载态,给出过程反馈
+      setErr(null);
     }
     async function load() {
       try {

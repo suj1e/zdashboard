@@ -9,7 +9,7 @@ import { useViewerFreshness, RefreshButton } from '../../../web/viewers/freshnes
 /** design 资产一律走 /__design/asset 代理(约定根 .zdev/design);共享查看器默认解析保留给 view 插件 */
 const viaDesignAsset = (p: string) => '/__design/asset?path=' + encodeURIComponent(p);
 
-/** files SSE(300ms 防抖)/手动刷新命中当前资产 → src 追加时间戳参数强制重载(不做 key 重挂) */
+/** files SSE(300ms 防抖)/手动刷新命中当前资产 → src 追加失效版本号参数强制重载(不做 key 重挂) */
 function useAssetReload() {
   const [v, refresh] = useViewerFreshness();
   return { bust: (url: string) => (v ? `${url}&v=${v}` : url), refresh };

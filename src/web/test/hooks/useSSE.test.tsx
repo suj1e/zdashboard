@@ -9,22 +9,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSSE, useSSEEvent } from '../../hooks/useSSE.js';
-
-/** jsdom 无 EventSource;onopen/onerror 由用例手工开火模拟原生重连 */
-class FakeES {
-  static instances: FakeES[] = [];
-  listeners = new Map<string, Set<(e: unknown) => void>>();
-  closed = false;
-  onopen?: () => void;
-  onerror?: () => void;
-  constructor(public url: string) { FakeES.instances.push(this); }
-  addEventListener(name: string, fn: (e: unknown) => void) {
-    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
-    this.listeners.get(name)!.add(fn);
-  }
-  removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
-  close() { this.closed = true; }
-}
+import { FakeES } from '../helpers/fake-es.js';
 
 afterEach(() => { delete (globalThis as Record<string, unknown>).EventSource; });
 

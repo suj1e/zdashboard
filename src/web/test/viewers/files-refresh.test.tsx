@@ -8,21 +8,8 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import { MdViewer } from '../../viewers/MdViewer.js';
 import { CodeViewer } from '../../viewers/CodeViewer.js';
-
-/** jsdom 无 EventSource;emit 手工派发服务端 SSE 帧(payload 恒 '') */
-class FakeES {
-  static instances: FakeES[] = [];
-  listeners = new Map<string, Set<(e: unknown) => void>>();
-  closed = false;
-  constructor(public url: string) { FakeES.instances.push(this); }
-  addEventListener(name: string, fn: (e: unknown) => void) {
-    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
-    this.listeners.get(name)!.add(fn);
-  }
-  removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
-  close() { this.closed = true; }
-  emit(name: string, data: unknown) { this.listeners.get(name)?.forEach((fn) => fn({ data })); }
-}
+import { ImageViewer } from '../../viewers/ImageViewer.js';
+import { FakeES } from '../helpers/fake-es.js';
 
 let fetchMock: Mock;
 
@@ -142,5 +129,43 @@ describe('CodeViewer — files 订阅刷新(数据新鲜度 T3)', () => {
     fireEvent.click(screen.getByRole('button', { name: '复制' }));
     await waitFor(() => expect(screen.getByText('已复制')).toBeInTheDocument());
     expect(writeText).toHaveBeenCalledWith('# hello');
+  });
+});
+
+describe('ImageViewer — files 订阅刷新(审查 B1)', () => {
+  it('files 事件后 img src 加失效版本号强制重载,刷新按钮可用', async () => {
+    const { container } = render(<ImageViewer path="img/logo.svg" />);
+    const img = () => container.querySelector('img')!;
+    // view 语义根路径直取,初始 src 无版本参数
+    expect(img().getAttribute('src')).toBe('/img/logo.svg');
+    const es = FakeES.instances.at(-1)!;
+    act(() => { es.emit('files', ''); });
+    await waitFor(() => expect(img().getAttribute('src')).toContain('v='), { timeout: 3000 });
+    // 同一 img 节点未重挂(仅 src 变更)
+    expect(container.querySelector('img')).toBe(img());
+
+    fireEvent.click(screen.getByRole('button', { name: '刷新' }));
+    await waitFor(() => expect(img().getAttribute('src')).toContain('v=2'));
+  });
+});
+
+describe('MdViewer — 错误态重试过程反馈(审查 S2)', () => {
+  it('错误态重试先进加载态给出过程反馈', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) throw new Error('first fail');
+      // 第二次延迟返回,保证加载态窗口可断言
+      return await new Promise((resolve) =>
+        setTimeout(() => resolve({ ok: true, status: 200, text: async () => '# 反馈内容' } as unknown as Response), 80)
+      );
+    });
+    render(<MdViewer path="docs/retry.md" />);
+    expect(await screen.findByText(/加载失败|网络异常/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '重试' }));
+    // 重取前清 err:呈现加载态而非停留在错误页
+    expect(await screen.findByText('加载中…')).toBeInTheDocument();
+    expect(await screen.findByText('反馈内容')).toBeInTheDocument();
+    expect(screen.queryByText('加载中…')).not.toBeInTheDocument();
   });
 });

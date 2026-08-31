@@ -1,28 +1,14 @@
 /**
  * 数据新鲜度 T3(design 侧):design 查看器同规则订阅 SSE files(300ms 防抖),
- * 命中当前资产才失效——viewer 挂载即只对应当前资产,重取/时间戳强制重载只作用于自身。
- * iframe 强制重载仅加时间戳参数,不做全量 key 重挂。
+ * 命中当前资产才失效——viewer 挂载即只对应当前资产,重取/失效版本号强制重载只作用于自身。
+ * iframe 强制重载仅加失效版本号参数,不做全量 key 重挂。
  */
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import TokenViewer from '../viewers/TokenViewer.js';
 import PageViewer from '../viewers/PageViewer.js';
 import { FontViewer, VideoViewer, AudioViewer, PdfViewer } from '../viewers/misc.js';
-
-/** jsdom 无 EventSource;emit 手工派发服务端 SSE 帧(payload 恒 '') */
-class FakeES {
-  static instances: FakeES[] = [];
-  listeners = new Map<string, Set<(e: unknown) => void>>();
-  closed = false;
-  constructor(public url: string) { FakeES.instances.push(this); }
-  addEventListener(name: string, fn: (e: unknown) => void) {
-    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
-    this.listeners.get(name)!.add(fn);
-  }
-  removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
-  close() { this.closed = true; }
-  emit(name: string, data: unknown) { this.listeners.get(name)?.forEach((fn) => fn({ data })); }
-}
+import { FakeES } from '../../../web/test/helpers/fake-es.js';
 
 let fetchMock: Mock;
 
@@ -77,8 +63,8 @@ describe('TokenViewer — files 订阅刷新(数据新鲜度 T3)', () => {
   });
 });
 
-describe('PageViewer — files 命中当前资产 iframe 时间戳强制重载(数据新鲜度 T3)', () => {
-  it('初始 src 不带时间戳;files 事件后加时间戳参数(不做 key 重挂)', async () => {
+describe('PageViewer — files 命中当前资产 iframe 失效版本号强制重载(数据新鲜度 T3)', () => {
+  it('初始 src 不带版本参数;files 事件后加失效版本号参数(不做 key 重挂)', async () => {
     const { container } = render(<PageViewer path="home.html" />);
     const iframe = () => container.querySelector('iframe')!;
     expect(iframe().getAttribute('src')).toBe('/__design/asset?path=' + encodeURIComponent('home.html'));
@@ -89,7 +75,7 @@ describe('PageViewer — files 命中当前资产 iframe 时间戳强制重载(�
     expect(container.querySelector('iframe')).toBe(iframe());
   });
 
-  it('刷新按钮同样触发时间戳强制重载', async () => {
+  it('刷新按钮同样触发失效版本号强制重载', async () => {
     const { container } = render(<PageViewer path="home.html" />);
     await waitFor(() => expect(screen.getByRole('button', { name: '刷新' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: '刷新' }));
@@ -108,7 +94,7 @@ describe('FontViewer — files 订阅重取字体资产(数据新鲜度 T3)', ()
   });
 });
 
-describe('media/pdf — files 命中当前资产 src 加时间戳(数据新鲜度 T3)', () => {
+describe('media/pdf — files 命中当前资产 src 加失效版本号(数据新鲜度 T3)', () => {
   it('初始 src 干净;files 事件后 video/audio/iframe 均加 &v= 强制重载', async () => {
     const v = render(<VideoViewer path="demo/a.mp4" />);
     const a = render(<AudioViewer path="demo/a.mp3" />);
