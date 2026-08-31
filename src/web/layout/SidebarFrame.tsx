@@ -1,6 +1,7 @@
-import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useState } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { useIcons } from '../lib/icons.js';
+import { ResizeHandle } from '../components/ResizeHandle.js';
 
 const STORAGE_PREFIX = 'zd-sidebar-';
 
@@ -8,10 +9,7 @@ const STORAGE_PREFIX = 'zd-sidebar-';
 const MIN_SIDEBAR_W = 220;
 const MAX_SIDEBAR_W = 480;
 const DEFAULT_SIDEBAR_W = 280;
-const KEYBOARD_STEP = 16;
 const SIDEBAR_W_KEY = 'zd-sidebar-w';
-// 拖拽松手后浏览器补发 click，紧接的第二下点击会合成 dblclick——该窗口内的重置视为误触
-const DOUBLE_CLICK_GUARD_MS = 500;
 
 const clampWidth = (px: number) => Math.min(MAX_SIDEBAR_W, Math.max(MIN_SIDEBAR_W, px));
 
@@ -31,7 +29,7 @@ function readStoredSidebarW(): number {
  * 侧栏框架：桌面折叠 chevron + 按 mode 记忆开合 + 折叠态热区 hover 临时展开；
  * 移动端 fixed 抽屉 + 遮罩。单实例面板，桌面/移动仅切换定位方式。
  * 无侧栏内容的插件（hasContent=false）整体动画收起——容器常驻保证宽度始终可过渡。
- * 桌面展开态右缘 6px 把手支持拖拽调宽/双击重置/键盘微调，仅作用于该实例子树。
+ * 桌面展开态右缘把手（ResizeHandle）支持拖拽调宽/双击重置/键盘微调，仅作用于该实例子树。
  */
 export function SidebarFrame({ mode, hasContent = true, children }: { mode: string; hasContent?: boolean; children: ReactNode }) {
   const { icon } = useIcons();
@@ -40,17 +38,11 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
   const [width, setWidth] = useState(readStoredSidebarW);
   const [dragging, setDragging] = useState(false);
 
-  const widthRef = useRef(width);
-  const dragStartRef = useRef<{ startX: number; startWidth: number } | null>(null);
-  const detachDragRef = useRef<() => void>(() => {});
-  const lastMovedDragEndRef = useRef<number | null>(null);
-
   const toggle = () => setOpen(prev => !prev);
 
   /** 写 inline --sidebar-w（clamp 后）；persist=true 同步 localStorage */
   const applyWidth = (px: number, persist: boolean) => {
     const clamped = clampWidth(px);
-    widthRef.current = clamped;
     setWidth(clamped);
     if (persist) {
       try {
@@ -60,60 +52,10 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
   };
 
   const resetWidth = () => {
-    // 仅记录"有位移"的拖拽收尾：纯双击（两次无位移点击）仍是合法重置入口
-    const lastMovedAt = lastMovedDragEndRef.current;
-    if (lastMovedAt !== null && Date.now() - lastMovedAt < DOUBLE_CLICK_GUARD_MS) return;
-    widthRef.current = DEFAULT_SIDEBAR_W;
     setWidth(DEFAULT_SIDEBAR_W);
     try {
       localStorage.removeItem(SIDEBAR_W_KEY);
     } catch { /* storage 不可用时静默 */ }
-  };
-
-  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (dragStartRef.current) return;
-    dragStartRef.current = { startX: e.clientX, startWidth: widthRef.current };
-    setDragging(true);
-    // pointer 捕获：真浏览器把后续 move/up 重定向到把手；jsdom 等环境无此实现则靠 window 监听兜底
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch { /* 未激活 pointer 时忽略 */ }
-
-    let moved = false;
-    const onMove = (ev: PointerEvent) => {
-      const start = dragStartRef.current;
-      if (start && ev.clientX !== start.startX) moved = true;
-      if (start) applyWidth(start.startWidth + (ev.clientX - start.startX), false);
-    };
-    const detach = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onEnd);
-      window.removeEventListener('pointercancel', onEnd);
-    };
-    const onEnd = () => {
-      if (!dragStartRef.current) return;
-      dragStartRef.current = null;
-      detach();
-      setDragging(false);
-      if (moved) lastMovedDragEndRef.current = Date.now();
-      applyWidth(widthRef.current, true); // 持久化最终宽度
-    };
-    detachDragRef.current = detach;
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onEnd);
-    window.addEventListener('pointercancel', onEnd);
-  };
-
-  useEffect(() => () => detachDragRef.current(), []);
-
-  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      applyWidth(widthRef.current - KEYBOARD_STEP, true);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      applyWidth(widthRef.current + KEYBOARD_STEP, true);
-    }
   };
 
   const show = hasContent && (open || hovered);
@@ -146,23 +88,16 @@ export function SidebarFrame({ mode, hasContent = true, children }: { mode: stri
         {/* 拖拽调宽把手：仅桌面展开态（in-flow 面板带 sm:relative 作为定位父级）；
             <sm 与折叠态不渲染。重叠处 chevron(z-40) 优先 */}
         {hasContent && open && (
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="调整侧栏宽度"
-            aria-valuemin={MIN_SIDEBAR_W}
-            aria-valuemax={MAX_SIDEBAR_W}
-            aria-valuenow={width}
-            tabIndex={0}
-            onPointerDown={handlePointerDown}
-            onDoubleClick={resetWidth}
-            onKeyDown={handleKeyDown}
-            className={[
-              'absolute right-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize select-none touch-none',
-              'sm:block',
-              dragging ? 'bg-primary/20' : 'hover:bg-primary/20',
-              dragging ? 'transition-none' : 'transition-colors',
-            ].join(' ')}
+          <ResizeHandle
+            orientation="vertical"
+            min={MIN_SIDEBAR_W}
+            max={MAX_SIDEBAR_W}
+            value={width}
+            onChange={applyWidth}
+            onReset={resetWidth}
+            label="调整侧栏宽度"
+            onDraggingChange={setDragging}
+            className="absolute right-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize sm:block"
           />
         )}
       </div>

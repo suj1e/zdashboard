@@ -1,5 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useIcons } from '../../web/lib/icons.js';
+import { ResizeHandle } from '../../web/components/ResizeHandle.js';
+
+// 大纲栏拖拽调宽常量（design.md：clamp 176–400，默认即旧 w-44=176）
+const MIN_OUTLINE_W = 176;
+const MAX_OUTLINE_W = 400;
+const DEFAULT_OUTLINE_W = 176;
+const OUTLINE_W_KEY = 'zd-outline-w';
+
+const clampWidth = (px: number) => Math.min(MAX_OUTLINE_W, Math.max(MIN_OUTLINE_W, px));
+
+/** 首渲染读持久化宽度；非法（非数字/越界）忽略回退默认值，防闪烁 */
+function readStoredOutlineW(): number {
+  try {
+    const raw = localStorage.getItem(OUTLINE_W_KEY);
+    if (raw === null) return DEFAULT_OUTLINE_W;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= MIN_OUTLINE_W && n <= MAX_OUTLINE_W ? n : DEFAULT_OUTLINE_W;
+  } catch {
+    return DEFAULT_OUTLINE_W;
+  }
+}
 
 interface OutlineItem {
   id: string;
@@ -16,6 +37,26 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
   const { icon } = useIcons();
   const [items, setItems] = useState<OutlineItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [width, setWidth] = useState(readStoredOutlineW);
+
+  /** 写受控宽度（clamp 后）；persist=true 同步 localStorage */
+  const applyWidth = (px: number, persist: boolean) => {
+    const clamped = clampWidth(px);
+    setWidth(clamped);
+    if (persist) {
+      try {
+        localStorage.setItem(OUTLINE_W_KEY, String(clamped));
+      } catch { /* storage 不可用时静默 */ }
+    }
+  };
+
+  const resetWidth = () => {
+    setWidth(DEFAULT_OUTLINE_W);
+    try {
+      localStorage.removeItem(OUTLINE_W_KEY);
+    } catch { /* storage 不可用时静默 */ }
+  };
+
 
   // Build outline from DOM anchors (rehype-slug has already generated id attributes)
   // 依赖内容信号: MdViewer 异步渲染,容器 ref 稳定,须在内容变化后重建,否则 mount 时 headings 为空
@@ -72,7 +113,11 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
   if (!items.length) return null;
 
   return (
-    <nav className="hidden md:flex w-44 shrink-0 flex-col border-l pl-3 py-2 overflow-y-auto" aria-label="文档大纲">
+    <nav
+      className="relative hidden md:flex shrink-0 flex-col border-l pl-3 py-2 overflow-y-auto"
+      style={{ width: `${width}px` }}
+      aria-label="文档大纲"
+    >
       <div className="flex items-center gap-1 mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
         {icon('file-text', 'h-3 w-3')}
         <span>大纲</span>
@@ -82,19 +127,32 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
           <li key={item.id}>
             <button
               type="button"
+              title={item.text}
               onClick={() => scrollTo(item.id)}
-              className={`w-full text-left text-sm leading-snug py-0.5 px-1.5 rounded truncate transition-colors ${
+              className={`w-full text-left text-sm leading-snug py-0.5 px-1.5 rounded line-clamp-2 transition-colors ${
                 activeId === item.id
                   ? 'bg-primary/10 text-foreground font-medium'
                   : 'text-muted-foreground hover:bg-muted/70'
               }`}
-              style={{ paddingLeft: 6 + (item.level - 1) * 10 }}
+              style={{ paddingLeft: 6 + Math.min(item.level - 1, 2) * 10 }}
             >
               {item.text || item.id}
             </button>
           </li>
         ))}
       </ul>
+
+      {/* 左缘拖拽调宽把手：<md 隐藏（nav 本身 hidden md:flex），双击重置回 176 */}
+      <ResizeHandle
+        orientation="vertical"
+        min={MIN_OUTLINE_W}
+        max={MAX_OUTLINE_W}
+        value={width}
+        onChange={applyWidth}
+        onReset={resetWidth}
+        label="调整大纲宽度"
+        className="absolute left-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize md:block"
+      />
     </nav>
   );
 }
