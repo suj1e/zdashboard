@@ -108,7 +108,7 @@ CLI SHALL 支持 `--dir <root>`、`--port <n>`、`--open`、`--page <mode>`、`-
 
 ### Requirement: zskills 数据目录约定（.zdev）
 
-系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `.zdev/design/`（zdesign/zasset 产出根），apply 插件批量只读视图经 `.zdev/apply/CURRENT` 指针读取 `.zdev/apply/runs/<runId>/state.json`（zapply batch 约定）。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
+系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `.zdev/design/`（zdesign/zasset 产出根）。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
 
 #### Scenario: 配置优先级与回退
 
@@ -119,11 +119,6 @@ CLI SHALL 支持 `--dir <root>`、`--port <n>`、`--open`、`--page <mode>`、`-
 
 - **WHEN** `.zdev/` 下存在 brief.md/prd.md
 - **THEN** 不再生成评审文档列表（review 插件已移除）；md 文件仅在位于约定扫描目录时被 view/design 浏览
-
-#### Scenario: 批量状态写入后面板静默刷新
-
-- **WHEN** zapply batch 运行中更新 `.zdev/apply/runs/<runId>/state.json`
-- **THEN** apply 批量驾驶舱经 SSE `files` 事件自动重取并呈现最新批次状态，无整页刷新
 
 ### Requirement: worktree 平台级
 
@@ -165,7 +160,7 @@ CLI SHALL 支持 `--dir <root>`、`--port <n>`、`--open`、`--page <mode>`、`-
 #### Scenario: 渲染管线单一来源
 
 - **WHEN** Markdown 渲染插件链（rehype/remark）调整
-- **THEN** view/review/design 三处预览行为一致更新，无复制版本漂移
+- **THEN** view/design 两处预览行为一致更新，无复制版本漂移
 
 #### Scenario: badge 视觉一致
 
