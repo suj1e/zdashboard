@@ -117,3 +117,10 @@
     background-size: 20px 20px;
   }
 }
+
+/* 动效敏感用户:关闭装饰动画(animate-pulse)与 hover 缩放;
+   加载/状态语义由颜色与文案承载,不依赖动效本身 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse { animation: none !important; }
+  [class*="hover:scale"]:hover { transform: none !important; }
+}

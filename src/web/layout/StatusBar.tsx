@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { CONN_DOT, CONN_TEXT, useConnStatus } from '../hooks/useConnStatus';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useIcons } from '../lib/icons.js';
 
 interface GitInfo { branch?: string; dirty?: number }
@@ -15,6 +16,8 @@ export function StatusBar({ projectPath }: { projectPath: string }) {
   // 连接状态单源(onFiles 透传:重连后 git 信息静默重取)
   const status = useConnStatus(() => setBump(k => k + 1));
   const { icon } = useIcons();
+  // reduced-motion:live 心跳点退为静态 success 色(色点语义由 CONN_DOT 单源保留)
+  const reduceMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     fetch('/__config', { cache: 'no-store' }).then(r => r.json())
@@ -22,7 +25,7 @@ export function StatusBar({ projectPath }: { projectPath: string }) {
       .catch(() => {});
   }, [bump]);
 
-  const dot = `${CONN_DOT[status]}${status === 'live' ? ' animate-pulse' : ''}`;
+  const dot = `${CONN_DOT[status]}${status === 'live' && !reduceMotion ? ' animate-pulse' : ''}`;
 
   return (
     <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-sm">
