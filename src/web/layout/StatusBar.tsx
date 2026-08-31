@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
-import { useSSE } from '../hooks/useSSE';
+import { CONN_DOT, CONN_TEXT, useConnStatus } from '../hooks/useConnStatus';
 import { useIcons } from '../lib/icons.js';
 
 interface GitInfo { branch?: string; dirty?: number }
@@ -8,13 +8,12 @@ interface GitInfo { branch?: string; dirty?: number }
 const CHIP = 'inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 h-[var(--chip-h)] font-mono text-xs leading-none text-muted-foreground';
 
 /** 底部状态条:胶囊 chip 呈现项目身份(左)与系统状态(右),与全站药丸/badge 视觉语言一致 */
-export function StatusBar({ projectPath, stoppedRef }: {
-  projectPath: string; stoppedRef: React.MutableRefObject<boolean>;
-}) {
+export function StatusBar({ projectPath }: { projectPath: string }) {
   const [git, setGit] = useState<GitInfo>({});
   const [version, setVersion] = useState('');
   const [bump, setBump] = useState(0);
-  const status = useSSE(() => {}, () => setBump(k => k + 1), stoppedRef);
+  // 连接状态单源(onFiles 透传:重连后 git 信息静默重取)
+  const status = useConnStatus(() => setBump(k => k + 1));
   const { icon } = useIcons();
 
   useEffect(() => {
@@ -23,7 +22,7 @@ export function StatusBar({ projectPath, stoppedRef }: {
       .catch(() => {});
   }, [bump]);
 
-  const dot = status === 'live' ? 'bg-success animate-pulse' : 'bg-muted-foreground';
+  const dot = `${CONN_DOT[status]}${status === 'live' ? ' animate-pulse' : ''}`;
 
   return (
     <footer className="h-[var(--statusbar-h)] border-t bg-background flex items-center justify-between px-3 gap-2 text-sm">
@@ -58,10 +57,23 @@ export function StatusBar({ projectPath, stoppedRef }: {
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         {version && <span className={CHIP}>{version}</span>}
-        <span className={CHIP} title={status === 'live' ? '实时推送已连接' : status === 'lost' ? '连接断开,自动重连中' : '连接中'}>
-          <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-          {status === 'live' ? 'SSE' : status === 'lost' ? '重连中' : '连接中'}
-        </span>
+        {status === 'lost' ? (
+          // 断线态:chip 变按钮,点击整页强刷(自动重连迟迟不恢复时的手动出口)
+          <button
+            type="button"
+            onClick={() => location.reload()}
+            title="连接断开,点击刷新页面"
+            className={`${CHIP} cursor-pointer`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+            {CONN_TEXT[status]}
+          </button>
+        ) : (
+          <span className={CHIP} title={status === 'live' ? '实时推送已连接' : '连接中'}>
+            <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+            {status === 'live' ? 'SSE' : CONN_TEXT[status]}
+          </span>
+        )}
       </div>
     </footer>
   );

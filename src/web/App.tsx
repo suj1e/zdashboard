@@ -39,8 +39,9 @@ export default function App() {
   }, [plugins.length]);
 
   // SSE 'reload' 仅代表服务端文件变更;'files' 事件已驱动各订阅方增量刷新,
-  // 整页 location.reload 会打断交互并引发全屏闪烁,故 no-op(消除闪烁)
-  const status = useSSE(
+  // 整页 location.reload 会打断交互并引发全屏闪烁,故 no-op(消除闪烁)。
+  // 连接状态展示已由 Topbar/StatusBar 经 useConnStatus 单源自取,此处订阅仅维持连接早建。
+  useSSE(
     () => {},
     () => {},
     stoppedRef
@@ -76,7 +77,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col">
-      <Topbar status={status} stoppedRef={stoppedRef} />
+      <Topbar stoppedRef={stoppedRef} />
       <div className="flex-1 min-h-0 flex">
         <IconRail active={known} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
         <SidebarFrame mode={known ?? 'home'} hasContent={!!plugin?.Sidebar}>
@@ -115,7 +116,7 @@ export default function App() {
           </div>
         </section>
       </div>
-      <StatusBar projectPath={projectPath} stoppedRef={stoppedRef} />
+      <StatusBar projectPath={projectPath} />
     </div>
   );
 }
