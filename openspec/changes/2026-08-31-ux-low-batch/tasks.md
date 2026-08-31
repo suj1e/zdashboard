@@ -1,6 +1,6 @@
 # 任务:UX 低优批次
 
-- [ ] 1. `safeStorage` 工具 + 全仓 localStorage 直调点接入(ThemeToggle/StyleSelect/main)
+- [x] 1. `safeStorage` 工具 + 全仓 localStorage 直调点接入(ThemeToggle/StyleSelect/main)
   - 验收:单测:正常读写/抛异常不崩
 - [ ] 2. reduced-motion:globals.css 媒体查询 + live 点静态化 + hover scale 关闭
   - 验收:CSS 断言;组件测试:reduce 下无 pulse 类

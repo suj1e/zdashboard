@@ -7,6 +7,7 @@ import {
 } from './ui/dropdown-menu';
 import { STYLES } from '../lib/themes';
 import { useIcons } from '../lib/icons.js';
+import { safeSetItem } from '../lib/safeStorage.js';
 import { useState } from 'react';
 
 export function StyleSelect() {
@@ -15,7 +16,7 @@ export function StyleSelect() {
 
   const setStyle = (id: string) => {
     document.documentElement.dataset.theme = id;
-    localStorage.setItem('zd-theme', id);
+    safeSetItem('zd-theme', id);
     setCurrent(id);
     document.documentElement.dispatchEvent(new CustomEvent('themechange'));
   };

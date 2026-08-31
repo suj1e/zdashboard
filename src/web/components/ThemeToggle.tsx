@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { useIcons } from '../lib/icons.js';
+import { safeSetItem } from '../lib/safeStorage.js';
 
 export function ThemeToggle() {
   // 状态源是 React state(dataset 仅作初值,main.tsx 启动时已写入);
@@ -14,7 +15,7 @@ export function ThemeToggle() {
     const next = mode === 'dark' ? 'light' : 'dark';
     setMode(next);
     document.documentElement.dataset.mode = next;
-    localStorage.setItem('zd-mode', next);
+    safeSetItem('zd-mode', next);
   };
 
   return (
