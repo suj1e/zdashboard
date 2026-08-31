@@ -8,5 +8,5 @@
   - 验收:组件测试:404 文案断言、重试触发重新 fetch
 - [ ] 4. EmptyState 双实现合并(components 版 re-export kit),调用点修正
   - 验收:`grep -rn "components/EmptyState" src/` 仅 re-export;PlaceholderWorkspace 正常
-- [ ] 5. 回归 + playground 手验(mock 500/404/空三分支)
+- [x] 5. 回归 + playground 手验(mock 500/404/空三分支)
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);🔧[人工] 手验 checklist 由用户执行
