@@ -10,8 +10,11 @@ import { useSSE } from './hooks/useSSE';
 import { useModeIcon } from './lib/icons';
 import { PluginPage, Skeleton } from './kit';
 
-/** 一次性拉取 JSON;失败返回 null,由调用方保持默认状态 */
-async function fetchJson<T>(url: string): Promise<T | null> {
+/**
+ * 一次性拉取 JSON;失败返回 null 由调用方保持默认状态(宽松语义,仅 shell 配置面使用)。
+ * 刻意不与 lib/fetchJson 门卫同名——数据面门卫抛错,这里是吞错兜底,同名会反义误导。
+ */
+async function loadJsonLenient<T>(url: string): Promise<T | null> {
   try {
     const r = await fetch(url, { cache: 'no-store' });
     return await r.json();
@@ -38,7 +41,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetchJson<{ root?: string }>('/__config').then((cfg) => {
+    void loadJsonLenient<{ root?: string }>('/__config').then((cfg) => {
       if (!cancelled && cfg) setProjectPath(cfg.root ?? '');
     });
     return () => { cancelled = true; };
@@ -46,7 +49,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetchJson<Detects>('/__detect').then((data) => {
+    void loadJsonLenient<Detects>('/__detect').then((data) => {
       if (!cancelled && data) setDetect({ hasOpenspec: !!data.hasOpenspec, hasDocs: !!data.hasDocs, hasJust: !!data.hasJust });
     });
     return () => { cancelled = true; };

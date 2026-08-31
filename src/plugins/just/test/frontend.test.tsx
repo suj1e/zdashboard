@@ -37,7 +37,8 @@ beforeEach(() => {
   vi.stubGlobal('EventSource', FakeES);
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const json = (v: unknown) => ({ json: async () => v }) as Response;
+    // fetchJson 门卫消费端:mock 必须模拟真实 Response 的 ok/status
+    const json = (v: unknown) => ({ ok: true, status: 200, json: async () => v }) as unknown as Response;
     if (url.includes('/__just/recipes')) return json([{ name: 'dev-server', description: 'dev' }, { name: 'build', description: 'b' }]);
     if (url.includes('/__config')) return json({ stopToken: 'tok' });
     throw new Error(`unexpected fetch: ${url}`);

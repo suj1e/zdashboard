@@ -10,6 +10,8 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import 'highlight.js/styles/github-dark.css';
 import 'katex/dist/katex.min.css';
+import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
+import { ErrorState } from '../kit/index.js';
 
 function CodeBlock({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null);
@@ -40,14 +42,25 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 /** resolve:可选整 URL 解析器(不传 = /__file-content 根路径,view 插件语义);design 插件传代理路由解析 */
 export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [text, setText] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     let alive = true;
-    fetch(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
-      .then((r) => r.text())
+    setText(null);
+    setErr(null);
+    fetchText(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((t) => { if (alive) setText(t); })
-      .catch(() => { if (alive) setText(''); });
+      .catch((e) => { if (alive) setErr(viewerFetchErrorMessage(e)); });
     return () => { alive = false; };
-  }, [path, resolve]);
+  }, [path, resolve, tick]);
+
+  if (err) {
+    return (
+      <div className="h-full flex flex-col p-4">
+        <ErrorState message={err} onRetry={() => setTick(t => t + 1)} />
+      </div>
+    );
+  }
 
   if (text === null) return <p className="p-3 text-xs text-muted-foreground">加载中…</p>;
 

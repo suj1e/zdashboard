@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { intervalToDuration } from 'date-fns';
 import { useIcons } from '../lib/icons.js';
 import { usePluginData } from '../hooks/usePluginData.js';
+import { fetchJson } from '../lib/fetchJson.js';
+import { EmptyState, ErrorState, Skeleton } from '../kit/index.js';
 
 interface Recipe { name: string; description: string; }
 type TaskStatus = 'running' | 'exited';
@@ -49,7 +51,7 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
     else setInternalSelected(r);
   };
   const recipes = usePluginData<Recipe[]>('just:/__just/recipes', () =>
-    fetch('/__just/recipes', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'plugin:just:state' });
+    fetchJson<Recipe[]>('/__just/recipes', { cache: 'no-store' }), { subscribe: 'plugin:just:state' });
   const recipeList = recipes.data ?? [];
   const [tasks, setTasks] = useState<Record<string, TaskState>>({});
   const [logs, setLogs] = useState<Record<string, string[]>>({});
@@ -167,10 +169,18 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
 
       {/* ── 内容区 ── */}
       {selected === null ? (
-        /* 总控台视图:每任务一张紧凑卡(状态/时长/启停/日志尾预览) */
-        <div className="flex-1 min-h-0 overflow-auto p-3 grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 content-start">
-          {rows.length === 0 && <p className="text-xs text-muted-foreground col-span-full p-4 text-center">未发现 justfile recipes</p>}
-          {rows.map(r => {
+        /* 总控台视图:recipes 三态(加载/错误/空),有数据才渲染任务卡;
+           骨架仅初始加载(loading && 无数据),SSE state 事件后台重取静默,任务卡不卸载 */
+        <div className="flex-1 min-h-0 flex flex-col">
+          {recipes.loading && !recipes.data ? (
+            <Skeleton rows={4} className="m-3" />
+          ) : recipes.error ? (
+            <ErrorState message={recipes.error} onRetry={recipes.reload} />
+          ) : rows.length === 0 ? (
+            <EmptyState title="未发现 justfile recipes" hint="在项目根目录放置 justfile,即可在这里查看与启停任务" />
+          ) : (
+            <div className="flex-1 min-h-0 overflow-auto p-3 grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 content-start">
+              {rows.map(r => {
             const t = r.task;
             const running = t?.state === 'running';
             const exited = t?.state === 'exited';
@@ -200,7 +210,9 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
                 </div>
               </div>
             );
-          })}
+              })}
+            </div>
+          )}
         </div>
       ) : (
         /* 单任务视图:状态头 + 完整日志流 */

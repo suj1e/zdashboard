@@ -40,7 +40,8 @@ beforeEach(() => {
   __resetRouterForTest();
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const json = (v: unknown) => ({ json: async () => v }) as Response;
+    // fetchJson 门卫消费端:mock 必须模拟真实 Response 的 ok/status
+    const json = (v: unknown) => ({ ok: true, status: 200, json: async () => v }) as unknown as Response;
     if (url.includes('/__plugins/config')) return json({});
     if (url.includes('/__worktrees')) return json(WORKTREES);
     if (url.includes('wt=%2Fwt%2Fa') || url.includes('wt=/wt/a')) return json({ tree: WT_TREE });

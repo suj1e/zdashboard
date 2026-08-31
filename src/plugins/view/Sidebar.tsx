@@ -13,6 +13,8 @@ import type { TreeNode } from '../../server/spec-scan.js';
 import { matches } from './filter.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
+import { fetchJson } from '../../web/lib/fetchJson.js';
+import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
 
 interface WorktreeInfo {
   path: string;
@@ -29,21 +31,15 @@ interface TreesData {
 }
 
 async function fetchTrees(): Promise<TreesData> {
-  const worktrees = await fetch('/__worktrees', { cache: 'no-store' })
-    .then(r => r.json() as Promise<WorktreeInfo[]>)
-    .catch(() => [] as WorktreeInfo[]);
+  // 错误一律传播(fetchJson 门卫):任何一段失败 → usePluginData error 态 → ErrorState 可重试
+  const worktrees = await fetchJson<WorktreeInfo[]>('/__worktrees', { cache: 'no-store' });
   const wtTrees: Record<string, TreeNode[]> = {};
   await Promise.all(worktrees.map(async (wt) => {
-    try {
-      const d = await fetch(`/__files?wt=${encodeURIComponent(wt.path)}`, { cache: 'no-store' }).then(r => r.json());
-      wtTrees[wt.path] = d.tree ?? [];
-    } catch { wtTrees[wt.path] = []; }
+    const d = await fetchJson<{ tree?: TreeNode[] }>(`/__files?wt=${encodeURIComponent(wt.path)}`, { cache: 'no-store' });
+    wtTrees[wt.path] = d.tree ?? [];
   }));
-  const rootTree = await fetch('/__files', { cache: 'no-store' })
-    .then(r => r.json())
-    .then((d: { tree?: TreeNode[] }) => d.tree ?? [])
-    .catch(() => [] as TreeNode[]);
-  return { worktrees, wtTrees, rootTree };
+  const root = await fetchJson<{ tree?: TreeNode[] }>('/__files', { cache: 'no-store' });
+  return { worktrees, wtTrees, rootTree: root.tree ?? [] };
 }
 
 function TreeDir({ node, depth, filter, current, onSelectFile }: {
@@ -133,6 +129,12 @@ export default function Sidebar() {
   };
 
   const showWorktrees = worktrees.length > 0;
+  // 空态与过滤态分离:无过滤且无数据 → 引导空态;有过滤但全树无匹配 → 「无匹配结果」
+  const hasFilterMatch =
+    !!filter && (worktrees.some((wt) => (wtTrees[wt.path] ?? []).some((n) => matches(n, filter)))
+      || rootTree.some((n) => matches(n, filter)));
+  const treeEmpty = !filter && !!trees.data && !showWorktrees && rootTree.length === 0;
+  const filterEmpty = !!filter && !!trees.data && !hasFilterMatch;
 
   return (
     <div className="p-2 flex flex-col h-full">
@@ -144,7 +146,19 @@ export default function Sidebar() {
           data-testid="view-filter-input"
           className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:outline-none focus:border-primary"
         />
-        <div className="py-1 flex-1 min-h-0 overflow-auto" data-testid="view-tree-scroller">
+        <div className="py-1 flex-1 min-h-0 overflow-auto flex flex-col" data-testid="view-tree-scroller">
+          {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载树 */}
+          {trees.loading && !trees.data && <Skeleton rows={6} className="mx-1 mt-1" />}
+          {trees.error && <ErrorState message={trees.error} onRetry={trees.reload} />}
+          {treeEmpty && (
+            <EmptyState
+              title="暂无可展示的规格文件"
+              hint="约定扫描目录:openspec / docs / .zdev/apply"
+            />
+          )}
+          {filterEmpty && <EmptyState title="无匹配结果" hint="调整或清空过滤词后重试" />}
+          {!!trees.data && !trees.error && !treeEmpty && !filterEmpty && (
+            <>
           {showWorktrees && worktrees.map((wt) => {
             const tree = wtTrees[wt.path] ?? [];
             const filtered = tree.filter((n) => matches(n, filter));
@@ -213,6 +227,8 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

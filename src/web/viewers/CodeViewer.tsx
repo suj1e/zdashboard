@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import { formatBytes } from '../lib/utils.js';
+import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
+import { ErrorState } from '../kit/index.js';
 
 function escHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -12,24 +14,25 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
   const [text, setText] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [tick, setTick] = useState(0);
   const name = path.split('/').pop() || path;
 
   useEffect(() => {
     let alive = true;
     setText(null);
     setErr(null);
-    fetch(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.text();
-      })
+    fetchText(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
       .then((t) => { if (alive) setText(t); })
-      .catch((e) => { if (alive) setErr(e.message || '加载失败'); });
+      .catch((e) => { if (alive) setErr(viewerFetchErrorMessage(e)); });
     return () => { alive = false; };
-  }, [path, resolve]);
+  }, [path, resolve, tick]);
 
   if (err) {
-    return <div className="p-4 text-xs text-destructive">加载失败: {err}</div>;
+    return (
+      <div className="h-full flex flex-col p-4">
+        <ErrorState message={err} onRetry={() => setTick(t => t + 1)} />
+      </div>
+    );
   }
 
   const ext = name.includes('.') ? '.' + name.split('.').pop()!.toLowerCase() : '';

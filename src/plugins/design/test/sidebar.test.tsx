@@ -43,7 +43,8 @@ beforeEach(() => {
   vi.stubGlobal('EventSource', FakeES);
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const json = (v: unknown) => ({ json: async () => v }) as Response;
+    // fetchJson 门卫消费端:mock 必须模拟真实 Response 的 ok/status
+    const json = (v: unknown) => ({ ok: true, status: 200, json: async () => v }) as unknown as Response;
     // 配置链路已拆除:Sidebar 不得再请求 /__plugins/config
     if (url.includes('/__plugins/config')) throw new Error(`unexpected config fetch: ${url}`);
     if (url.includes('/__design/assets')) return json(ASSETS);
