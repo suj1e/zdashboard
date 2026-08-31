@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import Ansi from 'ansi-to-react';
 import { Button } from './ui/button';
 import { FilterPills, type FilterItem } from './FilterPills.js';
 import { toast } from 'sonner';
@@ -7,6 +6,8 @@ import { intervalToDuration } from 'date-fns';
 import { useIcons } from '../lib/icons.js';
 import { usePluginData } from '../hooks/usePluginData.js';
 import { fetchJson } from '../lib/fetchJson.js';
+import { MAX_LOG_LINES } from '../lib/log-viewer.js';
+import { LogLine, type LogLineData } from './log-lines.js';
 import { EmptyState, ErrorState, Skeleton } from '../kit/index.js';
 
 interface Recipe { name: string; description: string; }
@@ -42,6 +43,16 @@ function fmtElapsed(ms: number) {
   return `${h}h${m}m`;
 }
 
+/** 运行时长徽标:每秒 tick 收敛在本组件内,日志列表不参与重渲 */
+function ElapsedBadge({ startedAt, className }: { startedAt: number; className?: string }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick(x => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <span className={className}>{fmtElapsed(Math.max(0, Date.now() - startedAt))}</span>;
+}
+
 export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) {
   const controlled = typeof onSelect === 'function';
   const [internalSelected, setInternalSelected] = useState<string | null>(null);
@@ -54,20 +65,59 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
     fetchJson<Recipe[]>('/__just/recipes', { cache: 'no-store' }), { subscribe: 'plugin:just:state' });
   const recipeList = recipes.data ?? [];
   const [tasks, setTasks] = useState<Record<string, TaskState>>({});
-  const [logs, setLogs] = useState<Record<string, string[]>>({});
+  const [logs, setLogs] = useState<Record<string, LogLineData[]>>({});
   const tokenRef = useRef('');
-  const [, forceTick] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const selLines = selected ? logs[selected] ?? [] : [];
   const { icon } = useIcons();
 
+  // ── 渲染合批:log 事件进 pending,rAF(降级 50ms timer)一帧一落;seq 单调递增随行存入 ──
+  const pendingRef = useRef(new Map<string, string[]>());
+  const seqRef = useRef(0);
+  const flushScheduledRef = useRef(false);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushRef = useRef<() => void>(() => {});
+
   useEffect(() => {
+    const flush = () => {
+      flushScheduledRef.current = false;
+      const batch = pendingRef.current;
+      if (batch.size === 0) return;
+      pendingRef.current = new Map();
+      const appended = new Map<string, LogLineData[]>();
+      for (const [recipe, texts] of batch) {
+        appended.set(recipe, texts.map(t => ({ seq: ++seqRef.current, text: t })));
+      }
+      setLogs(prev => {
+        const next = { ...prev };
+        for (const [recipe, lines] of appended) {
+          const merged = (next[recipe] ?? []).concat(lines);
+          next[recipe] = merged.length > MAX_LOG_LINES ? merged.slice(-MAX_LOG_LINES) : merged;
+        }
+        return next;
+      });
+    };
+    flushRef.current = flush;
+    const schedule = () => {
+      if (flushScheduledRef.current) return;
+      flushScheduledRef.current = true;
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+          if (fallbackTimerRef.current !== null) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null; }
+          flush();
+        });
+      } else {
+        fallbackTimerRef.current = setTimeout(() => { fallbackTimerRef.current = null; flush(); }, 50);
+      }
+    };
+    tokenRef.current = '';
     fetch('/__config').then(r => r.json()).then(c => { tokenRef.current = c.stopToken ?? ''; }).catch(() => {});
     const es = new EventSource('/__just/logs');
     let firstOpen = true;
     es.onopen = () => {
       if (firstOpen) { firstOpen = false; return; }
       // 重连:清空本地状态,靠服务端 subscribe 重放重建快照(避免日志重复追加)
+      pendingRef.current.clear();
       setLogs({});
       setTasks({});
     };
@@ -75,11 +125,12 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
       try {
         const ev = JSON.parse(e.data) as Ev;
         if (ev.type === 'log') {
-          setLogs(prev => {
-            const next = [...(prev[ev.recipe] ?? []), ev.text];
-            return { ...prev, [ev.recipe]: next.length > 1000 ? next.slice(-1000) : next };
-          });
+          const arr = pendingRef.current.get(ev.recipe);
+          if (arr) arr.push(ev.text);
+          else pendingRef.current.set(ev.recipe, [ev.text]);
+          schedule();
         } else if (ev.type === 'clear') {
+          pendingRef.current.delete(ev.recipe); // 先撤 pending,避免 clear 后残留批量复活旧日志
           setLogs(prev => ({ ...prev, [ev.recipe]: [] }));
         } else if (ev.type === 'state') {
           setTasks(prev => ({
@@ -92,8 +143,12 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
       } catch { /* ignore */ }
     };
     es.onerror = () => { /* EventSource 自动重连,onopen 里处理重放去重 */ };
-    const timer = setInterval(() => forceTick(t => t + 1), 1000);
-    return () => { es.close(); clearInterval(timer); };
+    return () => {
+      es.close();
+      if (fallbackTimerRef.current !== null) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null; }
+      flushScheduledRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -184,14 +239,14 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             const t = r.task;
             const running = t?.state === 'running';
             const exited = t?.state === 'exited';
-            const tail = (logs[r.name] ?? []).slice(-3).map(l => l.replace(/\r?\n$/, '').replace(/\x1b\[[0-9;]*m/g, ''));
+            const tail = (logs[r.name] ?? []).slice(-3).map(l => l.text.replace(/\r?\n$/, '').replace(/\x1b\[[0-9;]*m/g, ''));
             return (
               <div key={r.name} onClick={() => setSelected(r.name)}
                 className="group rounded-[var(--radius-lg)] border bg-card p-3 cursor-pointer hover:border-muted-foreground/40 transition-colors">
                 <div className="flex items-center gap-2 text-xs">
                   <span className={`h-2 w-2 rounded-[var(--radius-full)] flex-none ${pill(running, exited, t)}`} />
                   <span className="font-mono font-medium">{r.name}</span>
-                  {running && <span className="text-success font-mono">{fmtElapsed(Date.now() - t.startedAt)}</span>}
+                  {running && <ElapsedBadge startedAt={t.startedAt} className="text-success font-mono" />}
                   {exited && <span className={`font-mono ${t.signal ? 'text-muted-foreground' : t.code ? 'text-destructive' : 'text-success'}`}>{t.signal ? '已停止' : `exit ${t.code}`}</span>}
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -221,7 +276,9 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             <span className={`h-1.5 w-1.5 rounded-[var(--radius-full)] ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
             <span className="font-mono font-medium">{selected}</span>
             <span className="text-muted-foreground font-mono">
-              {selRunning ? `running · ${fmtElapsed(Date.now() - selTask.startedAt)}` : selTask?.signal ? '已停止' : selTask ? `exit ${selTask.code}` : '未运行'}
+              {selRunning
+                ? <>running · <ElapsedBadge startedAt={selTask.startedAt} /></>
+                : selTask?.signal ? '已停止' : selTask ? `exit ${selTask.code}` : '未运行'}
             </span>
             <span className="ml-auto flex items-center gap-1">
               {selRunning
@@ -233,14 +290,7 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
           </div>
           <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-terminal-bg p-3.5 font-mono text-xs leading-relaxed text-terminal-fg">
             {selLines.length === 0 && <p className="text-terminal-fg/50">$ just {selected} · 等待输出…</p>}
-            {selLines.map((l, i) => {
-              const text = l.replace(/\r?\n$/, '');
-              return (
-                <div key={i} className="whitespace-pre-wrap break-all min-h-[1.25rem]">
-                  {/\x1b\[/.test(text) ? <Ansi>{text}</Ansi> : <span className={levelClass(text)}>{text}</span>}
-                </div>
-              );
-            })}
+            {selLines.map(l => <LogLine key={l.seq} line={l} />)}
           </div>
         </div>
       )}

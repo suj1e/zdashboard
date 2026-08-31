@@ -27,8 +27,8 @@ describe('parseRecipeSignature — just --show 首行签名解析', () => {
   });
 
   it('variadic + 参数与 $ 变长参数剥前缀取名', () => {
-    expect(parseRecipeSignature('foo +flags:').params).toEqual(['flags']);
-    expect(parseRecipeSignature('foo $rest:').params).toEqual(['rest']);
+    expect(parseRecipeSignature('foo +flags:')?.params).toEqual(['flags']);
+    expect(parseRecipeSignature('foo $rest:')?.params).toEqual(['rest']);
   });
 
   it('纯位置参数(无默认值)→ 取参数名', () => {
@@ -44,7 +44,7 @@ describe('parseRecipeSignature — just --show 首行签名解析', () => {
   });
 
   it('首部 @ 前缀剥掉(private recipe)', () => {
-    expect(parseRecipeSignature('@hello msg="x":').name).toBe('hello');
+    expect(parseRecipeSignature('@hello msg="x":')?.name).toBe('hello');
   });
 
   it('无冒号/空行等非法签名 → null(调用方跳过)', () => {
