@@ -56,3 +56,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 低优清单 | diagrams/low-batch.html | 四域低优项与前置 |
+### 覆盖率目标
+- safeStorage 分支覆盖 ≥90%;持久化/动画断言组件覆盖 ≥85%;logs 频道迁移深度若降级在报告中说明。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(6/8/2))
+- 场景覆盖图:diagrams/scenario-coverage.html(六场景覆盖图)

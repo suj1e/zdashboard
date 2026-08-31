@@ -73,3 +73,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 日志改造地图 | diagrams/log-ux-map.html | 锚定/合批/搜索/传参五项改造 |
+### 覆盖率目标
+- 锚定/argv 纯函数分支覆盖 ≥90%;LogViewer 合批/过滤/pending 组件覆盖 ≥85%;回归:runner 与日志既有用例通过(stop(a) 基线除外)。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(12/14/3))
+- 场景覆盖图:diagrams/scenario-coverage.html(七场景覆盖图)

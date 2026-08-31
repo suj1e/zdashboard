@@ -43,3 +43,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 大纲前后对比 | diagrams/outline-before-after.html | 调宽/两行截断/tooltip |
+### 覆盖率目标
+- ResizeHandle 抽取后 SidebarFrame 既有测试 100% 通过;OutlineNav 新行为组件覆盖 ≥85%。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(4/8/2))
+- 场景覆盖图:diagrams/scenario-coverage.html(五场景覆盖图)

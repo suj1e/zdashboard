@@ -55,3 +55,9 @@ viewer files 重取带 300ms 防抖 + 仅命中当前 path 时触发——批量
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 新鲜度状态机 | diagrams/freshness-states.html | 断线补偿与刷新失败保旧数据 |
+### 覆盖率目标
+- 核心 hooks `useSSE`/`usePluginData` 改动分支覆盖 ≥90%;viewer 订阅/滚动重置组件覆盖 ≥85%;回归:全量既有用例通过(基线除外)。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(10/9/3))
+- 场景覆盖图:diagrams/scenario-coverage.html(六场景覆盖图)

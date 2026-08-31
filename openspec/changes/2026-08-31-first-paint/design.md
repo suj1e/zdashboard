@@ -70,3 +70,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 首屏体积与FOUC | diagrams/bundle-fouc.html | 主包 1.45MB→0.6MB + 深色首帧 |
+### 覆盖率目标
+- 主题兜底纯函数分支覆盖 ≥90%;ICON_MAP 冒烟 100% 键;体积与闪屏为构建/人工核验项(非覆盖率)。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(6/4/2))
+- 场景覆盖图:diagrams/scenario-coverage.html(五场景覆盖图)

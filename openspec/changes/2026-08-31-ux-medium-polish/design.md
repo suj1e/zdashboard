@@ -62,3 +62,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 修复地图 | diagrams/fix-map.html | 九项 medium 修复按域分布 |
+### 覆盖率目标
+- sendErrorPage/主题兜底纯函数分支 ≥90%;骨架/iframe/状态条组件覆盖 ≥85%;对比度与键盘走查为人工核验项。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(8/12/4))
+- 场景覆盖图:diagrams/scenario-coverage.html(八场景覆盖图)

@@ -60,3 +60,9 @@
 | 图 | 相对路径 | 说明 |
 |---|---|---|
 | 三态收口 | diagrams/three-states.html | fetchJson 门卫 + ErrorState/EmptyState 三态分流 |
+### 覆盖率目标
+- 核心模块 `src/web/lib/fetchJson.ts` 分支覆盖 ≥90%;三态接线组件(view/design/stats 侧栏、viewer)语句覆盖 ≥85%;回归:全量既有用例 100% 通过(基线环境失败除外)。
+
+### 测试图示
+- 测试金字塔:diagrams/test-pyramid.html(测试金字塔(14/12/3))
+- 场景覆盖图:diagrams/scenario-coverage.html(六场景覆盖图)
