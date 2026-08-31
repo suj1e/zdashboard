@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>UX 中优批次修复地图</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--accent:#eb6c36;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem 2rem}.frame{max-width:1200px;width:100%}.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}h1{font-family:var(--serif);font-size:clamp(1.5rem,2.4vw + .75rem,2rem);font-weight:400;margin-bottom:1.5rem}svg{width:100%;min-width:900px;display:block}</style></head>
+<body><div class="frame"><p class="eyebrow">2026-08-31-ux-medium-polish</p><h1>UX 中优批次修复地图</h1>
+<svg viewBox="0 0 960 440" role="img" aria-labelledby="mp-title mp-desc"><title id="mp-title">UX 中优批次修复地图</title><desc id="mp-desc">清单图:九项 medium 修复按壳层、插件、服务端、主题四域分布,每项标注修复要点。</desc>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<g font-family="'Geist',sans-serif" font-size="11">
+<g><rect x="32" y="56" width="424" height="168" rx="8" fill="none" stroke="#2d3142" stroke-width="1"/>
+<text x="48" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">壳层</text>
+<text x="48" y="104" fill="#2d3142">· 深链接首屏骨架(不再闪首页)</text>
+<text x="48" y="128" fill="#2d3142">· 断线统一「重连中」+ warning 点,点击强刷</text>
+<text x="48" y="152" fill="#2d3142">· focus-visible 全局基线(--ring)</text>
+<text x="48" y="176" fill="#2d3142">· 面包屑末段不截断 + title</text>
+<text x="48" y="200" fill="#2d3142">· 首页卡片骨架</text></g>
+<g><rect x="504" y="56" width="424" height="168" rx="8" fill="none" stroke="#2d3142" stroke-width="1"/>
+<text x="520" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">插件</text>
+<text x="520" y="104" fill="#2d3142">· design 空态引导「运行 zdesign 生成」</text>
+<text x="520" y="128" fill="#2d3142">· just 假空态区分:加载中/未装 just/无 justfile</text>
+<text x="520" y="152" fill="#2d3142">· ImageViewer 错误文案勘正</text>
+<text x="520" y="176" fill="#2d3142">· StopButton 原生 confirm 处理决策</text>
+<text x="520" y="200" fill="#2d3142">· design 空态与 just 空态风格统一</text></g>
+<g><rect x="32" y="240" width="424" height="144" rx="8" fill="none" stroke="#2d3142" stroke-width="1"/>
+<text x="48" y="264" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">服务端</text>
+<text x="48" y="288" fill="#2d3142">· 404/403 极简 HTML 错误页(API 仍 JSON)</text>
+<text x="48" y="312" fill="#2d3142">· Content-Type: text/html; charset=utf-8</text>
+<text x="48" y="336" fill="#2d3142">· 带返回首页链接</text>
+<text x="48" y="360" fill="#2d3142">· 错误响应统一出口</text></g>
+<g><rect x="504" y="240" width="424" height="144" rx="8" fill="none" stroke="#eb6c36" stroke-width="1"/>
+<text x="520" y="264" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">主题 / a11y</text>
+<text x="520" y="288" fill="#2d3142">· slate light primary → blue-600(WCAG 4.5:1)</text>
+<text x="520" y="312" fill="#2d3142">· zd-theme 非法值兜底校验</text>
+<text x="520" y="336" fill="#2d3142">· iframe 外部插件三态(Skeleton/超时/重试)</text>
+<text x="520" y="360" fill="#2d3142">· 断线期间数据过期提示(与 data-freshness 衔接)</text></g>
+</g>
+<line x1="32" y1="404" x2="928" y2="404" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="32" y="428" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">NOTE</text>
+<text x="100" y="428" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">前置 ux-error-states(ErrorState 复用);大纲体验已拆分至 view-outline-ux</text>
+</svg></div></body></html>

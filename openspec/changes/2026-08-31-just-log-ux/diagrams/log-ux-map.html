@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>just 日志体验改造</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--accent:#eb6c36;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem 2rem}.frame{max-width:1200px;width:100%}.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}h1{font-family:var(--serif);font-size:clamp(1.5rem,2.4vw + .75rem,2rem);font-weight:400;margin-bottom:1.5rem}svg{width:100%;min-width:900px;display:block}</style></head>
+<body><div class="frame"><p class="eyebrow">2026-08-31-just-log-ux</p><h1>just 日志体验改造</h1>
+<svg viewBox="0 0 960 440" role="img" aria-labelledby="jl-title jl-desc"><title id="jl-title">just 日志体验改造</title><desc id="jl-desc">组件图:日志面板五项改造——滚动锚定与回底按钮、合批渲染、搜索与级别过滤、启停 pending 反馈与 toast、带参 recipe 输入面板。</desc>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<g font-family="'Geist',sans-serif" font-size="11" font-weight="600">
+<rect x="32" y="56" width="424" height="152" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="48" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">PAIN · 现状</text>
+<text x="48" y="108" fill="#4f5d75">· 上翻读历史 → 每行新输出强行拽底</text>
+<text x="48" y="130" fill="#4f5d75">· 每行一个 SSE 事件渲染 + 索引 key 全表重渲</text>
+<text x="48" y="152" fill="#4f5d75">· 启动 403/400 静默 · 带参 recipe 必失败</text>
+<text x="48" y="174" fill="#4f5d75">· 无搜索 / 无级别过滤</text>
+<rect x="504" y="56" width="424" height="152" rx="8" fill="#eb6c36" opacity="0.05" stroke="#eb6c36" stroke-width="1"/>
+<text x="520" y="80" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">AFTER</text>
+<text x="520" y="108" fill="#2d3142">· 距底 40px 才跟随 · 「↓ N 行新输出」回底按钮</text>
+<text x="520" y="130" fill="#2d3142">· rAF/50ms 合批 + memo + seq key</text>
+<text x="520" y="152" fill="#2d3142">· 搜索高亮 + 级别 FilterPills</text>
+<text x="520" y="174" fill="#2d3142">· 非 2xx toast · 按钮 pending 至 state 事件</text>
+<rect x="32" y="240" width="424" height="120" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="48" y="266" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">SERVER</text>
+<text x="48" y="292" fill="#2d3142" font-size="11">/__just/recipes → [{ name, params[] }]</text>
+<text x="48" y="314" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">just --show 懒解析签名 · 进程内缓存</text>
+<text x="48" y="336" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">start 接受 args → spawn argv 追加 k=v</text>
+<rect x="504" y="240" width="424" height="120" rx="8" fill="#eb6c36" opacity="0.08" stroke="#eb6c36" stroke-width="1"/>
+<text x="520" y="266" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">WEB</text>
+<text x="520" y="292" fill="#2d3142" font-size="11">点带参 recipe → 参数输入面板(动态字段)</text>
+<text x="520" y="314" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">确认后 POST start { recipe, args } → 日志照常</text>
+<text x="520" y="336" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">非 2xx → toast 错误,不再静默</text>
+</g>
+<line x1="32" y1="392" x2="928" y2="392" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="32" y="416" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">NOTE</text>
+<text x="100" y="416" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">`\r` 进度条分段推送与「1000+ 行」计数顺带落地;日志下载/持久化不在本期</text>
+</svg></div></body></html>

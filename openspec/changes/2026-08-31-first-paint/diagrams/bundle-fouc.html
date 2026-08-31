@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>首屏体积与 FOUC</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--accent:#eb6c36;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem 2rem}.frame{max-width:1200px;width:100%}.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}h1{font-family:var(--serif);font-size:clamp(1.5rem,2.4vw + .75rem,2rem);font-weight:400;margin-bottom:1.5rem}svg{width:100%;min-width:900px;display:block}</style></head>
+<body><div class="frame"><p class="eyebrow">2026-08-31-first-paint</p><h1>首屏体积与 FOUC</h1>
+<svg viewBox="0 0 960 380" role="img" aria-labelledby="fp-title fp-desc"><title id="fp-title">首屏体积与 FOUC</title><desc id="fp-desc">条形对比图:主 bundle 从 1.45MB 具名导入后降至约 0.6MB;下方时间线示意深色用户冷启动从先浅色闪屏到首帧即深色。</desc>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<text x="32" y="72" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">EAGER MAIN BUNDLE</text>
+<rect x="32" y="84" width="864" height="40" rx="6" fill="rgba(45,49,66,0.15)"/>
+<text x="880" y="110" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist',sans-serif" text-anchor="end">1.45 MB · lucide+pixel 全量(1547 图标)</text>
+<rect x="32" y="148" width="356" height="40" rx="6" fill="#eb6c36" opacity="0.6"/>
+<text x="380" y="174" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist',sans-serif">≈0.6 MB · 按需导入 + manualChunks</text>
+<text x="32" y="240" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">DARK MODE COLD START</text>
+<g font-family="'Geist',sans-serif" font-size="10">
+<rect x="32" y="252" width="150" height="36" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="107" y="274" fill="#4f5d75" text-anchor="middle">浅色闪屏(FOUC)</text>
+<rect x="182" y="252" width="150" height="36" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.3)" stroke-width="1" stroke-dasharray="4,3"/><text x="257" y="274" fill="#7a8399" text-anchor="middle" text-decoration="line-through">JS 才写 dataset</text>
+<rect x="332" y="252" width="150" height="36" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><text x="407" y="274" fill="#2d3142" text-anchor="middle">内联脚本首帧前生效</text>
+<rect x="482" y="252" width="150" height="36" rx="6" fill="#2d3142"/><text x="557" y="274" fill="#f5f5f5" text-anchor="middle">深色首帧</text>
+</g>
+<line x1="32" y1="316" x2="928" y2="316" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="32" y="340" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">HOW</text>
+<text x="100" y="340" fill="#4f5d75" font-size="10" font-family="'Geist',sans-serif">icons.tsx 具名导入(ICON_MAP 驱动,dev 缺漏断言) + manualChunks 拆 vendor + index.html 3 行内联主题脚本</text>
+</svg></div></body></html>
