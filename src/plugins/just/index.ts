@@ -9,6 +9,7 @@
  * /__just/tasks 为任务列表提供只读路由。
  */
 import type http from 'node:http';
+import { execFile } from 'node:child_process';
 import { JustRunner } from '../../server/just-runner.js';
 import { pickStringArgs } from '../../server/just-recipe-params.js';
 import { readBody } from '../../core/read-body.js';
@@ -31,6 +32,17 @@ export const apply = defineBuiltin({
     });
 
     ctx.route('/__just/tasks', async () => runner.list());
+
+    // just 环境探测(空态三态文案依据):未装(ENOENT)/ 无 justfile(其他失败)/ 可用(成功)
+    ctx.route('/__just/status', async () => {
+      return await new Promise<{ installed: boolean; hasJustfile: boolean }>((resolve) => {
+        execFile('just', ['--list', '--unsorted'], { cwd: root, maxBuffer: 1 << 20, timeout: 8000 }, (err) => {
+          if (!err) return resolve({ installed: true, hasJustfile: true });
+          if ((err as NodeJS.ErrnoException).code === 'ENOENT') return resolve({ installed: false, hasJustfile: false });
+          resolve({ installed: true, hasJustfile: false });
+        });
+      });
+    });
 
     ctx.sse('/__just/logs', (res) => {
       const unsub = runner.subscribe((ev) => {

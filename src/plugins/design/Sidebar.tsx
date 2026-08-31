@@ -56,10 +56,11 @@ export default function Sidebar() {
       {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载旧列表 */}
       {assets.loading && !assets.data && <Skeleton rows={6} className="mx-3" />}
       {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}
-      {assets.data && groups.length === 0 && (
+      {/* 空态引导:首次加载完成(或已有数据)且过滤后无任何分组;refetch 期间旧态不闪 */}
+      {!assets.error && (assets.data || !assets.loading) && groups.length === 0 && (
         folderFilter
           ? <EmptyState title="无匹配结果" hint={`目录过滤 "${folderFilter}" 无匹配资产,调整或清空后重试`} />
-          : <EmptyState title="暂无设计资产" hint="约定目录 .zdev/design 下未发现可预览资产" />
+          : <EmptyState title="未发现 .zdev/design 资产" hint="运行 zdesign 生成" />
       )}
       {groups.map(g => (
         <GroupSection

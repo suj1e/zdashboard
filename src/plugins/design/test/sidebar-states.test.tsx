@@ -59,11 +59,13 @@ describe('design Sidebar — 三态接线', () => {
     expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
-  it('空数据(九类资产全空)→ EmptyState 引导注明约定目录 .zdev/design', async () => {
+  it('空数据(九类资产全空)→ EmptyState 引导「未发现 .zdev/design 资产 · 运行 zdesign 生成」', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => okJson(EMPTY_ASSETS)));
     render(<Sidebar />);
-    expect(await screen.findByText('暂无设计资产')).toBeInTheDocument();
-    expect(screen.getByText(/\.zdev\/design/)).toBeInTheDocument();
+    expect(await screen.findByText('未发现 .zdev/design 资产')).toBeInTheDocument();
+    expect(screen.getByText('运行 zdesign 生成')).toBeInTheDocument();
+    // 旧文案不再出现
+    expect(screen.queryByText('暂无设计资产')).not.toBeInTheDocument();
   });
 
   it('SSE 静默刷新:已有 data 时 files 事件 force 重取,不渲染 Skeleton、旧列表不卸载', async () => {

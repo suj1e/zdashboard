@@ -97,7 +97,8 @@ describe('just Workspace — recipe/task 入 URL', () => {
   it('?p=just&task=dev-server → LogViewer 聚焦该任务(单任务视图含清屏)', async () => {
     setLocation('/?p=just&task=dev-server');
     render(<Workspace params={new URLSearchParams('?p=just&task=dev-server')} />);
-    expect(await screen.findByText('dev-server')).toBeInTheDocument();
+    // T6 后面包屑末段与药丸行都会出现 dev-server:断言「出现即聚焦」
+    expect((await screen.findAllByText('dev-server')).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText('清屏')).toBeInTheDocument();
   });
 

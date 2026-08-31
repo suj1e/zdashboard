@@ -8,7 +8,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => {
   const children: Array<Record<string, unknown>> = [];
-  return { children };
+  /** status 路由错误注入:null=成功;{code:'ENOENT'}=未装;数字 code=just 存在但 --list 失败 */
+  const execErr: { current: (Error & { code?: string | number }) | null } = { current: null };
+  return { children, execErr };
 });
 
 vi.mock('node:child_process', async () => {
@@ -29,7 +31,7 @@ vi.mock('node:child_process', async () => {
     execFile: vi.fn((_f: string, args: string[], _o: unknown, cb?: (err: unknown, stdout: string) => void) => {
       if (cb) {
         if (args[0] === '--show') cb(null, 'build  # build all\n');
-        else cb(null, 'Available recipes:\nbuild  # build all\n');
+        else cb(h.execErr.current, 'Available recipes:\nbuild  # build all\n');
       }
       return { killed: false };
     }),
@@ -57,6 +59,7 @@ function reqWithBody(body: unknown, headers: Record<string, string> = {}) {
 
 beforeEach(() => {
   h.children.length = 0;
+  h.execErr.current = null;
 });
 
 /** guardedRoute 内部 void respondWith(...) fire-and-forget:断言前 flush 微任务 */
@@ -114,6 +117,29 @@ describe('just 插件 — 路由鉴权(guardedRoute)', () => {
     const calls = vi.mocked(spawn).mock.calls.filter(c => c[0] === 'just' && (c[1] as string[])?.[0] === 'build');
     expect(calls.length).toBeGreaterThan(0);
     expect(calls.at(-1)![1]).toEqual(['build', 'msg=hello world']);
+  });
+});
+
+describe('just 插件 — /__just/status(just 环境探测,T6 空态三态依据)', () => {
+  const getStatus = async () => {
+    const { routes } = await setupPlugin();
+    const res = createRes();
+    await routes.get('/__just/status')!({ headers: {} } as never, res as never);
+    return JSON.parse(String(res.body)) as { installed: boolean; hasJustfile: boolean };
+  };
+
+  it('just --list 成功 → { installed: true, hasJustfile: true }', async () => {
+    expect(await getStatus()).toEqual({ installed: true, hasJustfile: true });
+  });
+
+  it('spawn ENOENT(just 未安装)→ { installed: false, hasJustfile: false }', async () => {
+    h.execErr.current = Object.assign(new Error('spawn just ENOENT'), { code: 'ENOENT' });
+    expect(await getStatus()).toEqual({ installed: false, hasJustfile: false });
+  });
+
+  it('just 在但 --list 非零退出(多半无 justfile)→ { installed: true, hasJustfile: false }', async () => {
+    h.execErr.current = Object.assign(new Error('exit 1'), { code: 1 });
+    expect(await getStatus()).toEqual({ installed: true, hasJustfile: false });
   });
 });
 

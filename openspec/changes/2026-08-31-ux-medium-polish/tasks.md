@@ -10,7 +10,7 @@
   - 验收:单测:Content-Type 与 HTML 断言
 - [x] 5. focus-visible 全局基线 + 移除散落 `focus:outline-none`;slate light primary 对比度达标
   - 验收:CSS 断言/取色核验;🔧[人工] 键盘走查
-- [ ] 6. 面包屑末段不截断 + title;design/just 空态引导;`zd-theme` 非法值兜底
+- [x] 6. 面包屑末段不截断 + title;design/just 空态引导;`zd-theme` 非法值兜底
   - 验收:组件测试断言各点
 - [ ] 7. 回归 + 手验
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);🔧[人工] 手验 checklist 由用户执行

@@ -22,8 +22,23 @@ export function PageHeader({ icon, title, breadcrumb, status, actions }: {
       <div className="min-w-0 flex-1">
         <h2 className="text-lg font-bold tracking-tight text-foreground truncate">{title}</h2>
         {breadcrumb && breadcrumb.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {breadcrumb.join(' / ')}
+          // 分段面包屑:末段(flex-none font-medium)永不截断;前段 truncate 收窄,
+          // title 悬浮展示全路径(深路径可读性)
+          <p className="text-xs text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1">
+            {breadcrumb.map((seg, i) => {
+              const last = i === breadcrumb.length - 1;
+              return (
+                <span key={i} className="flex items-center gap-1 min-w-0">
+                  {i > 0 && <span aria-hidden className="flex-none">/</span>}
+                  <span
+                    title={breadcrumb.join(' / ')}
+                    className={last ? 'flex-none font-medium text-foreground/80' : 'min-w-0 truncate'}
+                  >
+                    {seg}
+                  </span>
+                </span>
+              );
+            })}
           </p>
         )}
       </div>

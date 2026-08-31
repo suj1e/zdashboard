@@ -58,9 +58,18 @@ exports[`关键组件快照与结构 > PageHeader 快照 1`] = `
       项目浏览
     </h2>
     <p
-      class="text-xs text-muted-foreground mt-0.5 truncate"
+      class="text-xs text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1"
     >
-      插件
+      <span
+        class="flex items-center gap-1 min-w-0"
+      >
+        <span
+          class="flex-none font-medium text-foreground/80"
+          title="插件"
+        >
+          插件
+        </span>
+      </span>
     </p>
   </div>
   <span

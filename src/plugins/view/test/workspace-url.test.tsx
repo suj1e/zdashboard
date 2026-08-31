@@ -49,8 +49,9 @@ describe('view Workspace — 深链接直达', () => {
     setLocation('/?p=view&wt=%2Fwt%2Fa&file=docs%2Fguide.md');
     render(<Workspace params={new URLSearchParams('?p=view&wt=%2Fwt%2Fa&file=docs%2Fguide.md')} />);
     expect(await screen.findByText('深链接预览内容')).toBeInTheDocument();
-    // 面包屑携带 worktree 与文件路径
-    expect(screen.getByText(/\/wt\/a \/ docs\/guide\.md/)).toBeInTheDocument();
+    // 面包屑携带 worktree 与文件路径(T6 分段渲染:末段为独立文本节点,title 含全路径)
+    const lastSeg = screen.getByText('docs/guide.md');
+    expect(lastSeg).toHaveAttribute('title', expect.stringContaining('/wt/a'));
   });
 
   it('.zdev/apply/CURRENT(无扩展名,点前缀目录)按纯文本预览,不落「无法预览」', async () => {

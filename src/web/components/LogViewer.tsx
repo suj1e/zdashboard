@@ -13,6 +13,8 @@ import { EmptyState, ErrorState, Skeleton } from '../kit/index.js';
 interface Recipe { name: string; description: string; params?: string[]; }
 type TaskStatus = 'running' | 'exited';
 interface TaskState { state: TaskStatus; code: number | null; startedAt: number; signal?: string; }
+/** just 环境探测(GET /__just/status):空态文案三态(未装/无 justfile/可用)依据 */
+interface JustStatus { installed: boolean; hasJustfile: boolean; }
 type Ev =
   | { type: 'log'; recipe: string; text: string }
   | { type: 'clear'; recipe: string }
@@ -101,6 +103,21 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const recipes = usePluginData<Recipe[]>('just:/__just/recipes', () =>
     fetchJson<Recipe[]>('/__just/recipes', { cache: 'no-store' }), { subscribe: 'plugin:just:state' });
   const recipeList = recipes.data ?? [];
+
+  // 空态三态区分:仅 recipes 加载完成且为空时探测一次 just 环境;
+  // 探测期间维持骨架(空态不闪),探测失败按「无 justfile」兜底引导
+  const needStatus = !recipes.loading && recipes.error === null && recipeList.length === 0;
+  const [justStatus, setJustStatus] = useState<JustStatus | null>(null);
+  useEffect(() => {
+    if (!needStatus) { setJustStatus(null); return; }
+    setJustStatus(null);
+    let cancelled = false;
+    fetchJson<JustStatus>('/__just/status', { cache: 'no-store' })
+      .then((s) => { if (!cancelled) setJustStatus(s); })
+      .catch(() => { if (!cancelled) setJustStatus({ installed: true, hasJustfile: false }); });
+    return () => { cancelled = true; };
+  }, [needStatus]);
+
   const [tasks, setTasks] = useState<Record<string, TaskState>>({});
   const [logs, setLogs] = useState<Record<string, LogLineData[]>>({});
   const tokenRef = useRef('');
@@ -385,7 +402,23 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
           ) : recipes.error ? (
             <ErrorState message={recipes.error} onRetry={recipes.reload} />
           ) : rows.length === 0 ? (
-            <EmptyState title="未发现 justfile recipes" hint="在项目根目录放置 justfile,即可在这里查看与启停任务" />
+            !justStatus ? (
+              // just 环境探测中:维持骨架,避免空态闪烁
+              <Skeleton rows={4} className="m-3" />
+            ) : (
+              <EmptyState
+                title={!justStatus.installed
+                  ? '未安装 just'
+                  : !justStatus.hasJustfile
+                    ? '未发现 justfile'
+                    : 'justfile 中未发现可运行 recipe'}
+                hint={!justStatus.installed
+                  ? '未检测到 just 命令,安装 just 后即可在这里查看与启停任务'
+                  : !justStatus.hasJustfile
+                    ? '在项目根目录放置 justfile,即可在这里查看与启停任务'
+                    : 'justfile 存在但未解析到可展示的 recipe,检查 recipe 定义'}
+              />
+            )
           ) : (
             <div className="flex-1 min-h-0 overflow-auto p-3 grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 content-start">
               {rows.map(r => {

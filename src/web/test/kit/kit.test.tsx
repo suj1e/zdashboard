@@ -60,6 +60,26 @@ describe('关键组件快照与结构', () => {
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('项目浏览');
   });
 
+  it('面包屑分段:末段 flex-none font-medium 不截断;前段 truncate 且 title 为全路径', () => {
+    render(
+      <PageHeader
+        title="T"
+        breadcrumb={['插件', 'view', 'docs/specs/很长的路径段一段二段三段四段五']}
+      />,
+    );
+    const last = screen.getByText('docs/specs/很长的路径段一段二段三段四段五');
+    expect(last.className).toContain('font-medium');
+    expect(last.className).toContain('flex-none');
+    expect(last.className).not.toContain('truncate');
+    // 前段:truncate 收窄,title 悬浮展示全路径
+    const first = screen.getByText('插件');
+    expect(first.className).toContain('truncate');
+    expect(first).toHaveAttribute('title', '插件 / view / docs/specs/很长的路径段一段二段三段四段五');
+    const middle = screen.getByText('view');
+    expect(middle.className).toContain('truncate');
+    expect(middle).toHaveAttribute('title', '插件 / view / docs/specs/很长的路径段一段二段三段四段五');
+  });
+
   it('Toolbar 快照并透传子元素', () => {
     const { container } = render(
       <Toolbar><input placeholder="搜索" /><button>批量</button></Toolbar>

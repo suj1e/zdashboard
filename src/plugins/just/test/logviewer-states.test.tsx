@@ -64,16 +64,43 @@ describe('LogViewer — recipes 三态接线', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('空 recipes → EmptyState 引导放置 justfile(不再是无引导的一句话)', async () => {
+  it('空 recipes + 未装 just(installed:false)→ 「未安装 just」引导', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/__config')) return okJson({ stopToken: 'tok' });
       if (url.includes('/__just/recipes')) return okJson([]);
+      if (url.includes('/__just/status')) return okJson({ installed: false, hasJustfile: false });
       throw new Error(`unexpected fetch: ${url}`);
     }));
     render(<LogViewer />);
-    expect(await screen.findByText('未发现 justfile recipes')).toBeInTheDocument();
+    expect(await screen.findByText('未安装 just')).toBeInTheDocument();
+    expect(screen.getByText(/未检测到 just 命令/)).toBeInTheDocument();
+    expect(screen.queryByText('未发现 justfile')).not.toBeInTheDocument();
+  });
+
+  it('空 recipes + 无 justfile(installed:true, hasJustfile:false)→ 「未发现 justfile」引导放置', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/__config')) return okJson({ stopToken: 'tok' });
+      if (url.includes('/__just/recipes')) return okJson([]);
+      if (url.includes('/__just/status')) return okJson({ installed: true, hasJustfile: false });
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    render(<LogViewer />);
+    expect(await screen.findByText('未发现 justfile')).toBeInTheDocument();
     expect(screen.getByText(/在项目根目录放置 justfile/)).toBeInTheDocument();
+  });
+
+  it('空 recipes + status 探测未返回 → 维持 Skeleton(空态不闪)', () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/__config')) return okJson({ stopToken: 'tok' });
+      if (url.includes('/__just/recipes')) return okJson([]);
+      return new Promise<Response>(() => {}); // status 挂起
+    }));
+    render(<LogViewer />);
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(screen.queryByText('未发现 justfile')).not.toBeInTheDocument();
   });
 
   it('loading(recipes 挂起)→ Skeleton 占位', () => {
