@@ -1,6 +1,6 @@
 # 任务:just 日志体验
 
-- [ ] 1. TDD:锚定判定/回底计数纯函数 + runner 参数解析(`hello msg=` → params)与 argv 拼装(特殊字符)
+- [x] 1. TDD:锚定判定/回底计数纯函数 + runner 参数解析(`hello msg=` → params)与 argv 拼装(特殊字符)
   - 验收:单测先红后绿
 - [ ] 2. LogViewer 渲染合批(rAF/50ms + memo + seq key)+ elapsed 局部化
   - 验收:组件测试:FakeES 连发 10 事件仅 1 次追加渲染;旧行不重渲
