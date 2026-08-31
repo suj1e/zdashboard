@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <title>zdashboard · 项目洞察</title>
+  <script>
+    /* FOUC 预置:赶在首帧前写入 data-mode/data-theme。
+       判定逻辑单源 src/web/lib/themeBoot.ts(resolveThemeBoot),此处为内联镜像,改动需同步。 */
+    (function () {
+      try {
+        var m = localStorage.getItem('zd-mode');
+        if (!m) {
+          var legacy = localStorage.getItem('zdashboard-theme');
+          m = legacy === 'light' ? 'light' : 'dark';
+          localStorage.setItem('zd-mode', m);
+          localStorage.removeItem('zdashboard-theme');
+        }
+        if (m !== 'light' && m !== 'dark') m = 'dark';
+        var t = localStorage.getItem('zd-theme');
+        if (t !== 'default' && t !== 'pixel' && t !== 'slate') t = 'default';
+        var d = document.documentElement;
+        d.dataset.mode = m;
+        d.dataset.theme = t;
+      } catch (e) { /* localStorage 不可用时放弃预置,交由 bundle 侧兜底 */ }
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

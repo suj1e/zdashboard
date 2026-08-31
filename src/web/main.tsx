@@ -4,25 +4,18 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from './components/ui/tooltip';
 import App from './App';
+import { resolveThemeBoot } from './lib/themeBoot';
 import './globals.css';
 import './themes/pixel.css';
 import './themes/slate.css';
 
 const rootEl = document.documentElement;
 
-// mode: zd-mode (new) or legacy zdashboard-theme → map to data-mode="dark"/"light"
-let mode = localStorage.getItem('zd-mode');
-if (!mode) {
-  const legacy = localStorage.getItem('zdashboard-theme');
-  mode = legacy === 'light' ? 'light' : 'dark'; // default dark
-  localStorage.setItem('zd-mode', mode);
-  localStorage.removeItem('zdashboard-theme');
-}
-rootEl.dataset.mode = mode;
-
-// style: zd-theme → data-theme="default"/"pixel"/"nord"
-let theme = localStorage.getItem('zd-theme') ?? 'default';
-rootEl.dataset.theme = theme;
+// 冷启动主题解析:legacy 迁移 + 非法值兜底,逻辑单源 themeBoot.ts。
+// 首帧前的预置由 index.html head 内联脚本完成,此处为 bundle 侧正式写入。
+const boot = resolveThemeBoot(localStorage);
+rootEl.dataset.mode = boot.mode;
+rootEl.dataset.theme = boot.theme;
 rootEl.dispatchEvent(new CustomEvent('themechange'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
