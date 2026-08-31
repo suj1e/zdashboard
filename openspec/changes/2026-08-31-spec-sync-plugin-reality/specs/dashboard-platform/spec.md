@@ -32,10 +32,15 @@
 - **WHEN** `.zworktree/<name>/` 存在且该目录有未提交改动
 - **THEN** `/__worktrees` 返回 `dirty:true`；clean 目录返回 `dirty:false`
 
-#### Scenario: view 树分组展开
+#### Scenario: view 树分组与跳转
 
-- **WHEN** 项目存在 `.zworktree/<name>/`，view 树显示该 worktree 分组（含分支与脏标识）
-- **THEN** 展开分组后仅呈现该 worktree 约定目录下的文件；项目无任何 `.zworktree/*` 时不显示 worktree 分组
+- **WHEN** 项目存在 `.zworktree/<name>/`，view 树显示 Worktrees 分组（含分支与脏标识）
+- **THEN** 展开分组仅呈现该 worktree 约定目录（openspec/docs）下的文件，不切换至已移除的 apply 视图
+
+#### Scenario: 空列表不显示
+
+- **WHEN** 项目无任何 `.zworktree/*`
+- **THEN** view 树不显示 Worktrees 分组
 
 ### Requirement: 依赖激活与交互反馈
 
