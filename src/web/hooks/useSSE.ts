@@ -9,6 +9,8 @@ const listeners = new Set<Handlers>();
 let es: EventSource | null = null;
 let status: ConnStatus = 'connecting';
 const statusSubs = new Set<(s: ConnStatus) => void>();
+/** useSSEEvent 频道注册表:event → 补偿函数集合。断线重连后逐频道补发失效信号(数据新鲜度) */
+const eventSubs = new Map<string, Set<() => void>>();
 
 function setStatus(s: ConnStatus) {
   status = s;
@@ -27,6 +29,9 @@ function connect() {
     // 断线重连后静默刷新各 plugin 数据,不弹窗、不整页 reload
     if (wasLost) {
       listeners.forEach((h) => h.onFiles());
+      // 重连补偿:断线期间漏掉的具名频道事件逐个补发空 payload,
+      // 订阅方(usePluginData/viewer)把任意事件(含 '')视为失效重取
+      eventSubs.forEach((subs) => subs.forEach((fn) => fn()));
     }
   };
   conn.addEventListener('reload', () => listeners.forEach((h) => h.onReload()));
@@ -95,7 +100,16 @@ export function useSSEEvent(event: string, handler: (data: string) => void) {
     const conn = es;
     if (!conn) return;
     const fn = (e: MessageEvent) => ref.current(e.data);
+    const compensate = () => ref.current('');
     conn.addEventListener(event, fn as EventListener);
-    return () => { conn.removeEventListener(event, fn as EventListener); };
+    // 注册进补偿表:断线重连后被逐频道补发(空 payload 视为失效重取)
+    if (!eventSubs.has(event)) eventSubs.set(event, new Set());
+    eventSubs.get(event)!.add(compensate);
+    return () => {
+      conn.removeEventListener(event, fn as EventListener);
+      const subs = eventSubs.get(event);
+      subs?.delete(compensate);
+      if (subs && subs.size === 0) eventSubs.delete(event);
+    };
   }, [event]);
 }

@@ -1,6 +1,6 @@
 # 任务:数据新鲜度链路
 
-- [ ] 1. TDD:useSSE 重连补偿——FakeES 断线→重开→断线期间注册的 `useSSEEvent` 频道 handler 被逐个调用
+- [x] 1. TDD:useSSE 重连补偿——FakeES 断线→重开→断线期间注册的 `useSSEEvent` 频道 handler 被逐个调用
   - 验收:单测先红后绿
 - [ ] 2. TDD:usePluginData 重取失败保留旧 data(`error` 独立字段);`!data && error` 才全屏错误
   - 验收:单测先红后绿
