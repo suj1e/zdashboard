@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import { formatBytes } from '../lib/utils.js';
 import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
 import { ErrorState } from '../kit/index.js';
+import { useViewerFreshness, RefreshButton } from './freshness.js';
 
 function escHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -14,23 +15,28 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
   const [text, setText] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [tick, setTick] = useState(0);
+  // files SSE(300ms 防抖)/手动刷新统一走版本号失效;后台重取保留旧内容,不闪「加载中」
+  const [version, refresh] = useViewerFreshness();
+  const loadedPathRef = useRef<string | null>(null);
   const name = path.split('/').pop() || path;
 
   useEffect(() => {
     let alive = true;
-    setText(null);
-    setErr(null);
+    if (loadedPathRef.current !== path) {
+      loadedPathRef.current = path;
+      setText(null);
+      setErr(null);
+    }
     fetchText(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
-      .then((t) => { if (alive) setText(t); })
+      .then((t) => { if (alive) { setText(t); setErr(null); } })
       .catch((e) => { if (alive) setErr(viewerFetchErrorMessage(e)); });
     return () => { alive = false; };
-  }, [path, resolve, tick]);
+  }, [path, resolve, version]);
 
   if (err) {
     return (
       <div className="h-full flex flex-col p-4">
-        <ErrorState message={err} onRetry={() => setTick(t => t + 1)} />
+        <ErrorState message={err} onRetry={refresh} />
       </div>
     );
   }
@@ -58,12 +64,15 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
       <div className="flex-none px-4 py-2 border-b text-xs flex items-center gap-3">
         <span className="font-mono text-foreground">{name}</span>
         <span className="text-muted-foreground">{formatBytes(text?.length ?? 0)}</span>
-        <button
-          onClick={copy}
-          className="ml-auto px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-sm hover:bg-muted transition-colors"
-        >
-          {copied ? '已复制' : '复制'}
-        </button>
+        <div className="ml-auto flex items-center gap-1">
+          <RefreshButton onClick={refresh} />
+          <button
+            onClick={copy}
+            className="px-2 py-0.5 rounded-[var(--radius-md)] border border-border bg-background/80 text-sm hover:bg-muted transition-colors"
+          >
+            {copied ? '已复制' : '复制'}
+          </button>
+        </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
         {text === null ? (

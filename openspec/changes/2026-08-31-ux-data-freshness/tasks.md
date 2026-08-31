@@ -4,7 +4,7 @@
   - 验收:单测先红后绿
 - [x] 2. TDD:usePluginData 重取失败保留旧 data(`error` 独立字段);`!data && error` 才全屏错误
   - 验收:单测先红后绿
-- [ ] 3. MdViewer/CodeViewer 订阅 files(300ms 防抖)重取 + 刷新按钮;design viewers 同规则命中当前资产才失效
+- [x] 3. MdViewer/CodeViewer 订阅 files(300ms 防抖)重取 + 刷新按钮;design viewers 同规则命中当前资产才失效
   - 验收:组件测试:files 事件触发重取、多次触发防抖合并
 - [ ] 4. view/Workspace `file` 变化重置 `contentRef.scrollTop = 0`
   - 验收:组件测试:切文件后 scrollTop 为 0
