@@ -53,7 +53,7 @@ describe('usePluginData — refreshing 派生字段(单测)', () => {
     }));
     const { result } = renderHook(() => usePluginData('k', async () => {
       const r = await fetch('/x');
-      return r.json() as { v: number };
+      return await r.json() as { v: number };
     }));
     await waitForHook(() => expect(result.current.data).toEqual({ v: 1 }));
 
@@ -99,7 +99,7 @@ describe('view Sidebar — files 事件刷新轻 spinner(组件)', () => {
     expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();      // 不闪骨架
     expect((await screen.findAllByText('README.md')).length).toBeGreaterThan(0); // 旧内容不卸载
 
-    act(() => { release?.(); });
+    act(() => { release?.(okJson(WORKTREES)); });
     await waitFor(() => expect(screen.queryByTestId('refresh-spinner')).toBeNull());
   });
 });
