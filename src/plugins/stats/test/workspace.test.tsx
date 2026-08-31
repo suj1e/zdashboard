@@ -40,11 +40,12 @@ beforeEach(() => {
   setLocation('/?p=stats');
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+    // fetchJson 门卫消费端:mock 必须模拟真实 Response 的 ok/status
     if (url.includes('/__detect')) {
-      return { json: async () => DETECT, text: async () => JSON.stringify(DETECT) } as Response;
+      return { ok: true, status: 200, json: async () => DETECT, text: async () => JSON.stringify(DETECT) } as unknown as Response;
     }
     if (url.includes('/__stats/data')) {
-      return { json: async () => STATS, text: async () => JSON.stringify(STATS) } as Response;
+      return { ok: true, status: 200, json: async () => STATS, text: async () => JSON.stringify(STATS) } as unknown as Response;
     }
     throw new Error(`unexpected fetch: ${url}`);
   }));
@@ -74,9 +75,9 @@ describe('stats Workspace — 页面冒烟', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/__detect')) {
-        return { json: async () => ({ ...DETECT, hasJust: false }), text: async () => '' } as Response;
+        return { ok: true, status: 200, json: async () => ({ ...DETECT, hasJust: false }), text: async () => '' } as unknown as Response;
       }
-      return { json: async () => STATS, text: async () => '' } as Response;
+      return { ok: true, status: 200, json: async () => STATS, text: async () => '' } as unknown as Response;
     }));
     render(<Workspace params={new URLSearchParams('?p=stats')} />);
     expect(await screen.findByText(/justfile ✗/)).toBeInTheDocument();

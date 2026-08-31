@@ -8,6 +8,8 @@ import { FileIcon } from '../../web/components/FileIcon.js';
 import { useIcons } from '../../web/lib/icons.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
+import { fetchJson } from '../../web/lib/fetchJson.js';
+import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
 
 interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
 
@@ -34,9 +36,9 @@ export default function Sidebar() {
 
   const { icon } = useIcons();
 
-  // files 频道(SSE)到达 → 失效重取,.zdev/design 资产变更即时生效
+  // files 频道(SSE)到达 → 失效重取,.zdev/design 资产变更即时生效;错误经 fetchJson 门卫传播
   const assets = usePluginData<Record<string, AssetFile[]>>('design:/__design/assets', () =>
-    fetch('/__design/assets', { cache: 'no-store' }).then(r => r.json()), { subscribe: 'files' });
+    fetchJson<Record<string, AssetFile[]>>('/__design/assets', { cache: 'no-store' }), { subscribe: 'files' });
 
   const groups = useMemo(() => {
     const data = assets.data;
@@ -49,8 +51,13 @@ export default function Sidebar() {
   const selectAsset = (it: AssetFile) => route.navigate({ type: it.type, asset: it.path });
 
   return (
-    <div>
-      <div className="p-3 text-xs text-muted-foreground truncate">设计资产</div>
+    <div className="flex flex-col h-full">
+      <div className="p-3 text-xs text-muted-foreground truncate flex-none">设计资产</div>
+      {assets.loading && <Skeleton rows={6} className="mx-3" />}
+      {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}
+      {assets.data && groups.length === 0 && (
+        <EmptyState title="暂无设计资产" hint="约定目录 .zdev/design 下未发现可预览资产" />
+      )}
       {groups.map(g => (
         <GroupSection
           key={g.key}

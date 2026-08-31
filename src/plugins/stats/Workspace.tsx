@@ -5,9 +5,10 @@
 import { useIcons, useModeIcon, type IconKey } from '../../web/lib/icons.js';
 import { formatBytes } from '../../web/lib/utils.js';
 import { ProgressBar } from '../../web/components/ProgressBar.js';
-import { PluginPage } from '../../web/kit/index.js';
+import { PluginPage, ErrorState, Skeleton } from '../../web/kit/index.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
+import { fetchJson } from '../../web/lib/fetchJson.js';
 import type { PluginWorkspaceProps } from '../../sdk/client.js';
 import { manifest } from './manifest.js';
 
@@ -37,15 +38,19 @@ export default function Workspace(_props: PluginWorkspaceProps) {
   const themed = useModeIcon(manifest.mode, 'h-5 w-5');
   const route = useRoute();
   const stats = usePluginData<StatsData>('stats:/__stats/data', () =>
-    fetch('/__stats/data', { cache: 'no-store' }).then(r => r.json() as Promise<StatsData>), { subscribe: 'files' });
+    fetchJson<StatsData>('/__stats/data', { cache: 'no-store' }), { subscribe: 'files' });
   const detect = usePluginData<DetectData>('stats:/__detect', () =>
-    fetch('/__detect', { cache: 'no-store' }).then(r => r.json() as Promise<DetectData>));
+    fetchJson<DetectData>('/__detect', { cache: 'no-store' }));
 
   if (stats.error) {
-    return <div className="flex h-full items-center justify-center text-destructive"><p>加载失败: {stats.error}</p></div>;
+    return (
+      <div className="h-full flex flex-col">
+        <ErrorState message={stats.error} onRetry={stats.reload} />
+      </div>
+    );
   }
   if (!stats.data) {
-    return <div className="flex h-full items-center justify-center text-muted-foreground"><p>加载中…</p></div>;
+    return <div className="h-full p-6"><Skeleton rows={8} /></div>;
   }
   const data = stats.data;
 
