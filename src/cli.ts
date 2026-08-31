@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { access, readdir } from 'node:fs/promises';
 import { exec } from 'node:child_process';
+import pkg from '../package.json' with { type: 'json' };
 import { parseArgs as utilParseArgs } from 'node:util';
 import { detect } from './server/detect.js';
 import type { DetectResult } from './server/detect.js';
@@ -117,8 +118,11 @@ async function main() {
   const root = path.resolve(args.dir);
 
   // --- instance reuse (before creating Context) ---
-  const existing = await findReusable(root);
-  if (existing && !args.restart) {
+  // 版本比对:活实例版本落后当前 CLI → 自动停旧接管(零操作升级);--restart 仍为强制重开
+  const found = await findReusable(root, pkg.version);
+  const existing = found?.record ?? null;
+  const autoUpgrade = found?.status === 'stale-version';
+  if (existing && !args.restart && !autoUpgrade) {
     const u = `http://localhost:${existing.port}` + (args.page ? `#${args.page}` : '');
     if (args.open) openUrl(u);
     console.log(`[zdashboard] 已复用实例 ${u}（--restart 可强制重开）`);
@@ -126,10 +130,16 @@ async function main() {
     await new Promise<void>((resolve) => process.stdout.write('', () => resolve()));
     process.exit(0);
   }
-  // 记录旧端口（--restart 时用于端口继承；stopInstance 会清 record）
-  const oldRecord = existing && args.restart ? existing : null;
+  // 记录旧端口（--restart/自动升级时用于端口继承；stopInstance 会清 record）
+  const oldRecord = existing && (args.restart || autoUpgrade) ? existing : null;
   if (oldRecord) {
-    console.log(`[zdashboard] --restart：停止旧实例 pid=${oldRecord.pid}`);
+    if (autoUpgrade) {
+      console.log(
+        `[zdashboard] 检测到旧版本实例 v${found!.liveVersion ?? 'unknown'}，自动升级到 v${pkg.version}（停止旧实例 pid=${oldRecord.pid}）`,
+      );
+    } else {
+      console.log(`[zdashboard] --restart：停止旧实例 pid=${oldRecord.pid}`);
+    }
     await stopInstance(oldRecord);
   }
 

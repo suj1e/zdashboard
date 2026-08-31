@@ -35,6 +35,17 @@ afterEach(() => {
   }
 });
 
+describe('writeRecord — version 字段', () => {
+  it('写入 version = package.json 当前版本', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-ver-'));
+    try {
+      writeRecord(root, 5010);
+      const rec = JSON.parse(fs.readFileSync(path.join(root, RECORD_FILE), 'utf8'));
+      const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
+      expect(rec.version).toBe(pkg.version);
+    } finally { fs.rmSync(root, { recursive: true, force: true }); }
+  });
+});
 describe('writeRecord — plugins 保留读改写(四分支)', () => {
   it('有 plugins:原样保留,且 pid/port/startedAt 更新为新值', () => {
     const root = makeRoot();

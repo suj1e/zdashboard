@@ -1,11 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import pkg from '../../package.json' with { type: 'json' };
+
+const CURRENT_VERSION: string = pkg.version;
 
 export interface InstanceRecord {
   pid: number;
   port: number;
   root: string;
   startedAt: string;
+  /** 写入该记录的实例版本(信息用途;活实例版本以 /__config 实时值为准) */
+  version?: string;
   plugins?: Record<string, Record<string, unknown>>;
 }
 
@@ -49,6 +54,7 @@ export function writeRecord(root: string, port: number): void {
     port,
     root,
     startedAt: new Date().toISOString(),
+    version: CURRENT_VERSION,
   };
   if (old?.plugins && typeof old.plugins === 'object') {
     rec.plugins = old.plugins;
@@ -173,24 +179,46 @@ async function fetchWithTimeout(url: string): Promise<Response> {
   }
 }
 
-export async function verifyRoot(port: number, root: string): Promise<boolean> {
+/** 活实例核验结果:reusable = 存活且 root 匹配;version 为该实例实时版本(供旧版检测) */
+export interface VerifyResult {
+  reusable: boolean;
+  version?: string;
+}
+
+export async function verifyRoot(port: number, root: string): Promise<VerifyResult> {
   try {
     const res = await fetchWithTimeout(`http://127.0.0.1:${port}/__config`);
-    if (res.status !== 200) return false;
+    if (res.status !== 200) return { reusable: false };
     const body = await res.json();
-    if (typeof body.root !== 'string') return false;
-    return body.root === root;
+    if (typeof body.root !== 'string') return { reusable: false };
+    return {
+      reusable: body.root === root,
+      version: typeof body.version === 'string' ? body.version : undefined,
+    };
   } catch {
-    return false;
+    return { reusable: false };
   }
 }
 
-export async function findReusable(root: string): Promise<InstanceRecord | null> {
+/**
+ * 可复用实例发现:
+ * - reuse          → 存活 + root 匹配 + 版本一致,直接复用;
+ * - stale-version  → 存活 + root 匹配但版本落后(调用方决定提示或自动升级接管);
+ * - null           → 无可复用实例(无记录/进程死亡/端口被无关进程占用)。
+ */
+export async function findReusable(
+  root: string,
+  currentVersion: string,
+): Promise<{ status: 'reuse'; record: InstanceRecord } | { status: 'stale-version'; record: InstanceRecord; liveVersion?: string } | null> {
   const rec = readRecord(root);
   if (!rec) return null;
   if (!isAlive(rec.pid)) return null;
-  if (!(await verifyRoot(rec.port, root))) return null;
-  return rec;
+  const v = await verifyRoot(rec.port, root);
+  if (!v.reusable) return null;
+  if (v.version && v.version !== currentVersion) {
+    return { status: 'stale-version', record: rec, liveVersion: v.version };
+  }
+  return { status: 'reuse', record: rec };
 }
 
 export async function stopInstance(record: InstanceRecord): Promise<void> {
