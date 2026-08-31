@@ -30,7 +30,8 @@ vi.mock('node:child_process', async () => {
       const a = args as string[];
       if (!cb) return { killed: false };
       if (a[0] === '--show') {
-        if (a[1] === 'hello') cb(null, 'hello msg="world":\n    @echo "hello {{msg}}"\n');
+        // 真实 just --show 输出:首行是 recipe 上方注释,签名在注释之后(与 playground justfile 实况一致)
+        if (a[1] === 'hello') cb(null, '# 参数示例\nhello msg="world":\n    @echo "hello {{ msg }}"\n');
         else cb(new Error('no recipe'), '');
         return { killed: false };
       }

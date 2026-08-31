@@ -10,5 +10,5 @@
   - 验收:组件测试:非 2xx toast、pending 至 state 事件
 - [x] 5. server:`/__just/recipes` 返回参数清单(懒解析+缓存);start 接受 args;UI 带参启动面板
   - 验收:组件测试:带参 recipe 弹面板、提交携带 args;playground `hello msg=x` 全流程通
-- [ ] 6. 回归 + playground 手验(`just lines`/`build`/`hello msg=x`/高频输出合批)
+- [x] 6. 回归 + playground 手验(`just lines`/`build`/`hello msg=x`/高频输出合批)
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);🔧[人工] 手验 checklist 由用户执行

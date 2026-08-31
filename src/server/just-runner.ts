@@ -74,13 +74,13 @@ export class JustRunner {
     });
   }
 
-  /** 懒解析单 recipe 参数:just --show 首行签名 → 参数名;失败记空数组并缓存 */
+  /** 懒解析单 recipe 参数:just --show 输出中首个可解析签名行(跳过 recipe 上方注释/空行)→ 参数名;失败记空数组并缓存 */
   recipeParams(name: string): Promise<string[]> {
     const hit = this.paramsCache.get(name);
     if (hit) return Promise.resolve(hit);
     return new Promise((resolve) => {
       execFile('just', ['--show', name], { cwd: this.cwd, maxBuffer: 1 << 20, timeout: 8000 }, (err, stdout) => {
-        const sig = err ? null : parseRecipeSignature((stdout.split(/\r?\n/).find(l => l.trim()) ?? ''));
+        const sig = err ? null : stdout.split(/\r?\n/).map(l => parseRecipeSignature(l)).find(Boolean) ?? null;
         const params = sig?.params ?? [];
         this.paramsCache.set(name, params);
         resolve(params);
@@ -157,10 +157,16 @@ export class JustRunner {
     });
   }
 
+  /** 行推送:行内 \r 再切分为多段独立行(进度条输出降级为分段渲染;CRLF 尾 \r、连续 \r 空段丢弃) */
   private pushLine(task: Task, line: string) {
-    task.buffer.push(line);
-    if (task.buffer.length > MAX_BUFFER) task.buffer.shift();
-    this.emit({ type: 'log', recipe: task.recipe, text: line });
+    const body = line.endsWith('\n') ? line.slice(0, -1) : line;
+    for (const seg of body.split('\r')) {
+      if (!seg) continue;
+      const text = seg + '\n';
+      task.buffer.push(text);
+      if (task.buffer.length > MAX_BUFFER) task.buffer.shift();
+      this.emit({ type: 'log', recipe: task.recipe, text });
+    }
   }
 
   /** 停单个任务;不传 recipe 停全部 */

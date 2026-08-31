@@ -93,6 +93,26 @@ describe('JustRunner — 多任务并发与日志按 taskId 隔离', () => {
     expect(logs2.map((e) => e.text)).toEqual(['hello\n', 'world\n']);
   });
 
+  it('进度条输出:行内 \\r 再切分为多段独立推送(降级分段渲染)', () => {
+    const runner = new JustRunner('/tmp/project');
+    const events: JustEvent[] = [];
+    runner.subscribe((ev) => events.push(ev));
+    runner.start('a');
+    childAt(0).stdout.emit('data', Buffer.from('progress 10%\rprogress 20%\rprogress 30%\n'));
+    const logs = events.filter((e) => e.type === 'log') as Extract<JustEvent, { type: 'log' }>[];
+    expect(logs.map((e) => e.text)).toEqual(['progress 10%\n', 'progress 20%\n', 'progress 30%\n']);
+  });
+
+  it('CRLF 行尾的 \\r 不产生空段;连续 \\r 空段丢弃', () => {
+    const runner = new JustRunner('/tmp/project');
+    const events: JustEvent[] = [];
+    runner.subscribe((ev) => events.push(ev));
+    runner.start('a');
+    childAt(0).stdout.emit('data', Buffer.from('start\r\nnext\r\r\n'));
+    const logs = events.filter((e) => e.type === 'log') as Extract<JustEvent, { type: 'log' }>[];
+    expect(logs.map((e) => e.text)).toEqual(['start\n', 'next\n']);
+  });
+
   it('重连重放:clear(a) 只清 a 的缓冲,b 日志保留', () => {
     const runner = new JustRunner('/tmp/project');
     const events: JustEvent[] = [];
