@@ -14,7 +14,32 @@ import { matches } from './filter.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { fetchJson } from '../../web/lib/fetchJson.js';
+import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
 import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
+
+/** 折叠集合持久化键(JSON `{ wt: string[], root: boolean }`,zd- 前缀规范) */
+const VIEW_COLLAPSE_KEY = 'zd-view-collapse';
+
+interface CollapseState { wt: string[]; root: boolean }
+
+/** 读折叠集合;缺省/损坏一律回落全展开(与无存储时行为一致) */
+function readCollapse(): CollapseState {
+  try {
+    const raw = safeGetItem(VIEW_COLLAPSE_KEY);
+    if (!raw) return { wt: [], root: false };
+    const o = JSON.parse(raw) as Partial<CollapseState>;
+    return {
+      wt: Array.isArray(o.wt) ? o.wt.filter((x): x is string => typeof x === 'string') : [],
+      root: o.root === true,
+    };
+  } catch {
+    return { wt: [], root: false };
+  }
+}
+
+function writeCollapse(next: CollapseState) {
+  safeSetItem(VIEW_COLLAPSE_KEY, JSON.stringify(next));
+}
 
 interface WorktreeInfo {
   path: string;
@@ -105,8 +130,9 @@ export default function Sidebar() {
   const drillDirty = params.get('card') === 'dirty';
 
   const { icon } = useIcons();
-  const [collapsedWt, setCollapsedWt] = useState<Set<string>>(new Set());
-  const [collapsedRoot, setCollapsedRoot] = useState(false);
+  const [collapse, setCollapse] = useState<CollapseState>(readCollapse);
+  const collapsedWt = new Set(collapse.wt);
+  const collapsedRoot = collapse.root;
   const trees = usePluginData<TreesData>('view:sidebar-trees', fetchTrees, { subscribe: 'files' });
 
   const worktrees = trees.data?.worktrees ?? [];
@@ -114,15 +140,21 @@ export default function Sidebar() {
   const rootTree = trees.data?.rootTree ?? [];
 
   const toggleWt = (path: string) => {
-    setCollapsedWt(prev => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
+    setCollapse(prev => {
+      const wt = new Set(prev.wt);
+      if (wt.has(path)) wt.delete(path);
+      else wt.add(path);
+      const next = { ...prev, wt: [...wt] };
+      writeCollapse(next);
       return next;
     });
   };
 
-  const toggleRoot = () => setCollapsedRoot(prev => !prev);
+  const toggleRoot = () => setCollapse(prev => {
+    const next = { ...prev, root: !prev.root };
+    writeCollapse(next);
+    return next;
+  });
 
   const setFilter = (v: string) => {
     route.navigate({ filter: v.trim() ? v : null }, { replace: true });

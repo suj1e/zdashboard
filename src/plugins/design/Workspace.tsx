@@ -7,11 +7,37 @@ import { FilterPills } from '../../web/components/FilterPills.js';
 import { EmptyState, PluginPage } from '../../web/kit/index.js';
 import { useIcons, useModeIcon } from '../../web/lib/icons.js';
 import { useRoute } from '../../web/router.js';
+import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
 import type { PluginWorkspaceProps } from '../../sdk/client.js';
 import { selectViewer } from './viewers/index.js';
 import { manifest } from './manifest.js';
 
 type VpMode = 0 | 768 | 375 | 'custom';
+
+/** 视口状态持久化键(JSON `{ mode, w, h }`,zd- 前缀规范) */
+const DESIGN_VIEWPORT_KEY = 'zd-design-viewport';
+
+/** 与既有默认值同源(mode=桌面,1024×768) */
+const DEFAULT_VIEWPORT = { mode: 0 as VpMode, w: 1024, h: 768 };
+const PRESET_MODES = [0, 768, 375];
+
+function readViewport(): { mode: VpMode; w: number; h: number } {
+  try {
+    const raw = safeGetItem(DESIGN_VIEWPORT_KEY);
+    if (!raw) return { ...DEFAULT_VIEWPORT };
+    const o = JSON.parse(raw) as { mode?: unknown; w?: unknown; h?: unknown };
+    const mode = PRESET_MODES.includes(o.mode as number) ? o.mode as VpMode : o.mode === 'custom' ? 'custom' : DEFAULT_VIEWPORT.mode;
+    const w = typeof o.w === 'number' && Number.isFinite(o.w) && o.w >= 280 && o.w <= 3000 ? o.w : DEFAULT_VIEWPORT.w;
+    const h = typeof o.h === 'number' && Number.isFinite(o.h) && o.h >= 400 && o.h <= 3000 ? o.h : DEFAULT_VIEWPORT.h;
+    return { mode, w, h };
+  } catch {
+    return { ...DEFAULT_VIEWPORT };
+  }
+}
+
+function writeViewport(v: { mode: VpMode; w: number; h: number }) {
+  safeSetItem(DESIGN_VIEWPORT_KEY, JSON.stringify(v));
+}
 
 function Viewport({ mode, onMode, w, h, onW, onH }: {
   mode: VpMode; onMode: (m: VpMode) => void; w: number; h: number; onW: (n: number) => void; onH: (n: number) => void;
@@ -50,9 +76,12 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
   const route = useRoute();
   const type = params.get('type') ?? '';
   const asset = params.get('asset');
-  const [mode, setMode] = useState<VpMode>(0);
-  const [w, setW] = useState(1024);
-  const [h, setH] = useState(768);
+  // 视口状态单源持久化(zd-design-viewport):模式与自定义宽高一起读写
+  const [vp, setVp] = useState(readViewport);
+  const setMode = (m: VpMode) => setVp(prev => (writeViewport({ ...prev, mode: m }), { ...prev, mode: m }));
+  const setW = (n: number) => setVp(prev => (writeViewport({ ...prev, w: n }), { ...prev, w: n }));
+  const setH = (n: number) => setVp(prev => (writeViewport({ ...prev, h: n }), { ...prev, h: n }));
+  const { mode, w, h } = vp;
 
   const Viewer = asset ? selectViewer(type) : null;
   const vpLabel = mode === 0 ? '桌面' : mode === 'custom' ? `${w} × ${h}` : `${mode}px`;

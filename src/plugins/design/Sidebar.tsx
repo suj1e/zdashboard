@@ -9,7 +9,25 @@ import { useIcons } from '../../web/lib/icons.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { fetchJson } from '../../web/lib/fetchJson.js';
+import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
 import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
+
+/** 分组展开态持久化键(JSON `Record<groupKey, boolean>`,缺省 true=展开) */
+const DESIGN_GROUPS_KEY = 'zd-design-groups';
+
+function readGroupOpen(): Record<string, boolean> {
+  try {
+    const raw = safeGetItem(DESIGN_GROUPS_KEY);
+    if (!raw) return {};
+    const o = JSON.parse(raw) as unknown;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return {};
+    const out: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(o)) if (typeof v === 'boolean') out[k] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
 
 interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
 
@@ -50,6 +68,16 @@ export default function Sidebar() {
 
   const selectAsset = (it: AssetFile) => route.navigate({ type: it.type, asset: it.path });
 
+  // 分组展开态单源(持久化):GroupSection 受控,缺省 true=展开
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(readGroupOpen);
+  const toggleGroup = (key: string) => {
+    setGroupOpen(prev => {
+      const next = { ...prev, [key]: !(prev[key] ?? true) };
+      safeSetItem(DESIGN_GROUPS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-3 text-xs text-muted-foreground truncate flex-none">设计资产</div>
@@ -66,6 +94,8 @@ export default function Sidebar() {
         <GroupSection
           key={g.key}
           group={g}
+          open={groupOpen[g.key] ?? true}
+          onToggle={() => toggleGroup(g.key)}
           current={currentAsset && currentType === g.key ? currentAsset : null}
           onSelect={selectAsset}
         />
@@ -74,18 +104,21 @@ export default function Sidebar() {
   );
 }
 
-function GroupSection({ group: g, current, onSelect }: {
+function GroupSection({ group: g, open, onToggle, current, onSelect }: {
   group: { key: AssetType; label: string; items: AssetFile[] };
+  /** 展开态由 Sidebar 单源受控(持久化 zd-design-groups) */
+  open: boolean;
+  onToggle: () => void;
   current: string | null;
   onSelect: (it: AssetFile) => void;
 }) {
-  const [open, setOpen] = useState(true);
   const { icon } = useIcons();
   const GIcon = GROUP_ICON[g.key];
   return (
     <div className="mb-1.5 px-1">
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={onToggle}
+        aria-expanded={open}
         className="w-full flex items-center gap-1.5 pt-2 pb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground rounded-md"
       >
         {icon('chevron-right', `h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`)}
