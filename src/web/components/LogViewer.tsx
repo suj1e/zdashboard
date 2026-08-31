@@ -33,6 +33,11 @@ const LEVEL_FILTERS = [
   { key: 'text-success', label: '成功' },
 ];
 
+/** 动作中文名(toast 文案) */
+const ACTION_LABEL = { start: '启动', stop: '停止', clear: '清屏' } as const;
+/** pending 解禁兜底:SSE state 事件迟迟不到时按超时放开按钮 */
+const PENDING_TIMEOUT_MS = 3000;
+
 function fmtElapsed(ms: number) {
   const d = intervalToDuration({ start: 0, end: ms });
   const h = d.hours ?? 0;
@@ -154,6 +159,8 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             ...prev,
             [ev.recipe]: { state: ev.state, code: ev.code, signal: ev.signal, startedAt: ev.startedAt ?? prev[ev.recipe]?.startedAt ?? Date.now() },
           }));
+          // 该任务启停的确认信号到达:解除按钮 pending
+          setPending(p => (p[ev.recipe] ? { ...p, [ev.recipe]: undefined } : p));
           // 新任务自动聚焦:仅非受控模式(URL 驱动时不擅自改 URL)
           if (ev.state === 'running' && !controlled) setSelected(ev.recipe);
         }
@@ -219,12 +226,38 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
     return ls;
   }, [selLines, levelFilter, query]);
 
-  const act = (action: 'start' | 'stop' | 'clear', recipe: string) => {
-    fetch(`/__just/${action}`, {
-      method: 'POST',
-      headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipe }),
-    }).catch(() => toast.error(`just ${action} 动作失败`));
+  // ── 启停反馈:按钮 pending(recipe 维度),持续到 SSE state 事件到达或 3s 超时 ──
+  const [pending, setPending] = useState<Record<string, 'start' | 'stop' | undefined>>({});
+  const clearPending = (recipe: string) => setPending(p => (p[recipe] ? { ...p, [recipe]: undefined } : p));
+
+  const act = async (action: 'start' | 'stop' | 'clear', recipe: string) => {
+    if (action !== 'clear') setPending(p => ({ ...p, [recipe]: action }));
+    try {
+      const res = await fetch(`/__just/${action}`, {
+        method: 'POST',
+        headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe }),
+      });
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const body = (await res.json()) as { error?: unknown };
+          if (typeof body?.error === 'string' && body.error) detail = `:${body.error}`;
+        } catch { /* body 非 JSON → 用状态码兜底文案 */ }
+        toast.error(`just ${recipe} ${ACTION_LABEL[action]}失败${detail || `(HTTP ${res.status})`}`);
+        if (action !== 'clear') clearPending(recipe);
+        return false;
+      }
+      if (action === 'clear') { toast.success(`已清屏 ${recipe}`); return true; }
+      // start/stop 成功:等 SSE state 事件解禁;3s 超时兜底
+      setTimeout(() => clearPending(recipe), PENDING_TIMEOUT_MS);
+      toast.success(action === 'start' ? `已启动 ${recipe}` : `已停止 ${recipe}`);
+      return true;
+    } catch {
+      toast.error(`just ${recipe} ${ACTION_LABEL[action]}失败:网络异常`);
+      if (action !== 'clear') clearPending(recipe);
+      return false;
+    }
   };
 
   // selected=null → 总控台视图;string → 聚焦该任务
@@ -315,9 +348,9 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
                   {!t && <span className="text-muted-foreground/60">未运行</span>}
                   <span className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {running ? (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[r.name]} onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
                     ) : (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('start', r.name)}>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[r.name]} onClick={() => act('start', r.name)}>
                         {exited ? icon('rotate-cw', 'h-2.5 w-2.5') : icon('play', 'h-2.5 w-2.5')}{exited ? '重跑' : '启动'}
                       </Button>
                     )}
@@ -346,10 +379,10 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             </span>
             <span className="ml-auto flex items-center gap-1">
               {selRunning
-                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
-                : <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
+                ? <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[selected]} onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
+                : <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[selected]} onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
               <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('clear', selected)} disabled={!selLines.length}>{icon('eraser', 'h-2.5 w-2.5')}清屏</Button>
-              <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
+              <span className="text-muted-foreground font-mono ml-1">{selLines.length >= MAX_LOG_LINES ? `${MAX_LOG_LINES}+ 行` : `${selLines.length} 行`}</span>
             </span>
           </div>
           <div className="flex-none flex items-center gap-2 px-3.5 py-1.5 border-b bg-background">

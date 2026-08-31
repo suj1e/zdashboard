@@ -6,7 +6,7 @@
   - 验收:组件测试:FakeES 连发 10 事件仅 1 次追加渲染;旧行不重渲
 - [x] 3. 滚动锚定 + 「↓ N 行新输出」回底按钮;日志搜索高亮 + 级别 FilterPills
   - 验收:组件测试:上翻不拽底、回底恢复、过滤/高亮生效
-- [ ] 4. 启停反馈:res.ok 检查 + toast + 按钮 pending 禁用;行数截断显示「1000+ 行」
+- [x] 4. 启停反馈:res.ok 检查 + toast + 按钮 pending 禁用;行数截断显示「1000+ 行」
   - 验收:组件测试:非 2xx toast、pending 至 state 事件
 - [ ] 5. server:`/__just/recipes` 返回参数清单(懒解析+缓存);start 接受 args;UI 带参启动面板
   - 验收:组件测试:带参 recipe 弹面板、提交携带 args;playground `hello msg=x` 全流程通
