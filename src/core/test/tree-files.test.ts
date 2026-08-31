@@ -174,21 +174,6 @@ describe('/__files — 约定目录扫描', () => {
     }
   });
 
-  it('.zdev/verify 点前缀约定目录(dotDirs 放行)→ 分组出现且内容可达', async () => {
-    const root = makeProject();
-    write(root, '.zdev/verify/0831-1200-auth/report.md', '# verify');
-
-    const { port, dispose } = await boot(root);
-    try {
-      const res = await get(port, '/__files');
-      const { tree } = JSON.parse(res.body) as { tree: TreeNode[] };
-      expect(groupNames(tree)).toContain('.zdev/verify');
-      expect(res.body).toContain('.zdev/verify/0831-1200-auth/report.md');
-    } finally {
-      dispose();
-    }
-  });
-
   it('.zdev 下未列入约定的目录(如 .zdev/design、.zdev/verify)不进树', async () => {
     const root = makeProject();
     write(root, '.zdev/design/brands/x/DESIGN.md', 'x');
