@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorState } from '../kit/index.js';
 
 /** resolve:可选整 URL 解析器(不传 = 根路径直取,view 插件语义);design 插件传代理路由解析 */
@@ -7,6 +7,8 @@ export function ImageViewer({ path, resolve }: { path: string; resolve?: (p: str
   const [zoom, setZoom] = useState(1);
   const [err, setErr] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
+  // 切图重置瞬态:A 图失败/尺寸标注不残留到 B 图
+  useEffect(() => { setErr(false); setDim('-'); }, [path]);
   const name = path.split('/').pop();
   const chess: React.CSSProperties = {
     backgroundImage:

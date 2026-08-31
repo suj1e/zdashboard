@@ -169,9 +169,10 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
 
       {/* ── 内容区 ── */}
       {selected === null ? (
-        /* 总控台视图:recipes 三态(加载/错误/空),有数据才渲染任务卡 */
+        /* 总控台视图:recipes 三态(加载/错误/空),有数据才渲染任务卡;
+           骨架仅初始加载(loading && 无数据),SSE state 事件后台重取静默,任务卡不卸载 */
         <div className="flex-1 min-h-0 flex flex-col">
-          {recipes.loading ? (
+          {recipes.loading && !recipes.data ? (
             <Skeleton rows={4} className="m-3" />
           ) : recipes.error ? (
             <ErrorState message={recipes.error} onRetry={recipes.reload} />

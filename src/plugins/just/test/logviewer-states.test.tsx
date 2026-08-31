@@ -1,11 +1,12 @@
 /**
  * T2 LogViewer recipes 三态验收(仅 recipes 选择面,日志区交互不动):
  * - loading → Skeleton;mock 500 → ErrorState(onRetry=reload);空 → EmptyState 引导放置 justfile。
+ * SSE 静默刷新:已有 data 时 plugin:just:state 事件 force 重取不渲染 Skeleton、任务卡不卸载。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { LogViewer } from '../../../web/components/LogViewer.js';
-import { __resetPluginDataForTest } from '../../../web/hooks/usePluginData.js';
+import { __resetPluginDataForTest, notifyPluginEvent } from '../../../web/hooks/usePluginData.js';
 
 const RECIPES = [{ name: 'dev-server', description: 'dev' }];
 
@@ -84,5 +85,26 @@ describe('LogViewer — recipes 三态接线', () => {
     render(<LogViewer />);
     expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('SSE 静默刷新:已有 data 时 plugin:just:state 事件 force 重取,不渲染 Skeleton、任务卡不卸载', async () => {
+    let slow = false;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/__config')) return okJson({ stopToken: 'tok' });
+      if (slow) return new Promise<Response>(() => {}); // 后台重取挂起
+      if (url.includes('/__just/recipes')) return okJson(RECIPES);
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    render(<LogViewer />);
+    expect((await screen.findAllByText('dev-server')).length).toBeGreaterThanOrEqual(2); // 药丸行 + 任务卡
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+
+    slow = true;
+    act(() => { notifyPluginEvent('plugin:just:state'); });
+    // 旧实现:loading 随 force 置 true → 内容区三元整体换 Skeleton(任务卡卸载),此断言红
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    // 任务卡仍在(药丸行之外,内容区网格里的卡片按钮「启动」可查)
+    expect(screen.getByRole('button', { name: /启动/ })).toBeInTheDocument();
   });
 });

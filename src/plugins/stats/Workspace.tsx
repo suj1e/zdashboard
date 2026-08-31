@@ -103,9 +103,16 @@ export default function Workspace(_props: PluginWorkspaceProps) {
         </div>
 
         <div className="mt-5 flex items-center gap-2 text-xs">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${detect.data?.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
-            justfile {detect.data?.hasJust ? '✓' : '✗'}
-          </span>
+          {/* detect 失败与「justfile ✗」分开语义:探测失败 ≠ 项目无 justfile */}
+          {detect.error ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-muted-foreground border-border">
+              justfile 探测失败
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${detect.data?.hasJust ? 'text-success border-success/30 bg-success/10' : 'text-muted-foreground border-border'}`}>
+              justfile {detect.data?.hasJust ? '✓' : '✗'}
+            </span>
+          )}
           {typeof data.dirty === 'number' && (
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${data.dirty ? 'text-warning border-warning/30 bg-warning/10' : 'text-success border-success/30 bg-success/10'}`}>
               {data.dirty ? `${data.dirty} 未提交` : 'clean'}

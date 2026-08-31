@@ -53,10 +53,13 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-3 text-xs text-muted-foreground truncate flex-none">设计资产</div>
-      {assets.loading && <Skeleton rows={6} className="mx-3" />}
+      {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载旧列表 */}
+      {assets.loading && !assets.data && <Skeleton rows={6} className="mx-3" />}
       {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}
       {assets.data && groups.length === 0 && (
-        <EmptyState title="暂无设计资产" hint="约定目录 .zdev/design 下未发现可预览资产" />
+        folderFilter
+          ? <EmptyState title="无匹配结果" hint={`目录过滤 "${folderFilter}" 无匹配资产,调整或清空后重试`} />
+          : <EmptyState title="暂无设计资产" hint="约定目录 .zdev/design 下未发现可预览资产" />
       )}
       {groups.map(g => (
         <GroupSection

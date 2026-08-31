@@ -129,7 +129,12 @@ export default function Sidebar() {
   };
 
   const showWorktrees = worktrees.length > 0;
-  const treeEmpty = !!trees.data && !showWorktrees && rootTree.length === 0;
+  // 空态与过滤态分离:无过滤且无数据 → 引导空态;有过滤但全树无匹配 → 「无匹配结果」
+  const hasFilterMatch =
+    !!filter && (worktrees.some((wt) => (wtTrees[wt.path] ?? []).some((n) => matches(n, filter)))
+      || rootTree.some((n) => matches(n, filter)));
+  const treeEmpty = !filter && !!trees.data && !showWorktrees && rootTree.length === 0;
+  const filterEmpty = !!filter && !!trees.data && !hasFilterMatch;
 
   return (
     <div className="p-2 flex flex-col h-full">
@@ -142,7 +147,8 @@ export default function Sidebar() {
           className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:outline-none focus:border-primary"
         />
         <div className="py-1 flex-1 min-h-0 overflow-auto flex flex-col" data-testid="view-tree-scroller">
-          {trees.loading && <Skeleton rows={6} className="mx-1 mt-1" />}
+          {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载树 */}
+          {trees.loading && !trees.data && <Skeleton rows={6} className="mx-1 mt-1" />}
           {trees.error && <ErrorState message={trees.error} onRetry={trees.reload} />}
           {treeEmpty && (
             <EmptyState
@@ -150,7 +156,8 @@ export default function Sidebar() {
               hint="约定扫描目录:openspec / docs / .zdev/apply"
             />
           )}
-          {!trees.loading && !trees.error && !treeEmpty && (
+          {filterEmpty && <EmptyState title="无匹配结果" hint="调整或清空过滤词后重试" />}
+          {!!trees.data && !trees.error && !treeEmpty && !filterEmpty && (
             <>
           {showWorktrees && worktrees.map((wt) => {
             const tree = wtTrees[wt.path] ?? [];

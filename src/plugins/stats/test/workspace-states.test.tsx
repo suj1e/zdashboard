@@ -68,4 +68,15 @@ describe('stats Workspace — 三态接线', () => {
     expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
     expect(screen.queryByText('加载中…')).not.toBeInTheDocument();
   });
+
+  it('detect 500 → 探测区显示「探测失败」,不与「justfile ✗」混同语义', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/__detect')) return serverError({ error: 'detect boom' });
+      return okJson(STATS);
+    }));
+    render(<Workspace params={new URLSearchParams('?p=stats')} />);
+    expect(await screen.findByText(/探测失败/)).toBeInTheDocument();
+    expect(screen.queryByText(/✗/)).not.toBeInTheDocument();
+  });
 });

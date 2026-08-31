@@ -137,4 +137,13 @@ describe('ImageViewer — onError 文案勘正 + 重试', () => {
     expect(img.getAttribute('src')).toBe(srcBefore);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  it('path 变化 → 重置错误态与尺寸标注(A 图失败切 B 图不残留旧错)', async () => {
+    const { rerender } = render(<ImageViewer path="icons/a.svg" />);
+    fireImgError();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    rerender(<ImageViewer path="icons/b.svg" />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument(); // dim 重置为 '-'
+  });
 });
