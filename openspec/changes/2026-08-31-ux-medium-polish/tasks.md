@@ -6,7 +6,7 @@
   - 验收:组件测试:lost 态文案/点击行为
 - [x] 3. iframe 三态(Skeleton/握手 8s 超时 ErrorState/重试重挂)+ 配置失败提示条
   - 验收:组件测试:timeout 渲染 ErrorState、重试 key++
-- [ ] 4. server 错误页(404/403 极简 HTML,`/__` API 路径保持 JSON)
+- [x] 4. server 错误页(404/403 极简 HTML,`/__` API 路径保持 JSON)
   - 验收:单测:Content-Type 与 HTML 断言
 - [ ] 5. focus-visible 全局基线 + 移除散落 `focus:outline-none`;slate light primary 对比度达标
   - 验收:CSS 断言/取色核验;🔧[人工] 键盘走查

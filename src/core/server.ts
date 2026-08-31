@@ -76,6 +76,33 @@ export function json(res: http.ServerResponse, data: unknown, status = 200): voi
   res.end(JSON.stringify(data));
 }
 
+/** 错误码 → 中文说明(极简错误页单源) */
+const ERROR_PAGE_TEXT: Record<number, string> = {
+  400: '请求无效',
+  403: '没有访问权限',
+  404: '页面不存在',
+};
+
+/**
+ * 极简 HTML 错误页:标题/说明/返回首页链接,零外部资源(离线可用)。
+ * 页面类路径(项目文件/静态资源)404/403 专用;`/__` 前缀 API 路径保持 JSON/原文不变。
+ */
+export function sendErrorPage(res: http.ServerResponse, code: number): void {
+  if (res.headersSent) {
+    // 头已发出(响应中途出错):不能再改状态码,只断开连接防悬挂
+    try { res.destroy(); } catch { /* 已断 */ }
+    return;
+  }
+  const text = ERROR_PAGE_TEXT[code] ?? '出错了';
+  res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(
+    `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">` +
+    `<title>${code} ${text} · zdashboard</title></head>` +
+    `<body><h1>${code} · ${text}</h1><p>请求的资源不可用或已被移动。</p>` +
+    `<p><a href="/">返回首页</a></p></body></html>`,
+  );
+}
+
 /** x-stop-token 鉴权助手:通过返回 true;未通过时已写 403 响应并返回 false */
 export function guarded(req: http.IncomingMessage, res: http.ServerResponse, token: string): boolean {
   if (req.headers['x-stop-token'] !== token) {
@@ -191,8 +218,13 @@ export class ServerService extends Service {
   }
 
   private serveFile(filePath: string, req: http.IncomingMessage, res: http.ServerResponse, injectHtml: boolean) {
+    // `/__` 前缀为 API/插件资源路径:错误保持原样(不换 HTML 错误页)
+    const apiPath = (req.url || '').startsWith('/__');
     fs.stat(filePath, (err, stat) => {
-      if (err) { res.writeHead(404); return res.end('Not found'); }
+      if (err) {
+        if (apiPath) { res.writeHead(404); return res.end('Not found'); }
+        return sendErrorPage(res, 404);
+      }
       const ext = path.extname(filePath).toLowerCase();
       const ct = MIME[ext] ?? 'application/octet-stream';
 
@@ -231,7 +263,10 @@ export class ServerService extends Service {
 
       // Full response
       fs.readFile(filePath, (err, data) => {
-        if (err) { res.writeHead(404); return res.end('Not found'); }
+        if (err) {
+          if (apiPath) { res.writeHead(404); return res.end('Not found'); }
+          return sendErrorPage(res, 404);
+        }
         let body: string | Buffer = data;
         if (injectHtml && ext === '.html') {
           const s = data.toString('utf8');
@@ -292,10 +327,11 @@ export class ServerService extends Service {
       }
 
       const fp = path.join(this.root, this.safeDecode(url));
-      if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+      if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { return sendErrorPage(res, 403); }
       return this.serveFile(fp, req, res, true);
     } catch (e) {
-      try { res.writeHead(400); res.end('bad request'); } catch {}
+      // 兜底错误:页面类 400 错误页;若头已发出 sendErrorPage 安全退出仅断连
+      try { sendErrorPage(res, 400); } catch { /* 已断 */ }
       console.error('[zdashboard] handler error', e);
     }
   };
