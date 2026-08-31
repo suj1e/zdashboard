@@ -84,7 +84,6 @@ export const MODE_ICON_MAP: Record<string, IconKey> = {
   stats: 'bar-chart-3',
   view: 'folder-tree',
   design: 'palette',
-  market: 'sparkles',
   just: 'terminal',
 };
 

@@ -9,6 +9,10 @@ describe('mode→icon 平台映射', () => {
     expect(MODE_ICON_MAP['apply-batch']).toBeUndefined();
   });
 
+  it('已删 market 后注册表无 market mode(sparkles 本体保留)', () => {
+    expect(MODE_ICON_MAP['market']).toBeUndefined();
+  });
+
   it('覆盖全部内置插件且键都在 ICON_MAP 中注册', () => {
     const modes = ['stats', 'view', 'design', 'just'];
     for (const m of modes) {

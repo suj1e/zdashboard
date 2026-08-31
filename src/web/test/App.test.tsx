@@ -83,7 +83,7 @@ describe('App — Workspace params 注入(B2)', () => {
 });
 
 describe('App — 非法 mode 回首页(含已删 apply 插件深链接)', () => {
-  it.each(['apply', 'apply-batch', 'nope'])('?p=%s 回落首页,URL 不被改写', async (mode) => {
+  it.each(['apply', 'apply-batch', 'market', 'nope'])('?p=%s 回落首页,URL 不被改写', async (mode) => {
     window.history.replaceState(null, '', `/?p=${mode}`);
     const pushSpy = vi.spyOn(window.history, 'pushState');
     const replaceSpy = vi.spyOn(window.history, 'replaceState');
