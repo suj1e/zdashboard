@@ -6,5 +6,5 @@
   - 验收:`grep -ri market src/ --include="*.ts" --include="*.tsx"` 零命中;typecheck 0 error
 - [x] 3. README.md market 段落清理(实施时 grep 确认)
   - 验收:grep README 零命中
-- [ ] 4. 回归 + playground 手验:IconRail 5 插件、`?p=market` 回落首页
+- [x] 4. 回归 + playground 手验:IconRail 5 插件、`?p=market` 回落首页
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);手工 checklist 过
