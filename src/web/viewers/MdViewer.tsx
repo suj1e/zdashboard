@@ -12,6 +12,7 @@ import 'highlight.js/styles/github-dark.css';
 import 'katex/dist/katex.min.css';
 import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
 import { ErrorState } from '../kit/index.js';
+import { useViewerFreshness, RefreshButton } from './freshness.js';
 
 function CodeBlock({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null);
@@ -43,21 +44,30 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [text, setText] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
+  // files SSE(300ms 防抖)/手动刷新统一走版本号失效;后台重取保留旧内容,不闪「加载中」
+  const [version, refresh] = useViewerFreshness();
+  const loadedPathRef = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;
-    setText(null);
-    setErr(null);
+    if (loadedPathRef.current !== path) {
+      loadedPathRef.current = path;
+      setText(null);
+      setErr(null);
+    } else if (text === null) {
+      // 无内容的重取(错误态重试/SSE 失效):先清 err 进加载态,给出过程反馈
+      setErr(null);
+    }
     fetchText(resolve ? resolve(path) : '/__file-content/' + encodeURI(path), { cache: 'no-store' })
-      .then((t) => { if (alive) setText(t); })
+      .then((t) => { if (alive) { setText(t); setErr(null); } })
       .catch((e) => { if (alive) setErr(viewerFetchErrorMessage(e)); });
     return () => { alive = false; };
-  }, [path, resolve, tick]);
+  }, [path, resolve, version]);
 
-  if (err) {
+  // 仅「无内容且失败」才全屏 ErrorState;重取失败但有旧内容 → 保留旧内容(轻提示归后续)
+  if (err && text === null) {
     return (
       <div className="h-full flex flex-col p-4">
-        <ErrorState message={err} onRetry={() => setTick(t => t + 1)} />
+        <ErrorState message={err} onRetry={refresh} />
       </div>
     );
   }
@@ -69,7 +79,11 @@ export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string
   const body = frontmatter ? text.slice(fmMatch![0].length) : text;
 
   return (
-    <div className="prose dark:prose-invert mx-auto max-w-3xl p-8 prose-headings:scroll-mt-4 prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0">
+    <div className="relative">
+      <div className="absolute right-6 top-4 z-10">
+        <RefreshButton onClick={refresh} />
+      </div>
+      <div className="prose dark:prose-invert mx-auto max-w-3xl p-8 prose-headings:scroll-mt-4 prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0">
       {frontmatter && (
         <details className="not-prose mb-4 rounded-[var(--radius-md)] border p-3 text-sm">
           <summary className="cursor-pointer font-medium">YAML frontmatter</summary>
@@ -95,6 +109,7 @@ export function MdViewer({ path, resolve }: { path: string; resolve?: (p: string
       >
         {body}
       </ReactMarkdown>
+      </div>
     </div>
   );
 }

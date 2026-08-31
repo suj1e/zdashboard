@@ -1,7 +1,8 @@
 /** design 资产查看器:CSS 变量 Token 解析预览(独立文件,自 foundation Workspace 拆出) */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchText, viewerFetchErrorMessage } from '../../../web/lib/fetchJson.js';
 import { ErrorState } from '../../../web/kit/index.js';
+import { useViewerFreshness, RefreshButton } from '../../../web/viewers/freshness.js';
 
 interface TokenSection {
   label: string;
@@ -39,29 +40,40 @@ function parseSections(text: string): TokenSection[] {
 export default function TokenViewer({ path }: { path: string }) {
   const [sections, setSections] = useState<TokenSection[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
+  // files SSE(300ms 防抖)/手动刷新统一走版本号失效;重取仅作用于当前展示的资产,且保留旧内容不闪「解析中」
+  const [version, refresh] = useViewerFreshness();
+  const loadedPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoadingOrReset();
-    async function setLoadingOrReset() {
+    const pathChanged = loadedPathRef.current !== path;
+    loadedPathRef.current = path;
+    if (pathChanged) {
       setSections(null);
       setErr(null);
+    } else if (sections === null) {
+      // 无内容的重取(错误态重试/SSE 失效):先清 err 进加载态,给出过程反馈
+      setErr(null);
+    }
+    async function load() {
       try {
         const text = await fetchText('/__design/asset?path=' + encodeURIComponent(path), { cache: 'no-store' });
         if (cancelled) return;
         setSections(parseSections(text));
+        setErr(null);
       } catch (e) {
         if (!cancelled) setErr(viewerFetchErrorMessage(e));
       }
     }
+    void load();
     return () => { cancelled = true; };
-  }, [path, tick]);
+  }, [path, version]);
 
-  if (err) {
+  // 仅「无内容且失败」才全屏 ErrorState;重取失败但有旧分区 → 保留旧内容(轻提示归后续)
+  if (err && sections === null) {
     return (
       <div className="h-full flex flex-col p-4">
-        <ErrorState message={err} onRetry={() => setTick(t => t + 1)} />
+        <ErrorState message={err} onRetry={refresh} />
       </div>
     );
   }
@@ -69,7 +81,10 @@ export default function TokenViewer({ path }: { path: string }) {
   if (!sections.length) return <p className="p-3 text-xs">未发现 CSS 变量</p>;
 
   return (
-    <div className="p-8 flex flex-col gap-7">
+    <div className="relative p-8 flex flex-col gap-7">
+      <div className="absolute right-6 top-4 z-10">
+        <RefreshButton onClick={refresh} />
+      </div>
       {sections.map(sec => {
         const hasColorItems = sec.items.some(it => LOOKS_COLOR_VALUE.test(it.value));
         const hasFontItems  = sec.items.some(it => FONT_NAME.test(it.name));

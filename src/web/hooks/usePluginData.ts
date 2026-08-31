@@ -4,6 +4,8 @@
  * - 缓存命中直接返回不再请求(reload()/失效事件强制绕过);
  * - 同 key 并发请求合并为一次 in-flight promise;
  * - opts.subscribe 指定 SSE 事件名(如 plugin:<mode>:<event>),到达即清缓存重取。
+ * - 注意:key 须稳定(重取失败保留旧 data 的语义以 key 不变为前提);
+ *   key 会变的场景请以 React key 重挂组件,否则旧 data 会串台。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSSEEvent } from './useSSE.js';
@@ -97,7 +99,9 @@ export function usePluginData<T>(
     setState((s) => ({ ...s, loading: s.loading || force, error: null }));
     void p.then(
       (v) => setState({ data: v as T, error: null, loading: false }),
-      (e) => setState({ data: null, error: errorMessage(e), loading: false }),
+      // 重取失败保留旧 data(错误降级为独立字段):仅 !data && error 才是全屏错误,
+      // data && error 由调用方可选轻提示——后台刷新失败不清空已有好数据
+      (e) => setState((s) => ({ data: s.data, error: errorMessage(e), loading: false })),
     );
   }, [key]);
 

@@ -8,23 +8,8 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useSSE } from '../../hooks/useSSE.js';
-
-/** jsdom 无 EventSource;onopen/onerror 由用例手工开火模拟原生重连 */
-class FakeES {
-  static instances: FakeES[] = [];
-  listeners = new Map<string, Set<(e: unknown) => void>>();
-  closed = false;
-  onopen?: () => void;
-  onerror?: () => void;
-  constructor(public url: string) { FakeES.instances.push(this); }
-  addEventListener(name: string, fn: (e: unknown) => void) {
-    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
-    this.listeners.get(name)!.add(fn);
-  }
-  removeEventListener(name: string, fn: (e: unknown) => void) { this.listeners.get(name)?.delete(fn); }
-  close() { this.closed = true; }
-}
+import { useSSE, useSSEEvent } from '../../hooks/useSSE.js';
+import { FakeES } from '../helpers/fake-es.js';
 
 afterEach(() => { delete (globalThis as Record<string, unknown>).EventSource; });
 
@@ -70,5 +55,42 @@ describe('useSSE — 断线恢复刷新(S1)', () => {
       expect(onFiles).toHaveBeenCalledTimes(1);
     });
     expect(onReload).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSSE — 断线重连频道补偿(数据新鲜度 T1)', () => {
+  it('断线期间注册的 useSSEEvent 频道,重连后 handler 被逐个补偿调用(data 为空串)', async () => {
+    (globalThis as Record<string, unknown>).EventSource = FakeES;
+    const handlerA = vi.fn();
+    const handlerB = vi.fn();
+    const { result } = renderHook(() => useSSE(vi.fn(), vi.fn()));
+    const es = FakeES.instances.at(-1)!;
+
+    act(() => es.onopen?.());          // 建连 live
+    act(() => es.onerror?.());         // 断线 lost
+    // 断线期间注册的具名频道(真实场景:断网时用户停在插件页)
+    renderHook(() => useSSEEvent('plugin:just:log', handlerA));
+    renderHook(() => useSSEEvent('plugin:stats:refresh', handlerB));
+    expect(handlerA).not.toHaveBeenCalled();
+    expect(handlerB).not.toHaveBeenCalled();
+
+    act(() => es.onopen?.());          // 原生重连再次 open
+    await waitFor(() => {
+      expect(result.current).toBe('live');
+      expect(handlerA).toHaveBeenCalledTimes(1);
+      expect(handlerA).toHaveBeenCalledWith('');
+      expect(handlerB).toHaveBeenCalledTimes(1);
+      expect(handlerB).toHaveBeenCalledWith('');
+    });
+  });
+
+  it('首连 open(非断线恢复)不补偿已注册频道', () => {
+    (globalThis as Record<string, unknown>).EventSource = FakeES;
+    const handler = vi.fn();
+    renderHook(() => useSSE(vi.fn(), vi.fn()));
+    renderHook(() => useSSEEvent('files', handler));
+    const es = FakeES.instances.at(-1)!;
+    act(() => es.onopen?.());          // 首次建连,无断线遗漏
+    expect(handler).not.toHaveBeenCalled();
   });
 });
