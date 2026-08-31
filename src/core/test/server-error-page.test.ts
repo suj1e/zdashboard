@@ -122,6 +122,20 @@ describe('错误页接线(集成)', () => {
     expect(res.contentType).toContain('text/html');
   });
 
+  it('S1:appDir 越界 /__app/../x → 403 HTML 错误页(不再裸文本)', async () => {
+    const res = await get(srv.port, '/__app/../x');
+    expect(res.status).toBe(403);
+    expect(res.contentType).toContain('text/html');
+    expect(res.body).toContain('403');
+  });
+
+  it('S2:/__ 前缀根遍历 /__foo/../.. → 403 保持原文(非 HTML)', async () => {
+    const res = await get(srv.port, '/__foo/../..');
+    expect(res.status).toBe(403);
+    expect(res.body).toBe('Forbidden');
+    expect(res.contentType ?? '').not.toContain('text/html');
+  });
+
   it('API 路径 /__file-content/missing → 404 保持原文(非 HTML)', async () => {
     const res = await get(srv.port, '/__file-content/missing.txt');
     expect(res.status).toBe(404);

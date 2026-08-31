@@ -20,6 +20,17 @@ function dispatchFrom(iframe: HTMLIFrameElement, data: unknown) {
   window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data }));
 }
 
+/** 侦听桥向某窗口的 postMessage 推送(spyOn 不可配置时退化为直接覆写) */
+function spyPost(win: Window) {
+  try {
+    return vi.spyOn(win, 'postMessage').mockImplementation(() => {});
+  } catch {
+    const fn = vi.fn();
+    (win as unknown as { postMessage: unknown }).postMessage = fn;
+    return fn;
+  }
+}
+
 function renderWs() {
   return render(<ExternalWorkspace viewerUrl="https://ext.example/view.html" label="外部插件" mode="ext" />);
 }
@@ -78,6 +89,46 @@ describe('ExternalWorkspace — 握手三态', () => {
     // 重挂后重新计时:再走 8s 且无握手 → 再次 timeout
     act(() => { vi.advanceTimersByTime(8_000); });
     expect(screen.getByRole('alert')).toHaveTextContent('超时');
+  });
+
+  it('B1 回归:重试(iframeKey++)后桥随新 iframe 重建——新 iframe 的 zd:ready 被接受且 zd:init 下发,旧窗口零推送', () => {
+    vi.useFakeTimers();
+    const { container } = renderWs();
+    const oldWin = container.querySelector('iframe')!.contentWindow!;
+    const oldPost = spyPost(oldWin);
+
+    act(() => { vi.advanceTimersByTime(8_000); });
+    fireEvent.click(screen.getByRole('button', { name: '重试' }));
+
+    const newIframe = container.querySelector('iframe')!;
+    // 原始值比较:jsdom Window 序列化会触雷(被销毁窗口的 location getter),不直接 expect 对象
+    const sameWin = (newIframe.contentWindow as unknown) === (oldWin as unknown);
+    expect(sameWin).toBe(false);
+    const newWin = newIframe.contentWindow!;
+    const newPost = spyPost(newWin);
+
+    // 新 iframe 发 zd:ready(source 与新 iframe 配对)
+    act(() => { dispatchFrom(newIframe, { source: 'zdashboard', type: 'zd:ready' }); });
+    expect(newPost).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'zdashboard', type: 'zd:init' }),
+      '*',
+    );
+    // 桥必须已切到新窗口:旧 WindowProxy 不再收到任何推送
+    expect(oldPost).not.toHaveBeenCalled();
+  });
+
+  it('S4 回归:超时后迟到握手(zd:ready)清除 ErrorState,不常驻覆盖', () => {
+    vi.useFakeTimers();
+    const { container } = renderWs();
+    const iframe = container.querySelector('iframe')!;
+
+    act(() => { vi.advanceTimersByTime(8_000); });
+    expect(screen.getByRole('alert')).toHaveTextContent('超时');
+
+    // 第 9 秒插件才握手成功:ErrorState 撤除
+    act(() => { dispatchFrom(iframe, { source: 'zdashboard', type: 'zd:ready' }); });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('handshake-overlay')).not.toBeInTheDocument();
   });
 });
 

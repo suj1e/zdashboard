@@ -97,7 +97,9 @@ export function ExternalWorkspace({ viewerUrl, label, mode, params }: ExternalWo
       bridge.destroy();
       bridgeRef.current = null;
     };
-  }, [mode]);
+    // iframeKey 入 deps:重试重挂(key++)产生新 contentWindow,桥必须随新窗口重建,
+    // 否则 zd:init/主题/config/fetch 代理全部打到死 WindowProxy(B1)
+  }, [mode, iframeKey]);
 
   // 路由参数变化推 zd:navigate(宿主→iframe);首次挂载不推(zd:init 已携带)
   const paramsKey = params?.toString() ?? '';
@@ -109,11 +111,15 @@ export function ExternalWorkspace({ viewerUrl, label, mode, params }: ExternalWo
     bridgeRef.current?.sendNavigate(searchToRecord(params));
   }, [paramsKey, params]);
 
-  // zd:ready 握手观测(与桥独立、只读判定):e.source 与当前 iframe 严格配对,防伪造消息
+  // zd:ready 握手观测(与桥独立、只读判定):e.source 与当前 iframe 严格配对,防伪造消息。
+  // 迟到握手(超时后第 9 秒才 ready)同时撤除 ErrorState(S4),成功 iframe 不被常驻覆盖
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.source !== iframeRef.current?.contentWindow) return;
-      if (parseBridgeMessage(e.data, 'toHost')?.type === 'zd:ready') setHandshaked(true);
+      if (parseBridgeMessage(e.data, 'toHost')?.type === 'zd:ready') {
+        setHandshaked(true);
+        setTimedOut(false);
+      }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);

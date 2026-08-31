@@ -321,17 +321,24 @@ export class ServerService extends Service {
         let fp = this.appDir;
         if (url !== '/') fp = path.join(this.appDir, this.safeDecode(url));
         if (url.indexOf('/__app/') === 0) fp = path.join(this.appDir, url.slice(7));
-        if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { res.writeHead(403); return res.end('Forbidden'); }
+        if (fp !== this.appDir && fp.indexOf(this.appDir + path.sep) !== 0) { return sendErrorPage(res, 403); }
         if (url === '/') fp = path.join(this.appDir, 'index.html');
         return this.serveFile(fp, req, res, false);
       }
 
       const fp = path.join(this.root, this.safeDecode(url));
-      if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) { return sendErrorPage(res, 403); }
+      if (fp !== this.root && fp.indexOf(this.root + path.sep) !== 0) {
+        // `/__` 前缀 API 路径错误保持原文(S2);页面类路径走 HTML 错误页
+        if ((req.url || '').startsWith('/__')) { res.writeHead(403); return res.end('Forbidden'); }
+        return sendErrorPage(res, 403);
+      }
       return this.serveFile(fp, req, res, true);
     } catch (e) {
-      // 兜底错误:页面类 400 错误页;若头已发出 sendErrorPage 安全退出仅断连
-      try { sendErrorPage(res, 400); } catch { /* 已断 */ }
+      // 兜底错误:API 路径保持原文(S2),页面类 400 错误页;头已发出时 sendErrorPage 仅断连
+      try {
+        if ((req.url || '').startsWith('/__')) { res.writeHead(400); res.end('bad request'); }
+        else sendErrorPage(res, 400);
+      } catch { /* 已断 */ }
       console.error('[zdashboard] handler error', e);
     }
   };
