@@ -144,7 +144,7 @@ export default function Sidebar() {
           onChange={e => setFilter(e.target.value)}
           placeholder="过滤…"
           data-testid="view-filter-input"
-          className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:outline-none focus:border-primary"
+          className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:border-primary"
         />
         <div className="py-1 flex-1 min-h-0 overflow-auto flex flex-col" data-testid="view-tree-scroller">
           {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载树 */}

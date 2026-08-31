@@ -80,7 +80,7 @@ function ParamsForm({ params, values, onChange, onSubmit, onCancel }: {
             placeholder={p}
             value={values[p] ?? ''}
             onChange={(e) => onChange(p, e.target.value)}
-            className="h-6 w-32 rounded-[var(--radius-md)] border bg-transparent px-1.5 font-mono outline-none placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
+            className="h-6 w-32 rounded-[var(--radius-md)] border bg-transparent px-1.5 font-mono placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
           />
         </label>
       ))}
@@ -449,7 +449,7 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="搜索日志…"
               aria-label="搜索日志"
-              className="h-6 w-40 rounded-[var(--radius-md)] border bg-transparent px-2 text-xs font-mono outline-none placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
+              className="h-6 w-40 rounded-[var(--radius-md)] border bg-transparent px-2 text-xs font-mono placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
             />
             <FilterPills items={LEVEL_FILTERS} value={levelFilter} onChange={setLevelFilter} ariaLabel="日志级别" />
           </div>

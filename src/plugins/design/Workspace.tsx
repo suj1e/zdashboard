@@ -23,7 +23,7 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
     { v: 375, icon: icon('smartphone', 'h-3.5 w-3.5'), label: '375' },
     { v: 'custom', icon: icon('sliders-horizontal', 'h-3.5 w-3.5'), label: '自定义' },
   ];
-  const inputCls = 'w-[var(--design-input-w)] h-7 px-1 text-center text-xs rounded border border-border bg-background text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:outline-none focus:border-primary';
+  const inputCls = 'w-[var(--design-input-w)] h-7 px-1 text-center text-xs rounded border border-border bg-background text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:border-primary';
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted">

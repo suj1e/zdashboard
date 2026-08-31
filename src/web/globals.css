@@ -107,6 +107,8 @@
 @layer base {
   * { border-color: hsl(var(--border)); }
   body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  /* 键盘可达性基线:全局焦点环统一走 --ring token(组件内不再散落 focus:outline-none) */
+  :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 }
 
 @layer components {

@@ -8,7 +8,7 @@
   - 验收:组件测试:timeout 渲染 ErrorState、重试 key++
 - [x] 4. server 错误页(404/403 极简 HTML,`/__` API 路径保持 JSON)
   - 验收:单测:Content-Type 与 HTML 断言
-- [ ] 5. focus-visible 全局基线 + 移除散落 `focus:outline-none`;slate light primary 对比度达标
+- [x] 5. focus-visible 全局基线 + 移除散落 `focus:outline-none`;slate light primary 对比度达标
   - 验收:CSS 断言/取色核验;🔧[人工] 键盘走查
 - [ ] 6. 面包屑末段不截断 + title;design/just 空态引导;`zd-theme` 非法值兜底
   - 验收:组件测试断言各点

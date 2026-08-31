@@ -63,7 +63,7 @@ function GridCard({ plugin, onSelect }: { plugin: HomeCardItem; onSelect: (mode:
   return (
     <button
       onClick={() => onSelect(plugin.mode)}
-      className="text-left group rounded-[var(--radius-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="text-left group rounded-[var(--radius-lg)]"
     >
       <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-muted-foreground/30">
         <CardHeader>
