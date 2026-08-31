@@ -61,8 +61,9 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error('复制失败'); // 剪贴板不可用(权限/非安全上下文):显式反馈,不再静默
+    } catch (e) {
+      console.error('[zdashboard] clipboard copy failed:', e); // 诊断保留(review S3)
+      toast.error('复制失败'); // 剪贴板不可用(权限/非安全上下文):显式反馈
     }
   };
 

@@ -9,25 +9,21 @@ import { useIcons } from '../../web/lib/icons.js';
 import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { fetchJson } from '../../web/lib/fetchJson.js';
-import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
+import { readJsonSafe, safeSetItem } from '../../web/lib/safeStorage.js';
 import { EmptyState, ErrorState, RefreshSpinner, Skeleton } from '../../web/kit/index.js';
 
 /** 分组展开态持久化键(JSON `Record<groupKey, boolean>`,缺省 true=展开) */
 const DESIGN_GROUPS_KEY = 'zd-design-groups';
 
-function readGroupOpen(): Record<string, boolean> {
-  try {
-    const raw = safeGetItem(DESIGN_GROUPS_KEY);
-    if (!raw) return {};
-    const o = JSON.parse(raw) as unknown;
-    if (!o || typeof o !== 'object' || Array.isArray(o)) return {};
-    const out: Record<string, boolean> = {};
-    for (const [k, v] of Object.entries(o)) if (typeof v === 'boolean') out[k] = v;
-    return out;
-  } catch {
-    return {};
-  }
+type GroupOpenMap = Record<string, boolean>;
+
+/** 形状校验:全值 boolean 才认;不过 → readJsonSafe 回落全展开(回落哲学一致) */
+function isGroupOpenMap(v: unknown): v is GroupOpenMap {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+  return Object.values(v).every((x) => typeof x === 'boolean');
 }
+
+const readGroupOpen = () => readJsonSafe<GroupOpenMap>(DESIGN_GROUPS_KEY, {}, isGroupOpenMap);
 
 interface AssetFile { path: string; name: string; ext: string; type: AssetType; }
 
@@ -69,13 +65,12 @@ export default function Sidebar() {
   const selectAsset = (it: AssetFile) => route.navigate({ type: it.type, asset: it.path });
 
   // 分组展开态单源(持久化):GroupSection 受控,缺省 true=展开
-  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(readGroupOpen);
+  const [groupOpen, setGroupOpen] = useState<GroupOpenMap>(readGroupOpen);
+  // 纯事件回调:先算 next,setState 与持久化并列(review S1:updater 内不写副作用)
   const toggleGroup = (key: string) => {
-    setGroupOpen(prev => {
-      const next = { ...prev, [key]: !(prev[key] ?? true) };
-      safeSetItem(DESIGN_GROUPS_KEY, JSON.stringify(next));
-      return next;
-    });
+    const next = { ...groupOpen, [key]: !(groupOpen[key] ?? true) };
+    setGroupOpen(next);
+    safeSetItem(DESIGN_GROUPS_KEY, JSON.stringify(next));
   };
 
   return (

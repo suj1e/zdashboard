@@ -1,6 +1,6 @@
 ## Why
 
-UX 巡检 low 级发现集中批次：单项皆小（多为 1-5 行）且独立，合并一批清掉。内容：UI 偏好持久化补齐（折叠态/视口模式/分组展开）、复制失败反馈、SSE 刷新轻指示、a11y 细节（aria-expanded/role=log/热区/Reduced Motion）、文案语言基线、`\r` 进度条分段、日志计数失真、组件日志双连接、design 工具栏度量统一。
+UX 巡检 low 级发现集中批次：单项皆小（多为 1-5 行）且独立，合并一批清掉。内容：UI 偏好持久化补齐（折叠态/视口模式/分组展开）、复制失败反馈、SSE 刷新轻指示、a11y 细节（aria-expanded/role=log/热区/Reduced Motion）、文案语言基线、`\r` 进度条分段、组件日志双连接、design 工具栏度量统一。
 
 ## What Changes
 
