@@ -10,6 +10,7 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import 'highlight.js/styles/github-dark.css';
 import 'katex/dist/katex.min.css';
+import { toast } from 'sonner';
 import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
 import { ErrorState } from '../kit/index.js';
 import { useViewerFreshness, RefreshButton } from './freshness.js';
@@ -23,7 +24,9 @@ function CodeBlock({ children }: { children?: ReactNode }) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch (e) { console.error('[zdashboard] clipboard copy failed:', e); }
+    } catch {
+      toast.error('复制失败'); // 剪贴板不可用(权限/非安全上下文):显式反馈,不再静默
+    }
   };
   return (
     <div className="not-prose relative my-4 group">

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
+import { toast } from 'sonner';
 import { formatBytes } from '../lib/utils.js';
 import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
 import { ErrorState } from '../kit/index.js';
@@ -60,7 +61,9 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch (e) { console.error('[zdashboard] clipboard copy failed:', e); }
+    } catch {
+      toast.error('复制失败'); // 剪贴板不可用(权限/非安全上下文):显式反馈,不再静默
+    }
   };
 
   return (

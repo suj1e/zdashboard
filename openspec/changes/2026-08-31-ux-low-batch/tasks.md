@@ -6,7 +6,7 @@
   - 验收:CSS 断言;组件测试:reduce 下无 pulse 类
 - [x] 3. 持久化三处:view 折叠集合/design 分组与视口/`zd-` 键规范
   - 验收:组件测试:rerender 后保持
-- [ ] 4. 复制失败反馈 + usePluginData 刷新轻 spinner;aria-expanded/日志 role=log/热区 24px
+- [x] 4. 复制失败反馈 + usePluginData 刷新轻 spinner;aria-expanded/日志 role=log/热区 24px
   - 验收:组件测试各点断言
 - [ ] 5. 文案基线(clean→干净)+ design 工具栏度量统一 + `\r` 分段 + logs 频道迁移评估落地
   - 验收:组件/单测各点;实施深度偏差在报告说明

@@ -15,7 +15,8 @@ export function IconButton({ label, onClick, disabled, className, children }: {
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-[var(--chip-h)] min-w-[var(--chip-h)] items-center justify-center gap-1 rounded-[var(--radius-sm)] border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 ${className ?? ''}`}
+      className={`relative inline-flex h-[var(--chip-h)] min-w-[var(--chip-h)] items-center justify-center gap-1 rounded-[var(--radius-sm)] border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50
+        after:content-[''] after:absolute after:-inset-[3px] ${className ?? ''}`}
     >
       {children}
     </button>

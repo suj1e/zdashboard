@@ -10,7 +10,7 @@ import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { fetchJson } from '../../web/lib/fetchJson.js';
 import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
-import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
+import { EmptyState, ErrorState, RefreshSpinner, Skeleton } from '../../web/kit/index.js';
 
 /** 分组展开态持久化键(JSON `Record<groupKey, boolean>`,缺省 true=展开) */
 const DESIGN_GROUPS_KEY = 'zd-design-groups';
@@ -80,7 +80,10 @@ export default function Sidebar() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 text-xs text-muted-foreground truncate flex-none">设计资产</div>
+      <div className="p-3 text-xs text-muted-foreground truncate flex-none flex items-center gap-2">
+        设计资产
+        {assets.refreshing && <RefreshSpinner />}
+      </div>
       {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载旧列表 */}
       {assets.loading && !assets.data && <Skeleton rows={6} className="mx-3" />}
       {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}

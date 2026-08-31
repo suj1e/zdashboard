@@ -14,6 +14,8 @@ export interface UsePluginDataResult<T> {
   data: T | null;
   error: string | null;
   loading: boolean;
+  /** 后台刷新中(loading 且已有旧 data):首载走全屏骨架,后台刷新仅轻指示 */
+  refreshing: boolean;
   reload(): void;
 }
 
@@ -125,5 +127,5 @@ export function usePluginData<T>(
     load(true);
   }, [load]);
 
-  return { ...state, reload };
+  return { ...state, refreshing: state.loading && state.data !== null, reload };
 }

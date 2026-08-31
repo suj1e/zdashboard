@@ -490,6 +490,10 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             <div
               ref={scrollRef}
               data-testid="log-scroll"
+              role="log"
+              aria-live="polite"
+              aria-label="日志输出"
+              tabIndex={0}
               onScroll={onScroll}
               className="h-full overflow-auto bg-terminal-bg p-3.5 font-mono text-xs leading-relaxed text-terminal-fg"
             >

@@ -15,7 +15,7 @@ import { usePluginData } from '../../web/hooks/usePluginData.js';
 import { useRoute } from '../../web/router.js';
 import { fetchJson } from '../../web/lib/fetchJson.js';
 import { safeGetItem, safeSetItem } from '../../web/lib/safeStorage.js';
-import { EmptyState, ErrorState, Skeleton } from '../../web/kit/index.js';
+import { EmptyState, ErrorState, RefreshSpinner, Skeleton } from '../../web/kit/index.js';
 
 /** 折叠集合持久化键(JSON `{ wt: string[], root: boolean }`,zd- 前缀规范) */
 const VIEW_COLLAPSE_KEY = 'zd-view-collapse';
@@ -86,6 +86,7 @@ function TreeDir({ node, depth, filter, current, onSelectFile }: {
         return (
           <button
             onClick={() => setOpen(o => !o)}
+            aria-expanded={expanded}
             className="w-full flex items-center gap-1.5 px-2 py-1 text-sm text-foreground hover:bg-muted rounded-md mx-1"
             style={{ paddingLeft: 8 + depth * 14, width: 'calc(100% - 8px)' }}
           >
@@ -171,13 +172,16 @@ export default function Sidebar() {
   return (
     <div className="p-2 flex flex-col h-full">
       <div className="flex-1 min-h-0 flex flex-col">
-        <input
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder="过滤…"
-          data-testid="view-filter-input"
-          className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:border-primary"
-        />
+        <div className="w-full flex items-center gap-2">
+          <input
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="过滤…"
+            data-testid="view-filter-input"
+            className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:border-primary"
+          />
+          {trees.refreshing && <RefreshSpinner />}
+        </div>
         <div className="py-1 flex-1 min-h-0 overflow-auto flex flex-col" data-testid="view-tree-scroller">
           {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载树 */}
           {trees.loading && !trees.data && <Skeleton rows={6} className="mx-1 mt-1" />}
@@ -200,6 +204,7 @@ export default function Sidebar() {
               <div key={wt.path} className="mb-1">
                 <button
                   onClick={() => toggleWt(wt.path)}
+                  aria-expanded={!collapsedWt.has(wt.path)}
                   data-drill-dirty={highlightDirty ? 'true' : undefined}
                   className={`w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-md ${highlightDirty ? 'bg-warning/10 ring-1 ring-warning' : ''}`}
                 >
@@ -234,6 +239,7 @@ export default function Sidebar() {
             <div className="mb-1">
               <button
                 onClick={toggleRoot}
+                aria-expanded={!collapsedRoot}
                 className="w-full flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               >
                 <span className={`h-3 w-3 shrink-0 inline-flex items-center justify-center text-muted-foreground transition-transform ${!collapsedRoot ? 'rotate-90' : ''}`}>

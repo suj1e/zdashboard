@@ -15,3 +15,4 @@ export { DataList } from './DataList.js';
 export { KeyValue } from './KeyValue.js';
 export { AsyncBoundary, type AsyncState } from './AsyncBoundary.js';
 export { PluginPage } from './PluginPage.js';
+export { RefreshSpinner } from './RefreshSpinner.js';
