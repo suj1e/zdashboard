@@ -57,4 +57,4 @@
 
 | 图 | 相对路径 | 说明 |
 |---|---|---|
-| 移除总览 | diagrams/removal.html | IconRail 六格→五格，四路清理清单 |
+| 移除总览 | diagrams/removal.html | IconRail 五格→四格(apply 已于 601171d 先行删除)，四路清理清单 |

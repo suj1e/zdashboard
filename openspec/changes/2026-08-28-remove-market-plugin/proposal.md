@@ -14,7 +14,7 @@ market（灵感市场）插件经实际使用确认不需要：三市场浏览�
 ## 成功标准
 
 1. `grep -ri market src/ --include="*.ts" --include="*.tsx"` 零命中（测试断言内对已删模式的引用除外，应为零）
-2. IconRail 剩余 5 个内置插件（stats/view/design/apply/just）全部保留；`?p=market` 未知 mode 回落首页
+2. IconRail 剩余 4 个内置插件（stats/just/design/view，apply 已于 601171d 先行删除）全部保留；`?p=market` 未知 mode 回落首页
 3. spec REMOVED delta 经 `openspec validate` 通过，归档后主 spec 不再含 market SHALL
 4. `pnpm typecheck && pnpm test` 全绿（基线既有环境失败除外）
 
