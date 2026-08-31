@@ -10,6 +10,7 @@
  */
 import type http from 'node:http';
 import { JustRunner } from '../../server/just-runner.js';
+import { pickStringArgs } from '../../server/just-recipe-params.js';
 import { readBody } from '../../core/read-body.js';
 import { defineBuiltin } from '../builtin.js';
 import { manifest } from './manifest.js';
@@ -23,7 +24,7 @@ export const apply = defineBuiltin({
 
     ctx.route('/__just/recipes', async () => {
       try {
-        return await runner.recipes();
+        return await runner.recipesWithParams();
       } catch {
         return [];
       }
@@ -40,11 +41,16 @@ export const apply = defineBuiltin({
       return unsub;
     });
 
-    /** start/restart 须带合法 recipe(同名 start 即重启);stop 可带单个 recipe 或省略(停全部);clear 清日志 */
+    /** start/restart 须带合法 recipe(同名 start 即重启,可选 args 参数表);stop 可带单个 recipe 或省略(停全部);clear 清日志 */
     const handleAction = async (req: http.IncomingMessage, res: http.ServerResponse, act: 'start' | 'stop' | 'restart' | 'clear') => {
       const body = await readBody(req);
       let recipe: string | undefined;
-      try { recipe = JSON.parse(body || '{}').recipe; } catch { /* ignore */ }
+      let rawArgs: unknown;
+      try {
+        const parsed = JSON.parse(body || '{}') as { recipe?: string; args?: unknown };
+        recipe = parsed.recipe;
+        rawArgs = parsed.args;
+      } catch { /* ignore */ }
       if (act === 'clear') {
         if (recipe) runner.clear(recipe);
         return { ok: true };
@@ -61,7 +67,7 @@ export const apply = defineBuiltin({
           res.end('{"error":"unknown recipe"}');
           return undefined;
         }
-        runner.start(recipe);
+        runner.start(recipe, pickStringArgs(rawArgs));
       } else {
         runner.stop(recipe || undefined);
       }

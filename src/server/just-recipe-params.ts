@@ -55,3 +55,13 @@ export function buildJustArgv(recipe: string, args?: Record<string, string>): st
   if (!args) return [recipe];
   return [recipe, ...Object.entries(args).map(([k, v]) => `${k}=${v}`)];
 }
+
+/** start args 白名单化:仅保留 string 值;剔除后为空或输入非对象 → undefined(请求体不携带 args) */
+export function pickStringArgs(args: unknown): Record<string, string> | undefined {
+  if (typeof args !== 'object' || args === null) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(args)) {
+    if (typeof v === 'string') out[k] = v;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}

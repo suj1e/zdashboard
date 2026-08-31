@@ -3,7 +3,7 @@
  * argv 拼装安全契约:数组 argv 原样传值(值含空格/引号/& 不经 shell 拼接),调用方 spawn 不得开 shell。
  */
 import { describe, it, expect } from 'vitest';
-import { parseRecipeSignature, buildJustArgv } from '../just-recipe-params.js';
+import { parseRecipeSignature, buildJustArgv, pickStringArgs } from '../just-recipe-params.js';
 
 describe('parseRecipeSignature — just --show 首行签名解析', () => {
   it('playground 样例:hello msg="world": → params ["msg"]', () => {
@@ -87,5 +87,24 @@ describe('buildJustArgv — spawn argv 拼装(特殊字符安全)', () => {
 
   it('值含换行/CR → 原样保留(argv 不受控制字符影响)', () => {
     expect(buildJustArgv('hello', { msg: 'a\nb' })).toEqual(['hello', 'msg=a\nb']);
+  });
+});
+
+describe('pickStringArgs — start args 白名单化(仅保留 string 值)', () => {
+  it('全 string → 原样返回(新对象)', () => {
+    expect(pickStringArgs({ msg: 'x', tag: 'v2' })).toEqual({ msg: 'x', tag: 'v2' });
+  });
+
+  it('非 string 值(number/bool/object/array)全部剔除 → undefined', () => {
+    expect(pickStringArgs({ msg: 1, flag: true, obj: {}, arr: [] })).toBeUndefined();
+  });
+
+  it('剔除后为空 → undefined(请求体不携带 args 字段)', () => {
+    expect(pickStringArgs({ msg: 42 })).toBeUndefined();
+  });
+
+  it('null/undefined 输入 → undefined', () => {
+    expect(pickStringArgs(null)).toBeUndefined();
+    expect(pickStringArgs(undefined)).toBeUndefined();
   });
 });

@@ -10,7 +10,7 @@ import { isAtBottom, levelClass, MAX_LOG_LINES } from '../lib/log-viewer.js';
 import { LogLine, type LogLineData } from './log-lines.js';
 import { EmptyState, ErrorState, Skeleton } from '../kit/index.js';
 
-interface Recipe { name: string; description: string; }
+interface Recipe { name: string; description: string; params?: string[]; }
 type TaskStatus = 'running' | 'exited';
 interface TaskState { state: TaskStatus; code: number | null; startedAt: number; signal?: string; }
 type Ev =
@@ -56,6 +56,38 @@ function ElapsedBadge({ startedAt, className }: { startedAt: number; className?:
     return () => clearInterval(t);
   }, []);
   return <span className={className}>{fmtElapsed(Math.max(0, Date.now() - startedAt))}</span>;
+}
+
+/** 带参启动面板:动态字段(placeholder=参数名),确认后携带 args 启动 */
+function ParamsForm({ params, values, onChange, onSubmit, onCancel }: {
+  params: string[];
+  values: Record<string, string>;
+  onChange: (k: string, v: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      data-testid="param-panel"
+      onClick={(e) => e.stopPropagation()}
+      className="flex flex-wrap items-center gap-2 px-3.5 py-2 border-b bg-card text-sm"
+    >
+      {params.map(p => (
+        <label key={p} className="inline-flex items-center gap-1 text-xs">
+          <span className="font-mono text-muted-foreground">{p}</span>
+          <input
+            aria-label={p}
+            placeholder={p}
+            value={values[p] ?? ''}
+            onChange={(e) => onChange(p, e.target.value)}
+            className="h-6 w-32 rounded-[var(--radius-md)] border bg-transparent px-1.5 font-mono outline-none placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
+          />
+        </label>
+      ))}
+      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm text-success" onClick={onSubmit}>{'启动'}</Button>
+      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={onCancel}>{'取消'}</Button>
+    </div>
+  );
 }
 
 export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) {
@@ -230,13 +262,13 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const [pending, setPending] = useState<Record<string, 'start' | 'stop' | undefined>>({});
   const clearPending = (recipe: string) => setPending(p => (p[recipe] ? { ...p, [recipe]: undefined } : p));
 
-  const act = async (action: 'start' | 'stop' | 'clear', recipe: string) => {
+  const act = async (action: 'start' | 'stop' | 'clear', recipe: string, args?: Record<string, string>) => {
     if (action !== 'clear') setPending(p => ({ ...p, [recipe]: action }));
     try {
       const res = await fetch(`/__just/${action}`, {
         method: 'POST',
         headers: { 'x-stop-token': tokenRef.current, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipe }),
+        body: JSON.stringify({ recipe, ...(action === 'start' && args ? { args } : {}) }),
       });
       if (!res.ok) {
         let detail = '';
@@ -265,6 +297,33 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const runningCount = rows.filter(r => r.task?.state === 'running').length;
   const selTask = selected ? tasks[selected] : undefined;
   const selRunning = selTask?.state === 'running';
+
+  // ── 带参启动:带参 recipe 先弹参数面板,确认后携带 args 启动;无参直接启动 ──
+  const [paramTarget, setParamTarget] = useState<string | null>(null);
+  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const startRecipe = (name: string) => {
+    const p = recipeList.find(r => r.name === name)?.params ?? [];
+    if (p.length === 0) { void act('start', name); return; }
+    setParamValues(Object.fromEntries(p.map(k => [k, ''])));
+    setParamTarget(name);
+  };
+  const submitParams = () => {
+    if (!paramTarget) return;
+    const entries = Object.entries(paramValues).filter(([, v]) => v !== '');
+    void act('start', paramTarget, entries.length > 0 ? Object.fromEntries(entries) : undefined);
+    setParamTarget(null);
+    setParamValues({});
+  };
+  const cancelParams = () => { setParamTarget(null); setParamValues({}); };
+  const paramPanel = (recipe: string) => paramTarget === recipe ? (
+    <ParamsForm
+      params={recipeList.find(r => r.name === recipe)?.params ?? []}
+      values={paramValues}
+      onChange={(k, v) => setParamValues(prev => ({ ...prev, [k]: v }))}
+      onSubmit={submitParams}
+      onCancel={cancelParams}
+    />
+  ) : null;
 
   const pill = (running: boolean, exited: boolean, t?: TaskState) =>
     running ? 'bg-success animate-pulse'
@@ -350,12 +409,13 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
                     {running ? (
                       <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[r.name]} onClick={() => act('stop', r.name)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
                     ) : (
-                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[r.name]} onClick={() => act('start', r.name)}>
+                      <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[r.name]} onClick={() => startRecipe(r.name)}>
                         {exited ? icon('rotate-cw', 'h-2.5 w-2.5') : icon('play', 'h-2.5 w-2.5')}{exited ? '重跑' : '启动'}
                       </Button>
                     )}
                   </span>
                 </div>
+                {paramPanel(r.name)}
                 {r.description && <p className="mt-1 text-sm text-muted-foreground/70 truncate">{r.description}</p>}
                 <div className="mt-2 rounded bg-terminal-bg px-2 py-1.5 font-mono text-xs leading-relaxed text-terminal-fg/70 min-h-[3.4em]">
                   {tail.length ? tail.map((l, i) => <div key={i} className="truncate">{l}</div>) : <span className="text-terminal-fg/40">$ just {r.name} …</span>}
@@ -380,11 +440,12 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
             <span className="ml-auto flex items-center gap-1">
               {selRunning
                 ? <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[selected]} onClick={() => act('stop', selected)}>{icon('square', 'h-2.5 w-2.5')}停止</Button>
-                : <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[selected]} onClick={() => act('start', selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
+                : <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" disabled={!!pending[selected]} onClick={() => startRecipe(selected)}>{icon('rotate-cw', 'h-2.5 w-2.5')}{selTask ? '重跑' : '启动'}</Button>}
               <Button variant="ghost" className="h-6 gap-1 px-2 text-sm" onClick={() => act('clear', selected)} disabled={!selLines.length}>{icon('eraser', 'h-2.5 w-2.5')}清屏</Button>
               <span className="text-muted-foreground font-mono ml-1">{selLines.length >= MAX_LOG_LINES ? `${MAX_LOG_LINES}+ 行` : `${selLines.length} 行`}</span>
             </span>
           </div>
+          {paramPanel(selected)}
           <div className="flex-none flex items-center gap-2 px-3.5 py-1.5 border-b bg-background">
             <input
               value={queryInput}

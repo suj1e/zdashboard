@@ -26,8 +26,11 @@ vi.mock('node:child_process', async () => {
   }
   const cp = {
     spawn: vi.fn(() => makeChild(++pidSeq)),
-    execFile: vi.fn((_f: string, _a: string[], _o: unknown, cb?: (err: unknown, stdout: string) => void) => {
-      if (cb) cb(null, 'Available recipes:\nbuild  # build all\n');
+    execFile: vi.fn((_f: string, args: string[], _o: unknown, cb?: (err: unknown, stdout: string) => void) => {
+      if (cb) {
+        if (args[0] === '--show') cb(null, 'build  # build all\n');
+        else cb(null, 'Available recipes:\nbuild  # build all\n');
+      }
       return { killed: false };
     }),
   };
@@ -87,7 +90,7 @@ describe('just 插件 — 路由鉴权(guardedRoute)', () => {
     expect(list.some((t) => t.recipe === 'build' && t.state === 'running')).toBe(true);
   });
 
-  it('start 未声明 recipe → 400;read 路由无需 token', async () => {
+  it('start 未声明 recipe → 400;read 路由无需 token;recipes 携带参数清单', async () => {
     const { routes } = await setupPlugin();
     const res = createRes();
     routes.get('/__just/start')!(reqWithBody({}, { 'x-stop-token': 'tok-123' }), res as never);
@@ -97,7 +100,20 @@ describe('just 插件 — 路由鉴权(guardedRoute)', () => {
     const res2 = createRes();
     await routes.get('/__just/recipes')!({ headers: {} } as never, res2 as never);
     expect(res2.statusCode).toBe(200);
-    expect(JSON.parse(String(res2.body))).toEqual([{ name: 'build', description: 'build all' }]);
+    // T5 契约升级:每项带 params(客户端兼容无 params 的旧形状)
+    expect(JSON.parse(String(res2.body))).toEqual([{ name: 'build', description: 'build all', params: [] }]);
+  });
+
+  it('start 接受可选 args → spawn argv 追加 k=v;非 string 值剔除', async () => {
+    const { routes } = await setupPlugin();
+    const res = createRes();
+    routes.get('/__just/start')!(reqWithBody({ recipe: 'build', args: { msg: 'hello world', n: 42 } }, { 'x-stop-token': 'tok-123' }), res as never);
+    await flush();
+    expect(res.statusCode).toBe(200);
+    const { spawn } = await import('node:child_process');
+    const calls = vi.mocked(spawn).mock.calls.filter(c => c[0] === 'just' && (c[1] as string[])?.[0] === 'build');
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.at(-1)![1]).toEqual(['build', 'msg=hello world']);
   });
 });
 

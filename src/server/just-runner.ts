@@ -1,7 +1,9 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import iconv from 'iconv-lite';
+import { parseRecipeSignature, buildJustArgv } from './just-recipe-params.js';
 
 export interface Recipe { name: string; description: string; }
+export interface RecipeWithParams extends Recipe { params: string[] }
 export type TaskStatus = 'running' | 'exited';
 export interface TaskInfo { recipe: string; state: TaskStatus; code: number | null; startedAt: number; signal?: string }
 
@@ -43,6 +45,8 @@ export class JustRunner {
   private tasks = new Map<string, Task>();
   private clients = new Set<(ev: JustEvent) => void>();
   private recipesCache: Recipe[] | null = null;
+  /** recipe 参数清单进程内缓存(含失败空数组),避免反复 just --show 探测 */
+  private paramsCache = new Map<string, string[]>();
 
   constructor(cwd: string) { this.cwd = cwd; }
 
@@ -70,6 +74,26 @@ export class JustRunner {
     });
   }
 
+  /** 懒解析单 recipe 参数:just --show 首行签名 → 参数名;失败记空数组并缓存 */
+  recipeParams(name: string): Promise<string[]> {
+    const hit = this.paramsCache.get(name);
+    if (hit) return Promise.resolve(hit);
+    return new Promise((resolve) => {
+      execFile('just', ['--show', name], { cwd: this.cwd, maxBuffer: 1 << 20, timeout: 8000 }, (err, stdout) => {
+        const sig = err ? null : parseRecipeSignature((stdout.split(/\r?\n/).find(l => l.trim()) ?? ''));
+        const params = sig?.params ?? [];
+        this.paramsCache.set(name, params);
+        resolve(params);
+      });
+    });
+  }
+
+  /** recipes 列表附参数清单(参数探测逐 recipe 并发,进程内缓存后零开销) */
+  async recipesWithParams(): Promise<RecipeWithParams[]> {
+    const list = await this.recipes();
+    return Promise.all(list.map(async (r) => ({ ...r, params: await this.recipeParams(r.name) })));
+  }
+
   subscribe(fn: (ev: JustEvent) => void): () => void {
     this.clients.add(fn);
     // 连上即重放:全部任务的日志与状态
@@ -86,16 +110,16 @@ export class JustRunner {
     return Array.from(this.tasks.values(), (t) => ({ recipe: t.recipe, state: t.state, code: t.code, startedAt: t.startedAt }));
   }
 
-  /** 启动 recipe:同名先停旧进程(重启语义),不影响其他任务;调用方须先用 recipes() 校验名字 */
-  start(recipe: string) {
+  /** 启动 recipe:同名先停旧进程(重启语义),不影响其他任务;调用方须先用 recipes() 校验名字;
+   *  args 为可选参数表,spawn 数组 argv 追加 k=v(不经 shell,特殊字符安全) */
+  start(recipe: string, args?: Record<string, string>) {
     this.killOne(recipe);
     const task: Task = { recipe, child: null, state: 'running', code: null, startedAt: Date.now(), buffer: [], pending: Buffer.alloc(0) };
     this.tasks.set(recipe, task);
     this.emit({ type: 'clear', recipe }); // 广播清屏:同步清掉该任务上一轮残留日志
     this.emit({ type: 'state', recipe, state: 'running', code: null, startedAt: task.startedAt });
-    const child = spawn('just', [recipe], {
+    const child = spawn('just', buildJustArgv(recipe, args), {
       cwd: this.cwd,
-      shell: true,
       env: {
         ...process.env,
         FORCE_COLOR: '1', // node 生态(chalk 等)
