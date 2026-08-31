@@ -1,12 +1,11 @@
 /**
- * just-log-ux T1 纯函数单测:滚动锚定判定 / 回底未读计数 / 日志级别识别 / 搜索高亮切分。
+ * just-log-ux T1 纯函数单测:滚动锚定判定 / 日志级别识别 / 搜索高亮切分。
  * 纯函数,无 DOM 依赖;锚定阈值默认 40px(距底 <40px 视为在底部)。
  */
 import { describe, it, expect } from 'vitest';
 import {
   AT_BOTTOM_THRESHOLD_PX,
   isAtBottom,
-  newLinesCount,
   levelOf,
   levelClass,
   splitHighlight,
@@ -36,20 +35,6 @@ describe('isAtBottom — 滚动锚定判定(距底 <40px 才自动跟随)', () =
   it('自定义阈值生效', () => {
     expect(isAtBottom(1000, 750, 200, 100)).toBe(true); // 距底 50 < 100
     expect(isAtBottom(1000, 700, 200, 100)).toBe(false); // 距底 100 不含
-  });
-});
-
-describe('newLinesCount — 回底按钮未读行数计数(负值归零)', () => {
-  it('新增行数 = 总数 - 已见数', () => {
-    expect(newLinesCount(1010, 1000)).toBe(10);
-  });
-
-  it('窗口滑动截断后总数可能变小 → 不出负数', () => {
-    expect(newLinesCount(1000, 1005)).toBe(0);
-  });
-
-  it('无新增 → 0', () => {
-    expect(newLinesCount(500, 500)).toBe(0);
   });
 });
 

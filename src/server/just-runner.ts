@@ -157,16 +157,23 @@ export class JustRunner {
     });
   }
 
-  /** 行推送:行内 \r 再切分为多段独立行(进度条输出降级为分段渲染;CRLF 尾 \r、连续 \r 空段丢弃) */
+  /** 行推送:行内 \r 再切分为多段独立行(进度条输出降级为分段渲染);
+   *  \r 空段丢弃,但整行全空仍推送一条空行(空行是日志内容,不静默丢弃) */
   private pushLine(task: Task, line: string) {
     const body = line.endsWith('\n') ? line.slice(0, -1) : line;
-    for (const seg of body.split('\r')) {
-      if (!seg) continue;
-      const text = seg + '\n';
-      task.buffer.push(text);
-      if (task.buffer.length > MAX_BUFFER) task.buffer.shift();
-      this.emit({ type: 'log', recipe: task.recipe, text });
+    const segs = body.split('\r').filter(Boolean);
+    if (segs.length === 0) {
+      this.pushSegment(task, '');
+      return;
     }
+    for (const seg of segs) this.pushSegment(task, seg);
+  }
+
+  private pushSegment(task: Task, seg: string) {
+    const text = seg + '\n';
+    task.buffer.push(text);
+    if (task.buffer.length > MAX_BUFFER) task.buffer.shift();
+    this.emit({ type: 'log', recipe: task.recipe, text });
   }
 
   /** 停单个任务;不传 recipe 停全部 */

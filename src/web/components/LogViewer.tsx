@@ -120,7 +120,6 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const seqRef = useRef(0);
   const flushScheduledRef = useRef(false);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flushRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const flush = () => {
@@ -151,7 +150,6 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
         setUnread(unreadRef.current);
       }
     };
-    flushRef.current = flush;
     const done = () => {
       if (!flushScheduledRef.current) return; // 另一路(帧/兜底)已触发
       flushScheduledRef.current = false;
@@ -207,18 +205,17 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 自动跟随:仅在底部时拽底;切换任务强制回底并清未读
+  // 自动跟随:消费追加前已记录的 atBottomRef(flush/onScroll 在几何变化前写入),
+  // 不在 commit 后重新量几何——多行合批会把距底瞬时拉大 ≥ 阈值,重量必然误判;切换任务强制回底并清未读
   const prevSelectedRef = useRef(selected);
   useEffect(() => {
     const el = scrollRef.current;
     const switched = prevSelectedRef.current !== selected;
     prevSelectedRef.current = selected;
     if (!el) return;
-    const at = isAtBottom(el.scrollHeight, el.scrollTop, el.clientHeight);
-    atBottomRef.current = at;
-    if (at || switched) {
-      el.scrollTop = el.scrollHeight;
-      atBottomRef.current = true;
+    if (atBottomRef.current || switched) {
+      atBottomRef.current = true; // 强制回底后视作在底
+      el.scrollTop = el.scrollHeight - el.clientHeight; // 合法底(scrollHeight 依赖浏览器 clamp,jsdom 不 clamp)
       if (unreadRef.current !== 0) { unreadRef.current = 0; setUnread(0); }
     }
   }, [selLines.length, selected]);
@@ -234,7 +231,7 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const jumpToBottom = () => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    el.scrollTop = el.scrollHeight - el.clientHeight; // 合法底(scrollHeight 依赖浏览器 clamp,jsdom 不 clamp)
     atBottomRef.current = true;
     unreadRef.current = 0;
     setUnread(0);

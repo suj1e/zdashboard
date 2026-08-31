@@ -113,6 +113,17 @@ describe('JustRunner — 多任务并发与日志按 taskId 隔离', () => {
     expect(logs.map((e) => e.text)).toEqual(['start\n', 'next\n']);
   });
 
+  it('S1 空行照常推送,不静默丢弃(纯 \\r 空行合并为一条空行)', () => {
+    const runner = new JustRunner('/tmp/project');
+    const events: JustEvent[] = [];
+    runner.subscribe((ev) => events.push(ev));
+    runner.start('a');
+    childAt(0).stdout.emit('data', Buffer.from('line\n\nend\n'));
+    childAt(0).stdout.emit('data', Buffer.from('\r\n'));
+    const logs = events.filter((e) => e.type === 'log') as Extract<JustEvent, { type: 'log' }>[];
+    expect(logs.map((e) => e.text)).toEqual(['line\n', '\n', 'end\n', '\n']);
+  });
+
   it('重连重放:clear(a) 只清 a 的缓冲,b 日志保留', () => {
     const runner = new JustRunner('/tmp/project');
     const events: JustEvent[] = [];

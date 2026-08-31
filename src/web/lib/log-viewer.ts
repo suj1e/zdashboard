@@ -14,11 +14,6 @@ export function isAtBottom(scrollHeight: number, scrollTop: number, clientHeight
   return scrollHeight - scrollTop - clientHeight < threshold;
 }
 
-/** 回底按钮未读行数:新增总数 - 已见总数;窗口滑动截断导致变小时归零 */
-export function newLinesCount(total: number, lastSeen: number): number {
-  return Math.max(0, total - lastSeen);
-}
-
 export type LogLevel = 'error' | 'warn' | 'info' | 'success' | 'plain';
 
 /** 行首级别词识别(INFO/DOWNLOAD/PROGRESS 视为成功绿,DEBUG 视为信息蓝) */

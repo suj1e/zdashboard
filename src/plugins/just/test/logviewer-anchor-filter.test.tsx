@@ -32,10 +32,13 @@ function emitLog(es: FakeES, text: string) {
   es.onmessage?.({ data: JSON.stringify({ type: 'log', recipe: 'dev-server', text }) });
 }
 
-/** jsdom 无布局:滚动容器的 scrollHeight/clientHeight 手工钉值,scrollTop 可写 */
-function mockScrollBox(el: HTMLElement, scrollHeight: number, clientHeight: number) {
-  Object.defineProperty(el, 'scrollHeight', { value: scrollHeight, configurable: true });
+/** jsdom 无布局:scrollHeight 按已提交行数动态增长(每行 20px),重现「追加后几何增长」这一关键转移 */
+function mockScrollBoxDynamic(el: HTMLElement, clientHeight = 200, lineHeight = 20) {
   Object.defineProperty(el, 'clientHeight', { value: clientHeight, configurable: true });
+  Object.defineProperty(el, 'scrollHeight', {
+    configurable: true,
+    get: () => el.querySelectorAll('[data-testid="log-scroll"] > div').length * lineHeight,
+  });
 }
 
 const scrollBox = () => document.querySelector<HTMLElement>('[data-testid="log-scroll"]')!;
@@ -67,53 +70,52 @@ async function mountWithRunningTask() {
 }
 
 describe('LogViewer 滚动锚定与回底', () => {
-  it('在底部时新输出自动跟随(scrollTop 拽到 scrollHeight)', async () => {
+  it('B1:在底部 → 合批追加 2 行(几何 +40px)→ 仍自动跟随拽到新 scrollHeight', async () => {
     const es = await mountWithRunningTask();
     const el = scrollBox();
-    mockScrollBox(el, 1000, 200);
-    el.scrollTop = 800; // 距底 0 → 在底部
-    act(() => { emitLog(es, 'follow-1\n'); emitLog(es, 'follow-2\n'); });
+    mockScrollBoxDynamic(el);
+    act(() => { for (let i = 0; i < 20; i++) emitLog(es, `pad ${i}\n`); }); // 内容超出视口(400px > 200px),距底才有意义
     await nextFrame();
-    expect(el.scrollTop).toBe(1000); // 旧实现无条件拽底同样通过;真正的行为差异在下两个用例
-    expect(screen.getByText('follow-2')).toBeInTheDocument();
+    el.scrollTop = el.scrollHeight - el.clientHeight; // 在底(距底 0;jsdom 的 scrollTop 不 clamp,须用合法最大值)
+    act(() => { emitLog(es, 'batch-1\n'); emitLog(es, 'batch-2\n'); }); // 本批 2 行 ≈ 40px
+    await nextFrame();
+    // 旧实现:commit 后重新量几何,距底被本批拉大到 40 → 判不在底 → 不拽底 → 红
+    expect(el.scrollTop).toBe(el.scrollHeight - el.clientHeight);
   });
 
-  it('上翻离开底部:新输出不拽底,出现「↓ 3 行新输出」', async () => {
+  it('B1:不在底部 → 追加 3 行 → 不拽底且未读计数 +3', async () => {
     const es = await mountWithRunningTask();
     const el = scrollBox();
-    mockScrollBox(el, 1000, 200);
-    el.scrollTop = 800;
-    act(() => { emitLog(es, 'first\n'); });
+    mockScrollBoxDynamic(el);
+    act(() => { for (let i = 0; i < 20; i++) emitLog(es, `pad ${i}\n`); }); // 垫高滚动空间
     await nextFrame();
-
-    el.scrollTop = 100; // 距底 900 → 离开底部
+    el.scrollTop = el.scrollHeight - el.clientHeight - 100; // 距底 100(> 40)→ 离开底部
     fireEvent.scroll(el);
+    const stayedAt = el.scrollTop;
     act(() => { emitLog(es, 'away-1\n'); emitLog(es, 'away-2\n'); emitLog(es, 'away-3\n'); });
     await nextFrame();
-    expect(el.scrollTop).toBe(100); // 无条件拽底旧实现 → 红
-    expect(screen.getByRole('button', { name: '↓ 3 行新输出' })).toBeInTheDocument(); // 未读计数精确 3
+    expect(el.scrollTop).toBe(stayedAt); // 不拽底
+    expect(screen.getByRole('button', { name: '↓ 3 行新输出' })).toBeInTheDocument(); // unread 精确 +3
   });
 
-  it('点击回底按钮:滚回底部、计数清零按钮消失,后续新输出恢复跟随', async () => {
+  it('回底按钮:点击回底清零按钮消失;此后多行合批追加恢复跟随', async () => {
     const es = await mountWithRunningTask();
     const el = scrollBox();
-    mockScrollBox(el, 1000, 200);
-    el.scrollTop = 800;
-    act(() => { emitLog(es, 'first\n'); });
+    mockScrollBoxDynamic(el);
+    act(() => { for (let i = 0; i < 20; i++) emitLog(es, `pad ${i}\n`); });
     await nextFrame();
-
-    el.scrollTop = 100;
+    el.scrollTop = el.scrollHeight - el.clientHeight - 100; // 距底 100(> 40)→ 离开底部
     fireEvent.scroll(el);
     act(() => { emitLog(es, 'a\n'); emitLog(es, 'b\n'); });
     await nextFrame();
     const jump = screen.getByRole('button', { name: '↓ 2 行新输出' });
     fireEvent.click(jump);
-    expect(el.scrollTop).toBe(1000);
-    expect(screen.queryByRole('button', { name: /行新输出/ })).toBeNull(); // 回底清零
+    expect(el.scrollTop).toBe(el.scrollHeight - el.clientHeight); // 回底
+    expect(screen.queryByRole('button', { name: /行新输出/ })).toBeNull(); // 清零
 
-    act(() => { emitLog(es, 'c\n'); }); // 已回底 → 恢复自动跟随
+    act(() => { emitLog(es, 'c\n'); emitLog(es, 'd\n'); }); // 手动回底后多行合批 → 必须恢复跟随
     await nextFrame();
-    expect(el.scrollTop).toBe(1000);
+    expect(el.scrollTop).toBe(el.scrollHeight - el.clientHeight); // 旧实现重量几何:本批 40px → 再判不在底 → 红
   });
 });
 
