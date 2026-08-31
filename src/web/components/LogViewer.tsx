@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { FilterPills, type FilterItem } from './FilterPills.js';
 import { toast } from 'sonner';
@@ -6,7 +6,7 @@ import { intervalToDuration } from 'date-fns';
 import { useIcons } from '../lib/icons.js';
 import { usePluginData } from '../hooks/usePluginData.js';
 import { fetchJson } from '../lib/fetchJson.js';
-import { MAX_LOG_LINES } from '../lib/log-viewer.js';
+import { isAtBottom, levelClass, MAX_LOG_LINES } from '../lib/log-viewer.js';
 import { LogLine, type LogLineData } from './log-lines.js';
 import { EmptyState, ErrorState, Skeleton } from '../kit/index.js';
 
@@ -24,14 +24,14 @@ interface LogViewerProps {
   onSelect?: (recipe: string | null) => void;
 }
 
-/** 无 ANSI 色码的行按日志级别着色(maven/构建工具在非 tty 下不输出颜色,前端补齐) */
-function levelClass(t: string) {
-  if (/^\[(ERROR|FATAL)\]/.test(t) || /^ERROR\b/.test(t)) return 'text-destructive';
-  if (/^\[(WARN|WARNING)\]/.test(t) || /^WARN(ING)?\b/.test(t)) return 'text-warning';
-  if (/^\[DEBUG\]/.test(t) || /^DEBUG\b/.test(t)) return 'text-info';
-  if (/^\[(INFO|DOWNLOAD|PROGRESS)\]/.test(t) || /^INFO\b/.test(t)) return 'text-success';
-  return 'text-terminal-fg';
-}
+/** 级别过滤 pill:key 与 levelClass 输出对齐(识别单源),all 表示不过滤 */
+const LEVEL_FILTERS = [
+  { key: 'all', label: '全部' },
+  { key: 'text-info', label: '信息' },
+  { key: 'text-warning', label: '警告' },
+  { key: 'text-destructive', label: '错误' },
+  { key: 'text-success', label: '成功' },
+];
 
 function fmtElapsed(ms: number) {
   const d = intervalToDuration({ start: 0, end: ms });
@@ -71,6 +71,13 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
   const selLines = selected ? logs[selected] ?? [] : [];
   const { icon } = useIcons();
 
+  // ── 滚动锚定:atBottom(距底 <40px)才自动跟随;离开底部累计未读行数,回底清零 ──
+  const atBottomRef = useRef(true);
+  const unreadRef = useRef(0);
+  const [unread, setUnread] = useState(0);
+  const selectedRef = useRef(selected);
+  useEffect(() => { selectedRef.current = selected; });
+
   // ── 渲染合批:log 事件进 pending,rAF(降级 50ms timer)一帧一落;seq 单调递增随行存入 ──
   const pendingRef = useRef(new Map<string, string[]>());
   const seqRef = useRef(0);
@@ -96,21 +103,31 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
         }
         return next;
       });
+      // 未读计数:仅当前选中任务的新增行;在底部则跟随并保持零
+      const sel = selectedRef.current;
+      const n = sel ? appended.get(sel)?.length ?? 0 : 0;
+      if (n > 0) {
+        const el = scrollRef.current;
+        const at = !el || isAtBottom(el.scrollHeight, el.scrollTop, el.clientHeight);
+        if (at) atBottomRef.current = true;
+        else unreadRef.current += n;
+        setUnread(unreadRef.current);
+      }
     };
     flushRef.current = flush;
+    const done = () => {
+      if (!flushScheduledRef.current) return; // 另一路(帧/兜底)已触发
+      flushScheduledRef.current = false;
+      if (fallbackTimerRef.current !== null) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null; }
+      flush();
+    };
     const schedule = () => {
       if (flushScheduledRef.current) return;
       flushScheduledRef.current = true;
-      if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => {
-          if (fallbackTimerRef.current !== null) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null; }
-          flush();
-        });
-      } else {
-        fallbackTimerRef.current = setTimeout(() => { fallbackTimerRef.current = null; flush(); }, 50);
-      }
+      // rAF 随帧落地;50ms timer 并行兜底(后台 tab rAF 暂停时输出仍会落地),先到先得
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(done);
+      fallbackTimerRef.current = setTimeout(done, 50);
     };
-    tokenRef.current = '';
     fetch('/__config').then(r => r.json()).then(c => { tokenRef.current = c.stopToken ?? ''; }).catch(() => {});
     const es = new EventSource('/__just/logs');
     let firstOpen = true;
@@ -151,9 +168,56 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 自动跟随:仅在底部时拽底;切换任务强制回底并清未读
+  const prevSelectedRef = useRef(selected);
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    const switched = prevSelectedRef.current !== selected;
+    prevSelectedRef.current = selected;
+    if (!el) return;
+    const at = isAtBottom(el.scrollHeight, el.scrollTop, el.clientHeight);
+    atBottomRef.current = at;
+    if (at || switched) {
+      el.scrollTop = el.scrollHeight;
+      atBottomRef.current = true;
+      if (unreadRef.current !== 0) { unreadRef.current = 0; setUnread(0); }
+    }
   }, [selLines.length, selected]);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const at = isAtBottom(el.scrollHeight, el.scrollTop, el.clientHeight);
+    atBottomRef.current = at;
+    if (at && unreadRef.current !== 0) { unreadRef.current = 0; setUnread(0); }
+  };
+
+  const jumpToBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+    atBottomRef.current = true;
+    unreadRef.current = 0;
+    setUnread(0);
+  };
+
+  // ── 搜索(防抖 150ms)与级别过滤:渲染层派生,不改存储 ──
+  const [queryInput, setQueryInput] = useState('');
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(queryInput), 150);
+    return () => clearTimeout(t);
+  }, [queryInput]);
+  const [levelFilter, setLevelFilter] = useState('all');
+  const visibleLines = useMemo(() => {
+    let ls = selLines;
+    if (levelFilter !== 'all') ls = ls.filter(l => levelClass(l.text.replace(/\r?\n$/, '')) === levelFilter);
+    if (query) {
+      const q = query.toLowerCase();
+      ls = ls.filter(l => l.text.toLowerCase().includes(q));
+    }
+    return ls;
+  }, [selLines, levelFilter, query]);
 
   const act = (action: 'start' | 'stop' | 'clear', recipe: string) => {
     fetch(`/__just/${action}`, {
@@ -270,7 +334,7 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
           )}
         </div>
       ) : (
-        /* 单任务视图:状态头 + 完整日志流 */
+        /* 单任务视图:状态头 + 工具行(搜索/级别) + 完整日志流 */
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex-none flex items-center gap-2 px-3.5 h-8 border-b bg-background text-sm">
             <span className={`h-1.5 w-1.5 rounded-[var(--radius-full)] ${selRunning ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
@@ -288,9 +352,39 @@ export function LogViewer({ selected: selectedProp, onSelect }: LogViewerProps) 
               <span className="text-muted-foreground font-mono ml-1">{selLines.length} 行</span>
             </span>
           </div>
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto bg-terminal-bg p-3.5 font-mono text-xs leading-relaxed text-terminal-fg">
-            {selLines.length === 0 && <p className="text-terminal-fg/50">$ just {selected} · 等待输出…</p>}
-            {selLines.map(l => <LogLine key={l.seq} line={l} />)}
+          <div className="flex-none flex items-center gap-2 px-3.5 py-1.5 border-b bg-background">
+            <input
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
+              placeholder="搜索日志…"
+              aria-label="搜索日志"
+              className="h-6 w-40 rounded-[var(--radius-md)] border bg-transparent px-2 text-xs font-mono outline-none placeholder:text-muted-foreground/50 focus:border-muted-foreground/50"
+            />
+            <FilterPills items={LEVEL_FILTERS} value={levelFilter} onChange={setLevelFilter} ariaLabel="日志级别" />
+          </div>
+          <div className="relative flex-1 min-h-0">
+            <div
+              ref={scrollRef}
+              data-testid="log-scroll"
+              onScroll={onScroll}
+              className="h-full overflow-auto bg-terminal-bg p-3.5 font-mono text-xs leading-relaxed text-terminal-fg"
+            >
+              {visibleLines.length === 0 && (
+                <p className="text-terminal-fg/50">
+                  {selLines.length === 0 ? `$ just ${selected} · 等待输出…` : '无匹配行'}
+                </p>
+              )}
+              {visibleLines.map(l => <LogLine key={l.seq} line={l} query={query} />)}
+            </div>
+            {unread > 0 && (
+              <button
+                type="button"
+                onClick={jumpToBottom}
+                className="absolute bottom-3 right-4 inline-flex items-center gap-1 h-7 px-3 rounded-[var(--radius-full)] border border-success/40 bg-success/10 text-success text-xs shadow-sm hover:bg-success/20 transition-colors"
+              >
+                ↓ {unread} 行新输出
+              </button>
+            )}
           </div>
         </div>
       )}

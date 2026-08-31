@@ -4,7 +4,7 @@
   - 验收:单测先红后绿
 - [x] 2. LogViewer 渲染合批(rAF/50ms + memo + seq key)+ elapsed 局部化
   - 验收:组件测试:FakeES 连发 10 事件仅 1 次追加渲染;旧行不重渲
-- [ ] 3. 滚动锚定 + 「↓ N 行新输出」回底按钮;日志搜索高亮 + 级别 FilterPills
+- [x] 3. 滚动锚定 + 「↓ N 行新输出」回底按钮;日志搜索高亮 + 级别 FilterPills
   - 验收:组件测试:上翻不拽底、回底恢复、过滤/高亮生效
 - [ ] 4. 启停反馈:res.ok 检查 + toast + 按钮 pending 禁用;行数截断显示「1000+ 行」
   - 验收:组件测试:非 2xx toast、pending 至 state 事件
