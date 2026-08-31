@@ -1,8 +1,8 @@
 import type { Context } from 'cordis';
 import { scanTree } from '../server/spec-scan.js';
 
-/** 生态约定:项目根/worktree 根下的固定扫描目录,非用户可配;.zdev/* 为点前缀目录,经 dotDirs 显式放行 */
-const CONVENTION_SCAN_DIRS = ['openspec', 'docs', '.zdev/apply', '.zdev/verify'] as const;
+/** 生态约定:项目根/worktree 根下的固定扫描目录,非用户可配;.zdev/apply 为点前缀目录,经 dotDirs 显式放行 */
+const CONVENTION_SCAN_DIRS = ['openspec', 'docs', '.zdev/apply'] as const;
 /** 点前缀扫描目录子集:scanTree 须声明才可扫(walkDir 点前缀最小例外) */
 const CONVENTION_DOT_DIRS = CONVENTION_SCAN_DIRS.filter((d) => d.startsWith('.'));
 
