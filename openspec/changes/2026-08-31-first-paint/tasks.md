@@ -1,6 +1,6 @@
 # 任务:首屏优化
 
-- [ ] 1. icons.tsx 具名导入改造:按 ICON_MAP 清单具名 import,渲染索引改组件常量查表,dev 缺漏断言
+- [x] 1. icons.tsx 具名导入改造:按 ICON_MAP 清单具名 import,渲染索引改组件常量查表,dev 缺漏断言
   - 验收:ICON_MAP 渲染冒烟单测全绿;typecheck 0 error
 - [ ] 2. vite manualChunks 拆 vendor;构建体积对比记录(改前 1.45MB → 目标 <700KB)
   - 验收:构建产物体积达标并记录在交付报告
