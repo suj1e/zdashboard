@@ -31,6 +31,13 @@ export default function App() {
   const stoppedRef = useRef(false);
   const [detect, setDetect] = useState<Detects>({ hasOpenspec: false, hasDocs: false, hasJust: false });
 
+  // pluginsReady 锁存:usePlugins 首次返回非空即置真且不再回退,
+  // 未 ready 时首页渲染全页骨架(深链接/首载不闪现空 HomeGrid)
+  const [pluginsReady, setPluginsReady] = useState(false);
+  useEffect(() => {
+    if (plugins.length > 0) setPluginsReady(true);
+  }, [plugins.length]);
+
   // SSE 'reload' 仅代表服务端文件变更;'files' 事件已驱动各订阅方增量刷新,
   // 整页 location.reload 会打断交互并引发全屏闪烁,故 no-op(消除闪烁)
   const status = useSSE(
@@ -99,8 +106,11 @@ export default function App() {
                   </Suspense>
                 </PluginPageShell>
               )
-            ) : (
+            ) : pluginsReady ? (
               <HomeGrid plugins={plugins} detect={detect} onSelect={handleSelect} />
+            ) : (
+              // 注册表未就绪:全页骨架替代 HomeGrid,消除深链接/首载的空首页闪现
+              <Skeleton rows={6} />
             )}
           </div>
         </section>

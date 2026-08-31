@@ -1,6 +1,6 @@
 # 任务:UX 中优批次
 
-- [ ] 1. App `pluginsReady` 首载骨架 + HomeGrid 卡片骨架(深链接无首页闪现)
+- [x] 1. App `pluginsReady` 首载骨架 + HomeGrid 卡片骨架(深链接无首页闪现)
   - 验收:组件测试:plugins 空时渲染骨架而非 HomeGrid
 - [ ] 2. 断线单源统一(同文案「重连中」+ warning 点 + lost chip 点击强刷)
   - 验收:组件测试:lost 态文案/点击行为

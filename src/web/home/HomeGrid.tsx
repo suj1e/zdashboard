@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import type { WebPlugin } from '../lib/plugins';
 import { useModeIcon } from '../lib/icons.js';
+import { Skeleton } from '../kit/index.js';
 
 /** 卡片所需的最小结构(props 面收窄) */
 export type HomeCardItem = Pick<WebPlugin, 'mode' | 'label' | 'icon'> & Partial<Pick<WebPlugin, 'description' | 'external'>>;
@@ -20,9 +21,12 @@ export function HomeGrid({ plugins, detect, onSelect }: {
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {plugins.map((p) => (
-          <GridCard key={p.mode} plugin={p} onSelect={onSelect} />
-        ))}
+        {plugins.length > 0 ? (
+          plugins.map((p) => <GridCard key={p.mode} plugin={p} onSelect={onSelect} />)
+        ) : (
+          // 注册表未就绪:3 张骨架卡片占位,避免空网格
+          Array.from({ length: 3 }, (_, i) => <HomeCardSkeleton key={i} />)
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         <span className="mr-1">探测</span>
@@ -32,6 +36,23 @@ export function HomeGrid({ plugins, detect, onSelect }: {
             {d.label}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** 卡片骨架:与 GridCard 同构(图标位 + 标题/描述两行),仅供未就绪占位 */
+function HomeCardSkeleton() {
+  return (
+    <div className="rounded-[var(--radius-xl)] border bg-card shadow-sm" aria-hidden data-slot="home-card-skeleton">
+      <div className="flex flex-col space-y-1.5 p-6">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-9 w-9 shrink-0" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="w-1/2" />
+            <Skeleton className="w-3/4" />
+          </div>
+        </div>
       </div>
     </div>
   );
