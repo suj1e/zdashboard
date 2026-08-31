@@ -39,3 +39,9 @@ export async function fetchText(url: string, init?: RequestInit): Promise<string
   const res = await guard(url, init);
   return res.text();
 }
+
+/** viewer 文案:404 →「文件不存在」;其余错误沿用 HttpError message(body error 字段/HTTP status),404 与失败分开表述 */
+export function viewerFetchErrorMessage(e: unknown): string {
+  if (e instanceof HttpError) return e.status === 404 ? '文件不存在' : e.message;
+  return '加载失败: 网络异常';
+}

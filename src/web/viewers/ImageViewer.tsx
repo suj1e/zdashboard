@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { ErrorState } from '../kit/index.js';
 
 /** resolve:可选整 URL 解析器(不传 = 根路径直取,view 插件语义);design 插件传代理路由解析 */
 export function ImageViewer({ path, resolve }: { path: string; resolve?: (p: string) => string }) {
   const [dim, setDim] = useState('-');
   const [zoom, setZoom] = useState(1);
   const [err, setErr] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const name = path.split('/').pop();
   const chess: React.CSSProperties = {
     backgroundImage:
@@ -26,9 +28,13 @@ export function ImageViewer({ path, resolve }: { path: string; resolve?: (p: str
       </div>
       <div className="flex-1 min-h-0 overflow-auto grid place-items-center p-6" style={chess}>
         {err ? (
-          <p className="text-muted-foreground">该格式无法预览</p>
+          <ErrorState
+            message="图片加载失败"
+            onRetry={() => { setErr(false); setReloadTick(t => t + 1); }}
+          />
         ) : (
           <img
+            key={reloadTick}
             src={resolve ? resolve(path) : '/' + encodeURI(path)}
             alt={name}
             style={{ transform: `scale(${zoom})` }}

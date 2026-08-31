@@ -22,7 +22,8 @@ const CSS_FIXTURE = `:root {
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    return { text: async () => (url.includes('tokens.css') ? CSS_FIXTURE : '') } as Response;
+    // fetchText 门卫消费端:mock 必须模拟真实 Response 的 ok/status
+    return { ok: true, status: 200, text: async () => (url.includes('tokens.css') ? CSS_FIXTURE : '') } as unknown as Response;
   }));
 });
 
@@ -70,7 +71,7 @@ describe('design viewer 资产 src 走 /__design/asset 代理', () => {
     const calls: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       calls.push(String(input));
-      return { text: async () => '', blob: async () => new Blob() } as unknown as Response;
+      return { ok: true, status: 200, text: async () => '', blob: async () => new Blob() } as unknown as Response;
     }));
     render(<FontViewer path="fonts/app.woff2" />);
     render(<TokenViewer path="tokens.css" />);
@@ -90,7 +91,7 @@ describe('design 共享查看器经 resolve 走代理(icon/md/component,B1)', ()
     const calls: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       calls.push(String(input));
-      return { text: async () => '# hi' } as unknown as Response;
+      return { ok: true, status: 200, text: async () => '# hi' } as unknown as Response;
     }));
     render(<MdViewer path="docs/readme.md" />);
     await waitFor(() => expect(calls).toContain(viaProxy('docs/readme.md')));
@@ -118,7 +119,7 @@ describe('TokenViewer — CSS 变量解析分区', () => {
   });
 
   it('无 CSS 变量的文件显示提示', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({ text: async () => 'body { margin: 0 }' }) as Response));
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, text: async () => 'body { margin: 0 }' }) as unknown as Response));
     render(<TokenViewer path="plain.css" />);
     expect(await screen.findByText('未发现 CSS 变量')).toBeInTheDocument();
   });
