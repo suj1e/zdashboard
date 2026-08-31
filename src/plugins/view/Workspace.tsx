@@ -2,7 +2,7 @@
  * view 工作区:左预览右 OutlineNav,文件由 URL ?file= 驱动(深链接直达)。
  * 面包屑 PageHeader 携带 worktree/路径;空态走 kit EmptyState。
  */
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
@@ -34,6 +34,11 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
   const wt = params.get('wt');
   const contentRef = useRef<HTMLDivElement>(null);
   const Viewer = file ? viewerFor(file) : null;
+
+  // 切文件重置滚动位置;重置 scrollTop 而非 key 重挂 viewer(避免重复 fetch 闪屏)
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [file]);
 
   return (
     <PluginPage
