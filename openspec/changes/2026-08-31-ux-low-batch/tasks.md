@@ -8,7 +8,7 @@
   - 验收:组件测试:rerender 后保持
 - [x] 4. 复制失败反馈 + usePluginData 刷新轻 spinner;aria-expanded/日志 role=log/热区 24px
   - 验收:组件测试各点断言
-- [ ] 5. 文案基线(clean→干净)+ design 工具栏度量统一 + `\r` 分段 + logs 频道迁移评估落地
+- [x] 5. 文案基线(clean→干净)+ design 工具栏度量统一 + `\r` 分段 + logs 频道迁移评估落地
   - 验收:组件/单测各点;实施深度偏差在报告说明
 - [ ] 6. 回归 + 手验
   - 验收:`pnpm typecheck && pnpm test` 全绿(基线既有环境失败除外);🔧[人工] 手验 checklist 由用户执行

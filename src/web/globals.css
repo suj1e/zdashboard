@@ -44,7 +44,7 @@
     --icon-rail-w: 48px;
     --sidebar-w: 280px;
     --design-preview-h: 72px;
-    --design-toolbar-h: 38px;
+    --design-toolbar-h: 32px; /* 对齐 LogViewer 工具行 h-8(32px) */
     --design-input-w: 50px;
     --token-card-min-w: 150px;
 

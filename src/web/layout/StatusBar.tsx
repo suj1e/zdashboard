@@ -49,7 +49,7 @@ export function StatusBar({ projectPath }: { projectPath: string }) {
                 {git.branch}
                 {git.dirty
                   ? <span className="text-warning">● {git.dirty}</span>
-                  : <span className="text-success">clean</span>}
+                  : <span className="text-success">干净</span>}
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-mono text-xs">
