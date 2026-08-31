@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import TokenViewer from '../viewers/TokenViewer.js';
 import PageViewer from '../viewers/PageViewer.js';
-import { FontViewer } from '../viewers/misc.js';
+import { FontViewer, VideoViewer, AudioViewer, PdfViewer } from '../viewers/misc.js';
 
 /** jsdom 无 EventSource;emit 手工派发服务端 SSE 帧(payload 恒 '') */
 class FakeES {
@@ -59,6 +59,22 @@ describe('TokenViewer — files 订阅刷新(数据新鲜度 T3)', () => {
     fireEvent.click(screen.getByRole('button', { name: '刷新' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
+
+  it('重取失败保留旧分区,不闪错误页', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) return { ok: true, status: 200, text: async () => ':root { --kept: #000000; }' } as unknown as Response;
+      throw new Error('boom');
+    });
+    render(<TokenViewer path="tokens.css" />);
+    expect(await screen.findByText('--kept')).toBeInTheDocument();
+    const es = FakeES.instances.at(-1)!;
+    act(() => { es.emit('files', ''); });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    expect(screen.getByText('--kept')).toBeInTheDocument();
+    expect(screen.queryByText(/加载失败|网络异常/)).not.toBeInTheDocument();
+  });
 });
 
 describe('PageViewer — files 命中当前资产 iframe 时间戳强制重载(数据新鲜度 T3)', () => {
@@ -89,5 +105,22 @@ describe('FontViewer — files 订阅重取字体资产(数据新鲜度 T3)', ()
     act(() => { es.emit('files', ''); });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
     expect(String(fetchMock.mock.calls[1][0])).toContain('/__design/asset?path=');
+  });
+});
+
+describe('media/pdf — files 命中当前资产 src 加时间戳(数据新鲜度 T3)', () => {
+  it('初始 src 干净;files 事件后 video/audio/iframe 均加 &v= 强制重载', async () => {
+    const v = render(<VideoViewer path="demo/a.mp4" />);
+    const a = render(<AudioViewer path="demo/a.mp3" />);
+    const p = render(<PdfViewer path="docs/b.pdf" />);
+    expect(v.container.querySelector('video')!.getAttribute('src')).not.toContain('&v=');
+    expect(a.container.querySelector('audio')!.getAttribute('src')).not.toContain('&v=');
+    expect(p.container.querySelector('iframe')!.getAttribute('src')).not.toContain('&v=');
+
+    const es = FakeES.instances.at(-1)!;
+    act(() => { es.emit('files', ''); });
+    await waitFor(() => expect(v.container.querySelector('video')!.getAttribute('src')).toContain('&v='), { timeout: 3000 });
+    expect(a.container.querySelector('audio')!.getAttribute('src')).toContain('&v=');
+    expect(p.container.querySelector('iframe')!.getAttribute('src')).toContain('&v=');
   });
 });

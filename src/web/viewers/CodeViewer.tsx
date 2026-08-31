@@ -33,7 +33,8 @@ export function CodeViewer({ path, resolve }: { path: string; resolve?: (p: stri
     return () => { alive = false; };
   }, [path, resolve, version]);
 
-  if (err) {
+  // 仅「无内容且失败」才全屏 ErrorState;重取失败但有旧内容 → 保留旧内容(轻提示归后续)
+  if (err && text === null) {
     return (
       <div className="h-full flex flex-col p-4">
         <ErrorState message={err} onRetry={refresh} />

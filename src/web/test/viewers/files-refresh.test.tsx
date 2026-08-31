@@ -68,6 +68,38 @@ describe('MdViewer — files 订阅刷新(数据新鲜度 T3)', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(String(fetchMock.mock.calls[1][0])).toContain('/__file-content/docs/c.md');
   });
+
+  it('首次加载失败才走 ErrorState,重试可恢复;frontmatter 正常解析', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) throw new Error('first fail');
+      return { ok: true, status: 200, text: async () => '---\ntitle: x\n---\n# 恢复内容' } as unknown as Response;
+    });
+    render(<MdViewer path="docs/err.md" />);
+    expect(await screen.findByText(/加载失败|网络异常/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '重试' }));
+    expect(await screen.findByText('恢复内容')).toBeInTheDocument();
+    // frontmatter 分支:details 折叠块 + 正文剔除 frontmatter
+    expect(screen.getByText('YAML frontmatter')).toBeInTheDocument();
+  });
+
+  it('重取失败保留旧内容,不闪错误页(stale-while-revalidate)', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) return { ok: true, status: 200, text: async () => '# 旧内容保持' } as unknown as Response;
+      throw new Error('network down');
+    });
+    render(<MdViewer path="docs/stale.md" />);
+    expect(await screen.findByText('旧内容保持')).toBeInTheDocument();
+    const es = FakeES.instances.at(-1)!;
+    act(() => { es.emit('files', ''); });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    // 失败后旧内容仍在,不切 ErrorState
+    expect(screen.getByText('旧内容保持')).toBeInTheDocument();
+    expect(screen.queryByText(/加载失败|网络异常/)).not.toBeInTheDocument();
+  });
 });
 
 describe('CodeViewer — files 订阅刷新(数据新鲜度 T3)', () => {
@@ -82,5 +114,33 @@ describe('CodeViewer — files 订阅刷新(数据新鲜度 T3)', () => {
     fireEvent.click(screen.getByRole('button', { name: '刷新' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(String(fetchMock.mock.calls[2][0])).toContain('/__file-content/src/app.ts');
+  });
+
+  it('重取失败保留旧内容,不闪错误页;首次加载失败才走 ErrorState', async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) return { ok: true, status: 200, text: async () => 'const kept = 1' } as unknown as Response;
+      throw new Error('boom');
+    });
+    const { container } = render(<CodeViewer path="src/kept.ts" />);
+    // hljs 高亮会把文本切碎,以 code 节点整体 textContent 断言
+    const codeText = () => container.querySelector('code')?.textContent ?? '';
+    await waitFor(() => expect(codeText()).toContain('const kept = 1'));
+    const es = FakeES.instances.at(-1)!;
+    act(() => { es.emit('files', ''); });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    expect(codeText()).toContain('const kept = 1');
+    expect(screen.queryByText(/加载失败|网络异常/)).not.toBeInTheDocument();
+  });
+
+  it('复制按钮走剪贴板(工具栏回归)', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<CodeViewer path="src/app.ts" />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: '复制' }));
+    await waitFor(() => expect(screen.getByText('已复制')).toBeInTheDocument());
+    expect(writeText).toHaveBeenCalledWith('# hello');
   });
 });
