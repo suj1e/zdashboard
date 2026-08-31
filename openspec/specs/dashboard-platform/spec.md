@@ -5,7 +5,7 @@ TBD - created by archiving change 2026-08-21-cordis-rewrite. Update Purpose afte
 ## Requirements
 ### Requirement: cordis 插件运行时
 
-系统 SHALL 以 cordis@4.0.0-rc.8 作为插件运行时：core 服务（server/reload/tree/manifest）与业务插件（just/bugs/review/design/apply/view）全部为 cordis 插件，通过 `ctx.server.route()` / `ctx.server.sse()` 注册能力，注册自动 effect 化，插件卸载时逆序回收副作用。
+系统 SHALL 以 cordis@4.0.0-rc.8 作为插件运行时：core 服务（server/reload/tree/manifest）与业务插件（stats/view/design/just）全部为 cordis 插件，通过 `ctx.server.route()` / `ctx.server.sse()` 注册能力，注册自动 effect 化，插件卸载时逆序回收副作用。
 
 #### Scenario: 插件注册即回收
 
@@ -31,23 +31,9 @@ TBD - created by archiving change 2026-08-21-cordis-rewrite. Update Purpose afte
 - **WHEN** 默认端口 4190 被占用
 - **THEN** 服务自动尝试 4191 并照常启动，banner 打印实际端口
 
-### Requirement: 插件清单与前端发现
-
-前端 SHALL 支持插件间跨导航：`zd-dashboard-nav` 事件（detail `{ mode, filter?, wt? }`）由 Shell 监听并切换目标工作区，向目标插件透传焦点目标（过滤器/change）。内置与外部插件均可派发该事件实现下钻。
-
-#### Scenario: 跨插件聚焦导航
-
-- **WHEN** 任一工作区派发 `zd-dashboard-nav { mode:'apply', wt:'x' }`
-- **THEN** Shell 切换至 apply 工作区并聚焦 change x
-
-#### Scenario: 内置插件零注册
-
-- **WHEN** 开发者在 `src/plugins/<new>/` 添加 `index.ts`（后端）与 `web.tsx`（前端契约，含可选 Sidebar 槽）
-- **THEN** 无需修改 App.tsx 或任何 core 代码，重启后新插件出现在 IconRail 与首页卡片，内容自动获得统一容器
-
 ### Requirement: 图标导航栏 + 工作区布局
 
-前端 SHALL 采用「Topbar + 左侧 IconRail + 插件全屏工作区 + 底部 StatusBar」布局：IconRail 列首页与全部插件（active 高亮、tooltip 显示名称）；每个插件的 Workspace 完全自治（自带侧栏与内容）；首页为插件卡片网格 + 项目探测信息；StatusBar 显示地址、项目路径与 SSE 连接状态。Topbar 右侧 SHALL 提供明暗切换与独立的风格选择器（多风格下拉）。
+前端 SHALL 采用「Topbar + 左侧 IconRail + 插件全屏工作区 + 底部 StatusBar」布局：IconRail 列首页与全部插件（active 高亮、tooltip 显示名称）；每个插件的 Workspace 完全自治，侧栏为可选槽位（无侧栏需求的插件如 just 直接全宽主区）；首页为插件卡片网格 + 项目探测信息；StatusBar 显示地址、项目路径与 SSE 连接状态。Topbar 右侧 SHALL 提供明暗切换与独立的风格选择器（多风格下拉）。
 
 #### Scenario: hash 直达
 
@@ -122,35 +108,26 @@ CLI SHALL 支持 `--dir <root>`、`--port <n>`、`--open`、`--page <mode>`、`-
 
 ### Requirement: zskills 数据目录约定（.zdev）
 
-系统 SHALL 优先从 `.zdev/` 读取 skill 数据、存量路径回退：bugs 配置（`.zdev/config.yaml` → `.zgoal/config.yaml`）、评审数据（`.zdev/review.yaml` → 根 `review.yaml`）；评审文档列表 SHALL 扫描 `.zdev/*.md`。启动日志 SHALL 打印生效的数据目录。文件变更监听 SHALL 覆盖 `.zdev/` 子目录。
+系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `.zdev/design/`（zdesign/zasset 产出根），apply 插件批量只读视图经 `.zdev/apply/CURRENT` 指针读取 `.zdev/apply/runs/<runId>/state.json`（zapply batch 约定）。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
 
 #### Scenario: 配置优先级与回退
 
 - **WHEN** `.zdev/config.yaml` 与 `.zgoal/config.yaml` 并存
-- **THEN** bugs 功能读 `.zdev/`；仅存量存在时回退读旧路径不报错
+- **THEN** 系统不读取二者（bugs 插件已移除，遗留文件仅作为存量被忽略）
 
 #### Scenario: 评审文档列表
 
 - **WHEN** `.zdev/` 下存在 brief.md/prd.md
-- **THEN** `/__docs` 列出它们（根目录 md 不列）；修改 `.zdev/review.yaml` 后前端经 SSE 自动刷新
+- **THEN** 不再生成评审文档列表（review 插件已移除）；md 文件仅在位于约定扫描目录时被 view/design 浏览
 
-### Requirement: worktree 感知
+#### Scenario: 批量状态写入后面板静默刷新
 
-apply 进度 SHALL 优先读取 `.zworktree/<change>/openspec/changes/<change>/` 下的 tasks/proposal/design（主目录兜底），卡片标注「worktree 执行中」；`GET /__worktrees` SHALL 返回 `.zworktree/` 下的 worktree 清单（名称/分支）；view 文件树 SHALL 排除 `.zworktree/`。dashboard SHALL NOT 执行任何写 git 操作。
-
-#### Scenario: worktree 进度优先
-
-- **WHEN** 主目录 tasks.md 为空、worktree 内已勾 2/5
-- **THEN** apply 卡片显示 2/5 与执行中 badge，不显示 0/5
-
-#### Scenario: 文件树无副本噪音
-
-- **WHEN** 项目存在 `.zworktree/<name>/`（整套代码副本）
-- **THEN** view 工作区文件树不显示该目录
+- **WHEN** zapply batch 运行中更新 `.zdev/apply/runs/<runId>/state.json`
+- **THEN** apply 批量驾驶舱经 SSE `files` 事件自动重取并呈现最新批次状态，无整页刷新
 
 ### Requirement: worktree 平台级
 
-系统 SHALL 提供平台级 worktree 列表能力：`/__worktrees` 返回全部 `.zworktree/*` worktree（名称/分支/HEAD/脏状态，脏经 `git status --porcelain` 探测）；worktree 数据 SHALL 由 core 层提供（非单个插件私有）。view 工作区文件树 SHALL 提供 Worktrees 分组入口，点击某项 SHALL 经平台内导航事件切换至 apply 视图并聚焦对应 change。dashboard SHALL 只读探测 worktree 状态，不执行 git 写操作。
+系统 SHALL 提供平台级 worktree 列表能力：`/__worktrees` 返回全部 `.zworktree/*` worktree（名称/分支/HEAD/脏状态，脏经 `git status --porcelain` 探测）；worktree 数据 SHALL 由 core 层提供（非单个插件私有）。view 工作区文件树 SHALL 将各 worktree 以独立分组呈现（含分支与脏标识），分组内展开该 worktree 约定目录（openspec/docs）的文件树；view 文件树 SHALL 排除 `.zworktree/` 目录本身。dashboard SHALL 只读探测 worktree 状态，不执行 git 写操作。
 
 #### Scenario: worktree 列表含脏状态
 
@@ -160,30 +137,21 @@ apply 进度 SHALL 优先读取 `.zworktree/<change>/openspec/changes/<change>/`
 #### Scenario: view 树分组与跳转
 
 - **WHEN** 项目存在 `.zworktree/<name>/`，view 树显示 Worktrees 分组（含分支与脏标识）
-- **THEN** 点击某 worktree 项，视图切换至 apply 并自动选中/展开对应 change 的 tasks
+- **THEN** 展开分组仅呈现该 worktree 约定目录（openspec/docs）下的文件，不切换至已移除的 apply 视图
 
 #### Scenario: 空列表不显示
 
 - **WHEN** 项目无任何 `.zworktree/*`
 - **THEN** view 树不显示 Worktrees 分组
 
-### Requirement: 统计卡片下钻
-
-stats 工作区的统计卡片 SHALL 可点击：点击文件/目录/Markdown 类卡片 SHALL 导航至 view 工作区并预设相应过滤，点击变更类卡片 SHALL 导航至 apply 工作区。导航经平台内导航事件完成。
-
-#### Scenario: 统计跳转
-
-- **WHEN** 点击「Markdown 9」卡片
-- **THEN** 切至 view 工作区且文件过滤框预填 `.md`；点击「变更 1/2」切至 apply
-
 ### Requirement: 依赖激活与交互反馈
 
-系统 SHALL 使用已声明依赖替代手搓实现：禅道配置解析统一走 yaml 包；文件大小/时长格式化使用 filesize/date-fns；树过滤输入经 use-debounce 防抖（≥150ms）；侧栏开合记忆使用 useLocalStorage。关键操作失败（停止服务、just 启停）SHALL 以 toast 通知用户，不只写控制台。
+系统 SHALL 使用已声明依赖替代手搓实现：文件大小/时长格式化使用 filesize/date-fns；树过滤输入经 use-debounce 防抖（≥150ms）。关键操作失败（停止服务、just 启停）SHALL 以 toast 通知用户，不只写控制台。
 
 #### Scenario: 配置解析统一
 
-- **WHEN** .zdev/config.yaml 含注释或带引号值
-- **THEN** yaml 包正确解析，不再因手搓正则误判
+- **WHEN** `.zdev/config.yaml` 含注释或带引号值
+- **THEN** 系统不再解析该文件（bugs 插件已移除，遗留配置文件仅作为存量被忽略）
 
 #### Scenario: 错误以 toast 呈现
 
@@ -317,22 +285,13 @@ SDK SHALL 提供 `PluginPage` 模板(PageHeader + AsyncBoundary + 内容区);加
 - **WHEN** 用户打开首页
 - **THEN** 探测 chips 数据来自 `/__detect`,浏览器 Network 中不因首页探测发起 `/__files` 请求
 
-### Requirement: 六内置插件统一 SDK 形态
-
-stats/view/apply/design/just/apply-batch 六个内置插件 SHALL 全部以 `definePlugin`(server)与 `defineWebPlugin`(client)声明,manifest 单源;foundation 提供的旧 web.tsx 兼容分支 SHALL 删除。apply-batch 的全部写路由 SHALL 经 guardedRoute 强制 stop-token;其前端 SHALL 通过 `plugin:apply-batch:state` SSE 获得状态更新,不再使用定时轮询,且不得 import server 侧 store 的运行时代码(仅 import type)。
-
-#### Scenario: apply-batch 鉴权与实时性
-
-- **WHEN** 未携带 stop-token POST `/__apply-batch/approve`,以及批量 store 发生一次状态变更
-- **THEN** 前者返回 403;后者 UI 在 1 秒内更新且 Network 中无周期性轮询请求
-
 ### Requirement: 插件内状态全部承载于 URL
 
-六插件的页面内状态 SHALL 按 manifests 的 ParamSchema 契约承载于 searchParams:view 为 `wt/file/filter`,apply 为 `change`,apply-batch 为 `view/sel`,just 为 `recipe/task`,design 为 `type/asset/folder`,stats 钻取来源为 `card`。刷新与分享深链接 SHALL 完整恢复页面状态。
+四个内置插件的页面内状态 SHALL 按 manifests 的 ParamSchema 契约承载于 searchParams:view 为 `wt/file/filter`，just 为 `recipe/task`，design 为 `type/asset/folder`，stats 钻取来源为 `card`。刷新与分享深链接 SHALL 完整恢复页面状态。
 
 #### Scenario: view 状态恢复
 
-- **WHEN** 在 view 中展开某 worktree 并打开一个文件后复制 URL,在新标签页打开
+- **WHEN** 在 view 中展开某 worktree 并打开一个文件后复制 URL，在新标签页打开
 - **THEN** 同一 worktree 分组与文件被还原选中并渲染预览
 
 ### Requirement: stats 跨插件钻取
@@ -374,10 +333,24 @@ just 插件不设侧边栏:主区 LogViewer 内嵌任务列表为唯一任务选
 
 ### Requirement: 插件序列完成冒烟关口
 
-plugin-platform 三 change 序列 SHALL 以端到端冒烟作为完成关口:六个内置插件页面、首页、外部 demo 插件、三套主题×明暗、深链接刷新/后退全部走查,console 零 error;bugs/review 删除残留(detect hasBugs 链、vite 代理、死 CSS 变量、孤儿类型、启动日志字段、`/__files` detect 搭车字段)SHALL 清零。
+plugin-platform change 序列 SHALL 以端到端冒烟作为完成关口:全部内置插件页面、首页、外部 demo 插件、三套主题×明暗、深链接刷新/后退全部走查,console 零 error;已移除插件的残留(detect 旧链、vite 代理、死 CSS 变量、孤儿类型、启动日志字段)SHALL 清零。
 
 #### Scenario: 残留清零核验
 
-- **WHEN** 在 src/ 与 vite.config.ts 中 grep hasBugs、ZenBug、BugsResult、review-sidebar 及 bugs/review 代理
-- **THEN** 全部无命中;`/__files` 响应不含 detect 字段
+- **WHEN** 在 src/ 与 vite.config.ts 中 grep 已移除插件的标识符与代理路径
+- **THEN** 全部无命中
+
+### Requirement: 内置插件统一 SDK 形态
+
+stats/view/design/just 四个内置插件 SHALL 全部以 `definePlugin`(server)与 `defineWebPlugin`(client)声明，manifest 为 server/client 共享单源。内置插件零注册：在 `src/plugins/<new>/` 添加 `index.ts`（后端）与 `web.tsx`（前端契约，含可选 Sidebar 槽）并接入注册表后，无需修改 App.tsx 或任何 core 代码，新插件即出现在 IconRail 与首页卡片。
+
+#### Scenario: 四插件注册表自洽
+
+- **WHEN** 启动 zdashboard 并请求 `/__plugins`
+- **THEN** 返回 stats/view/design/just 四个 manifest，无已移除插件（apply/apply-batch/market/bugs/review）残留
+
+#### Scenario: apply-batch 鉴权与实时性
+
+- **WHEN** 在 src/ 与 vite.config.ts 中检索 apply-batch 路由、guardedRoute 写操作与 `plugin:apply-batch:state` 频道
+- **THEN** 全部无命中（apply 插件已于 601171d 连同批量驾驶舱一并移除）
 

@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: 六内置插件统一 SDK 形态`
+- TO: `### Requirement: 内置插件统一 SDK 形态`
+
 ## MODIFIED Requirements
 
 ### Requirement: cordis 插件运行时
@@ -46,6 +51,11 @@
 
 系统 SHALL 使用已声明依赖替代手搓实现：文件大小/时长格式化使用 filesize/date-fns；树过滤输入经 use-debounce 防抖（≥150ms）。关键操作失败（停止服务、just 启停）SHALL 以 toast 通知用户，不只写控制台。
 
+#### Scenario: 配置解析统一
+
+- **WHEN** `.zdev/config.yaml` 含注释或带引号值
+- **THEN** 系统不再解析该文件（bugs 插件已移除，遗留配置文件仅作为存量被忽略）
+
 #### Scenario: 错误以 toast 呈现
 
 - **WHEN** just 启停请求失败
@@ -54,6 +64,16 @@
 ### Requirement: zskills 数据目录约定（.zdev）
 
 系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `.zdev/design/`（zdesign/zasset 产出根），apply 插件批量只读视图经 `.zdev/apply/CURRENT` 指针读取 `.zdev/apply/runs/<runId>/state.json`（zapply batch 约定）。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
+
+#### Scenario: 配置优先级与回退
+
+- **WHEN** `.zdev/config.yaml` 与 `.zgoal/config.yaml` 并存
+- **THEN** 系统不读取二者（bugs 插件已移除，遗留文件仅作为存量被忽略）
+
+#### Scenario: 评审文档列表
+
+- **WHEN** `.zdev/` 下存在 brief.md/prd.md
+- **THEN** 不再生成评审文档列表（review 插件已移除）；md 文件仅在位于约定扫描目录时被 view/design 浏览
 
 #### Scenario: 批量状态写入后面板静默刷新
 
@@ -68,6 +88,11 @@ stats/view/design/just 四个内置插件 SHALL 全部以 `definePlugin`(server)
 
 - **WHEN** 启动 zdashboard 并请求 `/__plugins`
 - **THEN** 返回 stats/view/design/just 四个 manifest，无已移除插件（apply/apply-batch/market/bugs/review）残留
+
+#### Scenario: apply-batch 鉴权与实时性
+
+- **WHEN** 在 src/ 与 vite.config.ts 中检索 apply-batch 路由、guardedRoute 写操作与 `plugin:apply-batch:state` 频道
+- **THEN** 全部无命中（apply 插件已于 601171d 连同批量驾驶舱一并移除）
 
 ### Requirement: 插件内状态全部承载于 URL
 
