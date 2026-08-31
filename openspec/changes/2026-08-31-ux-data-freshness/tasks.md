@@ -2,7 +2,7 @@
 
 - [x] 1. TDD:useSSE 重连补偿——FakeES 断线→重开→断线期间注册的 `useSSEEvent` 频道 handler 被逐个调用
   - 验收:单测先红后绿
-- [ ] 2. TDD:usePluginData 重取失败保留旧 data(`error` 独立字段);`!data && error` 才全屏错误
+- [x] 2. TDD:usePluginData 重取失败保留旧 data(`error` 独立字段);`!data && error` 才全屏错误
   - 验收:单测先红后绿
 - [ ] 3. MdViewer/CodeViewer 订阅 files(300ms 防抖)重取 + 刷新按钮;design viewers 同规则命中当前资产才失效
   - 验收:组件测试:files 事件触发重取、多次触发防抖合并

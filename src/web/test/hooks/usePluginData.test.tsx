@@ -82,6 +82,45 @@ describe('usePluginData', () => {
     expect(okFetcher).toHaveBeenCalledTimes(1);
     expect(errFetcher).toHaveBeenCalledTimes(1);
   });
+
+  it('后台重取失败保留旧 data:error 独立字段,不整页清空(数据新鲜度 T2)', async () => {
+    let n = 0;
+    const fetcher = vi.fn().mockImplementation(async () => {
+      n += 1;
+      if (n === 1) return 'good-value';
+      throw new Error('transient 500');
+    });
+    const { result } = renderHook(() => usePluginData<string>('stale-key', fetcher));
+    await waitFor(() => expect(result.current.data).toBe('good-value'));
+
+    // 手动 reload 触发后台重取,失败 → 旧 data 仍在,error 降级为独立字段
+    act(() => { result.current.reload(); });
+    await waitFor(() => expect(result.current.error).toBe('transient 500'));
+    expect(result.current.data).toBe('good-value');
+    expect(result.current.loading).toBe(false);
+
+    // 再 reload 恢复成功 → error 清空,data 更新
+    act(() => { result.current.reload(); });
+    await waitFor(() => expect(result.current.error).toBeNull());
+    expect(result.current.data).toBe('good-value');
+  });
+
+  it('SSE 失效重取失败同样保留旧 data(仅 !data && error 才是全屏错误)', async () => {
+    let n = 0;
+    const fetcher = vi.fn().mockImplementation(async () => {
+      n += 1;
+      if (n === 1) return 'first';
+      throw new Error('refetch fail');
+    });
+    const { result } = renderHook(() =>
+      usePluginData<string>('sse-stale-key', fetcher, { subscribe: 'plugin:stub:fail' })
+    );
+    await waitFor(() => expect(result.current.data).toBe('first'));
+
+    act(() => { notifyPluginEvent('plugin:stub:fail'); });
+    await waitFor(() => expect(result.current.error).toBe('refetch fail'));
+    expect(result.current.data).toBe('first');
+  });
 });
 
 describe('useSSEEvent — 动态频道接线', () => {

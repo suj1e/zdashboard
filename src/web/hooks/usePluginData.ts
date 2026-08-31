@@ -97,7 +97,9 @@ export function usePluginData<T>(
     setState((s) => ({ ...s, loading: s.loading || force, error: null }));
     void p.then(
       (v) => setState({ data: v as T, error: null, loading: false }),
-      (e) => setState({ data: null, error: errorMessage(e), loading: false }),
+      // 重取失败保留旧 data(错误降级为独立字段):仅 !data && error 才是全屏错误,
+      // data && error 由调用方可选轻提示——后台刷新失败不清空已有好数据
+      (e) => setState((s) => ({ data: s.data, error: errorMessage(e), loading: false })),
     );
   }, [key]);
 
