@@ -21,5 +21,19 @@ export default defineConfig({
       '/__file-content': 'http://localhost:4190',
     },
   },
-  build: { outDir: 'dist/web' },
+  build: {
+    outDir: 'dist/web',
+    rollupOptions: {
+      output: {
+        // vendor 拆块:react 系一块、radix+sonner 一块,其余默认(懒 chunk 不动)。
+        // 注意用锚定 node_modules/<pkg>/ 的正则,防止 react-is/.pnpm 路径误入。
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react';
+          if (/[\\/]node_modules[\\/](@radix-ui[\\/][^\\/]+|sonner)[\\/]/.test(id)) return 'vendor-ui';
+          return undefined;
+        },
+      },
+    },
+  },
 });

@@ -3,34 +3,88 @@
  *
  * 设计边界：按钮/链接等内联装饰图标（如 <Play />、<Square />）不纳入，
  * 仅覆盖集中映射点：FileIcon、两侧栏 GROUP_ICON、EmptyState、IconRail 首页。
+ *
+ * 体积边界：三个主题的图标一律**具名导入**进常量池（lucidePool/pixelPool/phosphorMap），
+ * 渲染时按组件常量查表——禁止 `import *` 命名空间 + 字符串动态索引，
+ * 否则 esbuild/rollup 无法 tree-shake，全量图标会进入 eager 主包（曾致 1.45MB）。
+ * 新增图标：ICON_MAP 值 + 对应 import 池两处同步；dev 期缺漏断言兜底（见文件尾）。
  */
 
-import * as lucide from 'lucide-react';
-import * as pixelReact from 'pixelarticons/react/index.js';
 import {
-  GitBranch, FolderOpen, Play, Square, Eraser,
-  Check, Palette, Moon, Sun,
-  FileText, Code, Globe, Terminal, Image,
-  ShieldCheck, BookOpen, Package,
-  Monitor, Shapes, Video,
+  FileText, Code, Globe, Braces, FileSpreadsheet, Terminal, Image,
+  ListTodo, Boxes, ShieldCheck, BookOpen, Package,
+  Monitor, Shapes, Video, AudioLines, Inbox, Sparkles, Home,
+  GitBranch, FolderOpen, Folder, Play, Square, RotateCw, Eraser,
+  Check, Palette, Moon, Sun, PackageOpen, Power, FolderGit2,
+  Tablet, Smartphone, SlidersHorizontal, ImageOff, Bug,
+  ExternalLink, RefreshCw, ClipboardCheck, ChevronDown, ChevronUp,
+  RotateCcw, Send, X, BarChart3, FolderTree, GitPullRequest,
+  ChevronLeft, FileQuestion, ChevronRight, Type, Eye, Settings,
+  Blocks, LetterText,
+} from 'lucide-react';
+import {
+  FileText as PxFileText, Code as PxCode, Globe as PxGlobe, Braces as PxBraces,
+  Terminal as PxTerminal, Image as PxImage, BookOpen as PxBookOpen,
+  Package as PxPackage, Monitor as PxMonitor, Blocks as PxBlocks,
+  Shapes as PxShapes, Video as PxVideo, Inbox as PxInbox,
+  Sparkles as PxSparkles, Home as PxHome, GitBranch as PxGitBranch,
+  Folder as PxFolder, Play as PxPlay,
+  Square as PxSquare, Eraser as PxEraser, Check as PxCheck,
+  Moon as PxMoon, Sun as PxSun, Power as PxPower, Tablet as PxTablet,
+  Smartphone as PxSmartphone, SlidersHorizontal as PxSlidersHorizontal,
+  Bug as PxBug, ExternalLink as PxExternalLink, ChevronDown as PxChevronDown,
+  ChevronUp as PxChevronUp, Send as PxSend, X as PxX,
+  GitPullRequest as PxGitPullRequest, ChevronLeft as PxChevronLeft,
+  ChevronRight as PxChevronRight, Eye as PxEye,
+} from 'pixelarticons/react/index.js';
+import {
+  GitBranch as PhGitBranch, FolderOpen as PhFolderOpen, Play as PhPlay,
+  Square as PhSquare, Eraser as PhEraser, Check as PhCheck,
+  Palette as PhPalette, Moon as PhMoon, Sun as PhSun,
+  FileText as PhFileText, Code as PhCode, Globe as PhGlobe,
+  Terminal as PhTerminal, Image as PhImage, ShieldCheck as PhShieldCheck,
+  BookOpen as PhBookOpen, Package as PhPackage, Monitor as PhMonitor,
+  Shapes as PhShapes, Video as PhVideo,
 } from '@phosphor-icons/react';
 import { useSyncExternalStore } from 'react';
 
 // ---------------------------------------------------------------------------
-// pixelarticons 适配层：将其“无组件导出”的 SVG 包包装为 LucideIcon 兼容组件
+// 组件常量池:键 = ICON_MAP 的值(lucide 组件名字符串),值 = 已具名导入的组件
 // ---------------------------------------------------------------------------
 
-/** pixelarticons: kebab 名 → PascalCase 导出组件(react/index.js 导出为 AiFile/Archive/... ) */
-function toPascal(name: string): string {
-  return name.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase()).replace(/^([a-z])/, (m) => m.toUpperCase());
-}
-function PixelIcon({ name, className, ...rest }: { name: string; className?: string } & Record<string, unknown>) {
-  const Cmp = (pixelReact as Record<string, React.ComponentType<{ className?: string }>>)[toPascal(name)];
-  if (!Cmp) return null;
-  return <Cmp className={className} {...rest} />;
-}
+type IconComponent = React.ComponentType<{ className?: string }>;
 
-// ---------------------------------------------------------------------------
+/** default 主题主池(同时也是 pixel/slate 的 fallback 池) */
+const lucidePool = {
+  FileText, Code, Globe, Braces, FileSpreadsheet, Terminal, Image,
+  ListTodo, Boxes, ShieldCheck, BookOpen, Package,
+  Monitor, Shapes, Video, AudioLines, Inbox, Sparkles, Home,
+  GitBranch, FolderOpen, Folder, Play, Square, RotateCw, Eraser,
+  Check, Palette, Moon, Sun, PackageOpen, Power, FolderGit2,
+  Tablet, Smartphone, SlidersHorizontal, ImageOff, Bug,
+  ExternalLink, RefreshCw, ClipboardCheck, ChevronDown, ChevronUp,
+  RotateCcw, Send, X, BarChart3, FolderTree, GitPullRequest,
+  ChevronLeft, FileQuestion, ChevronRight, Type, Eye, Settings,
+  Blocks, LetterText,
+} as const satisfies Record<string, IconComponent>;
+
+/** pixel 主题池:仅收 pixelarticons 实际导出的交集,其余 fallback 到 lucide */
+const pixelPool = {
+  FileText: PxFileText, Code: PxCode, Globe: PxGlobe, Braces: PxBraces,
+  Terminal: PxTerminal, Image: PxImage, BookOpen: PxBookOpen,
+  Package: PxPackage, Monitor: PxMonitor, Blocks: PxBlocks,
+  Shapes: PxShapes, Video: PxVideo, Inbox: PxInbox,
+  Sparkles: PxSparkles, Home: PxHome, GitBranch: PxGitBranch,
+  Folder: PxFolder, Play: PxPlay,
+  Square: PxSquare, Eraser: PxEraser, Check: PxCheck,
+  Moon: PxMoon, Sun: PxSun, Power: PxPower, Tablet: PxTablet,
+  Smartphone: PxSmartphone, SlidersHorizontal: PxSlidersHorizontal,
+  Bug: PxBug, ExternalLink: PxExternalLink, ChevronDown: PxChevronDown,
+  ChevronUp: PxChevronUp, Send: PxSend, X: PxX,
+  GitPullRequest: PxGitPullRequest, ChevronLeft: PxChevronLeft,
+  ChevronRight: PxChevronRight, Eye: PxEye,
+} as const satisfies Record<string, IconComponent>;
+
 // Icon key 类型
 // ---------------------------------------------------------------------------
 
@@ -88,7 +142,7 @@ export const MODE_ICON_MAP: Record<string, IconKey> = {
 };
 
 // ---------------------------------------------------------------------------
-// 语义映射（只定义一次）
+// 语义映射（只定义一次;值 = 池键,非组件——渲染经池查表）
 // ---------------------------------------------------------------------------
 
 export const ICON_MAP: Record<IconKey, string> = {
@@ -122,7 +176,8 @@ export const ICON_MAP: Record<IconKey, string> = {
   'group:video': 'Video',
   'group:audio': 'AudioLines',
   'group:pdf': 'FileText',
-  'group:font': 'TextColumns',
+  // 原 'TextColumns' 在 lucide-react 无此导出(曾渲染为 null),改为 LetterText
+  'group:font': 'LetterText',
 
   // EmptyState
   'empty:muted': 'Inbox',
@@ -176,46 +231,51 @@ export const ICON_MAP: Record<IconKey, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// 渲染器：default (lucide-react)
+// 渲染器(共享 import 池,动态索引消失)
 // ---------------------------------------------------------------------------
 
-function defaultRenderer(name: string, className?: string): React.ReactNode {
-  const Cmp = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
+function renderFromPool(Cmp: IconComponent | undefined, className?: string): React.ReactNode {
   if (!Cmp) return null;
   return className ? <Cmp className={className} /> : <Cmp />;
 }
 
-// ---------------------------------------------------------------------------
-// 渲染器：pixel (pixelarticons + lucide fallback)
-// ---------------------------------------------------------------------------
-
-function pixelRenderer(name: string, className?: string): React.ReactNode {
-  const pascal = toPascal(name);
-  const Cmp = (pixelReact as unknown as Record<string, React.ComponentType<{ className?: string }>>)[pascal];
-  if (Cmp) return className ? <Cmp className={className} /> : <Cmp />;
-  const Fallback = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
-  if (Fallback) return className ? <Fallback className={className} /> : <Fallback />;
-  return null;
+/** default (lucide) */
+function defaultRenderer(name: string, className?: string): React.ReactNode {
+  return renderFromPool(lucidePool[name as keyof typeof lucidePool], className);
 }
 
-// ---------------------------------------------------------------------------
-// 渲染器：slate (phosphor regular + lucide fallback)
-// ---------------------------------------------------------------------------
+/** pixel (pixelarticons + lucide fallback) */
+function pixelRenderer(name: string, className?: string): React.ReactNode {
+  return renderFromPool(pixelPool[name as keyof typeof pixelPool] ?? lucidePool[name as keyof typeof lucidePool], className);
+}
 
+/** slate (phosphor regular + lucide fallback) */
 const phosphorMap = {
-  GitBranch, FolderOpen, Play, Square, Eraser,
-  Check, Palette, Moon, Sun,
-  FileText, Code, Globe, Terminal, Image,
-  ShieldCheck, BookOpen, Package,
-  Monitor, Shapes, Video,
-} as const satisfies Record<string, React.ComponentType<{ className?: string }>>;
+  GitBranch: PhGitBranch, FolderOpen: PhFolderOpen, Play: PhPlay,
+  Square: PhSquare, Eraser: PhEraser, Check: PhCheck,
+  Palette: PhPalette, Moon: PhMoon, Sun: PhSun,
+  FileText: PhFileText, Code: PhCode, Globe: PhGlobe,
+  Terminal: PhTerminal, Image: PhImage, ShieldCheck: PhShieldCheck,
+  BookOpen: PhBookOpen, Package: PhPackage, Monitor: PhMonitor,
+  Shapes: PhShapes, Video: PhVideo,
+} as const satisfies Record<string, IconComponent>;
 
 function slateRenderer(name: string, className?: string): React.ReactNode {
   const Cmp = phosphorMap[name as keyof typeof phosphorMap];
   if (Cmp) return className ? <Cmp className={className} weight="regular" /> : <Cmp weight="regular" />;
-  const Fallback = (lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
-  if (Fallback) return className ? <Fallback className={className} /> : <Fallback />;
-  return null;
+  return renderFromPool(lucidePool[name as keyof typeof lucidePool], className);
+}
+
+// ---------------------------------------------------------------------------
+// dev 期缺漏断言:ICON_MAP 每个值必须命中 import 池,缺失渲染为空
+// ---------------------------------------------------------------------------
+
+if (process.env.NODE_ENV !== 'production') {
+  for (const [key, name] of Object.entries(ICON_MAP)) {
+    if (!(name in lucidePool)) {
+      console.error(`[icons] ICON_MAP["${key}"] → "${name}" 不在导入池中,该图标将渲染为空;请在 lucidePool 补具名导入`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
