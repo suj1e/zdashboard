@@ -6,7 +6,7 @@
  * - resolve 代理生效(design 场景)/ 无 resolve 走 /__file-content(view 场景)。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DiagramViewer } from '../DiagramViewer.js';
 
 const { excalidrawProps } = vi.hoisted(() => ({ excalidrawProps: [] as Record<string, unknown>[] }));
@@ -81,6 +81,8 @@ describe('DiagramViewer — .drawio 路径', () => {
     render(<DiagramViewer path="diagrams/flow.drawio" />);
     const iframe = await screen.findByTitle('flow.drawio');
     expect(iframe.getAttribute('src')).toBe('https://viewer.diagrams.net/?#R' + encodeURIComponent(DRAWIO_FIXTURE));
+    // review S3:不发 Referer(dashboard origin+文件路径是隐私面)
+    expect(iframe.getAttribute('referrerpolicy')).toBe('no-referrer');
     const link = screen.getByRole('link', { name: '在新窗口打开 viewer' });
     expect(link.getAttribute('href')).toContain('https://viewer.diagrams.net/');
   });
@@ -91,6 +93,25 @@ describe('DiagramViewer — .drawio 路径', () => {
     render(<DiagramViewer path="diagrams/huge.drawio" />);
     expect(await screen.findByRole('alert')).toHaveTextContent('文件过大');
     expect(document.querySelector('iframe')).not.toBeInTheDocument();
+  });
+
+  it('守卫按 encode 后长度(review S2):原始 ~205KB(<2MB)但 encode 膨胀超阈值 → 「文件过大」', async () => {
+    // '%' 经 encodeURIComponent 变 '%25'(3x 膨胀):205_001 原始字符 → ~615k 编码字符 > 600k 阈值
+    const xml = '<!-- ' + '%'.repeat(205_000) + ' -->';
+    expect(xml.length).toBeLessThan(2 * 1024 * 1024);
+    expect(encodeURIComponent(xml).length).toBeGreaterThan(600_000);
+    vi.stubGlobal('fetch', vi.fn(async () => okText(xml)));
+    render(<DiagramViewer path="diagrams/swollen.drawio" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('文件过大');
+    expect(document.querySelector('iframe')).not.toBeInTheDocument();
+  });
+
+  it('encode 后在阈值内 → 正常渲染(边界)', async () => {
+    const xml = '<a>' + 'x'.repeat(599_000) + '</a>'; // 纯 ASCII 不膨胀:~599_003 < 600_000
+    vi.stubGlobal('fetch', vi.fn(async () => okText(xml)));
+    render(<DiagramViewer path="diagrams/edge.drawio" />);
+    const iframe = await screen.findByTitle('edge.drawio');
+    expect(iframe.getAttribute('src')).toContain('https://viewer.diagrams.net/?#R');
   });
 });
 
@@ -108,5 +129,39 @@ describe('DiagramViewer — 内容拉取路由', () => {
     render(<DiagramViewer path="diagrams/arch.excalidraw" resolve={viaProxy} />);
     await screen.findByTestId('excalidraw-mock');
     expect(vi.mocked(fetch).mock.calls[0][0]).toBe(viaProxy('diagrams/arch.excalidraw'));
+  });
+});
+
+describe('DiagramViewer — 重取与性能语义', () => {
+  it('首次成功后重取失败 → 保留旧内容(review S1),不降级全屏错误态', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okText(SCENE_FIXTURE))
+      .mockRejectedValueOnce(new Error('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<DiagramViewer path="diagrams/arch.excalidraw" />);
+    await screen.findByTestId('excalidraw-mock');
+    fireEvent.click(screen.getByRole('button', { name: '刷新' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    // 旧画布仍在;err 仅在无内容时才全屏(语义同 MdViewer)
+    expect(screen.getByTestId('excalidraw-mock')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('TextEncoder.encode 随 content 记忆(review S5):content 不变的重取不重复编码', async () => {
+    const encodeSpy = vi.spyOn(TextEncoder.prototype, 'encode');
+    try {
+      const fetchMock = vi.fn(async () => okText(SCENE_FIXTURE));
+      vi.stubGlobal('fetch', fetchMock);
+      render(<DiagramViewer path="diagrams/arch.excalidraw" />);
+      await screen.findByTestId('excalidraw-mock');
+      const afterFirst = encodeSpy.mock.calls.length;
+      expect(afterFirst).toBeGreaterThan(0);
+      fireEvent.click(screen.getByRole('button', { name: '刷新' }));
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+      // 相同 content → setState bail / useMemo 命中,encode 不再执行
+      expect(encodeSpy.mock.calls.length).toBe(afterFirst);
+    } finally {
+      encodeSpy.mockRestore();
+    }
   });
 });

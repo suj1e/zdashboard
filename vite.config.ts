@@ -27,7 +27,9 @@ export default defineConfig({
       output: {
         // vendor 拆块:react 系一块、radix+sonner 一块、excalidraw 一块,其余默认(懒 chunk 不动)。
         // 注意用锚定 node_modules/<pkg>/ 的正则,防止 react-is/.pnpm 路径误入。
-        // excalidraw 仅被 DiagramViewer 动态 import:此处只定名,不影响懒加载性质。
+        // excalidraw 仅被 DiagramViewer 动态 import(JS + CSS 都必须走动态导入——顶层副作用
+        // import 形态同样形成静态依赖边,曾致 Workspace chunk eager 预载 1.4MB,review B1;
+        // 断言:scripts/check-excalidraw-lazy.mjs)。此处只定名,不影响懒加载性质。
         // preload-helper 必须显式钉回入口块:否则 rollup 会把它归进首个手动块(曾致入口
         // 静态 import excalidraw 块,1.7MB 变 eager)。
         manualChunks(id) {
