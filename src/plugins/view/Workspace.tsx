@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { MdViewer } from '../../web/viewers/MdViewer.js';
 import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
+import { FrameViewer } from '../../web/viewers/FrameViewer.js';
 import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import OutlineNav from './OutlineNav.js';
 import { EmptyState, PluginPage } from '../../web/kit/index.js';
@@ -21,6 +22,8 @@ function viewerFor(path: string) {
   const ext = dotAt >= 0 ? name.slice(dotAt) : '';
   if (ext === '.md' || ext === '.markdown') return MdViewer;
   if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;
+  // pdf/html 浏览器原生渲染,iframe 预览
+  if (['.pdf', '.html', '.htm'].includes(ext)) return FrameViewer;
   if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
   // 无扩展名文件(如 .zdev/apply/CURRENT)按纯文本预览
   if (dotAt === -1) return CodeViewer;

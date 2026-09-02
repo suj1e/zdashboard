@@ -114,35 +114,11 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
 
   return (
     <nav
-      className="relative hidden md:flex shrink-0 flex-col border-l pl-3 py-2 overflow-y-auto"
+      className="hidden md:flex shrink-0 flex-col border-l py-2 overflow-hidden"
       style={{ width: `${width}px` }}
       aria-label="文档大纲"
     >
-      <div className="flex items-center gap-1 mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-        {icon('file-text', 'h-3 w-3')}
-        <span>大纲</span>
-      </div>
-      <ul className="space-y-0.5">
-        {items.map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              title={item.text}
-              onClick={() => scrollTo(item.id)}
-              className={`w-full text-left text-sm leading-snug py-0.5 px-1.5 rounded line-clamp-2 transition-colors ${
-                activeId === item.id
-                  ? 'bg-primary/10 text-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-muted/70'
-              }`}
-              style={{ paddingLeft: 6 + Math.min(item.level - 1, 2) * 10 }}
-            >
-              {item.text || item.id}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* 左缘拖拽调宽把手：<md 隐藏（nav 本身 hidden md:flex），双击重置回 176 */}
+      {/* 把手为首层 flex 兄弟节点:不被内容覆盖/不随滚动移出,始终可拖拽 */}
       <ResizeHandle
         orientation="vertical"
         min={MIN_OUTLINE_W}
@@ -151,8 +127,33 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
         onChange={applyWidth}
         onReset={resetWidth}
         label="调整大纲宽度"
-        className="absolute left-0 top-0 z-20 hidden h-full w-1.5 cursor-col-resize md:block"
+        className="flex-none w-1.5 cursor-col-resize"
       />
+      <div className="flex-1 min-h-0 overflow-y-auto pl-3">
+        <div className="flex items-center gap-1 mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          {icon('file-text', 'h-3 w-3')}
+          <span>大纲</span>
+        </div>
+        <ul className="space-y-0.5">
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                title={item.text}
+                onClick={() => scrollTo(item.id)}
+                className={`w-full text-left text-sm leading-snug py-0.5 px-1.5 rounded line-clamp-2 transition-colors ${
+                  activeId === item.id
+                    ? 'bg-primary/10 text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-muted/70'
+                }`}
+                style={{ paddingLeft: 6 + Math.min(item.level - 1, 2) * 10 }}
+              >
+                {item.text || item.id}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   );
 }

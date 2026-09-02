@@ -200,11 +200,11 @@ describe('OutlineNav resize handle', () => {
   it('nav and handle stay hidden below md via responsive classes', () => {
     const { container } = renderNav();
     const nav = navOf(container);
+    // <md 隐藏由 nav 自身的 hidden md:flex 承担;把手是 nav 首层子节点,随 nav 一并隐藏
     expect(nav.className).toContain('hidden');
     expect(nav.className).toContain('md:flex');
     expect(nav.className).not.toContain('w-44');
     const handle = handleOf(container);
-    expect(handle.className).toContain('hidden');
-    expect(handle.className).toContain('md:block');
+    expect(handle.className).not.toContain('absolute');
   });
 });
