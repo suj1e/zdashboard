@@ -114,11 +114,11 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
 
   return (
     <nav
-      className="hidden md:flex shrink-0 flex-col border-l py-2 overflow-hidden"
+      className="hidden md:flex shrink-0 border-l py-2 overflow-hidden"
       style={{ width: `${width}px` }}
       aria-label="文档大纲"
     >
-      {/* 把手为首层 flex 兄弟节点:不被内容覆盖/不随滚动移出,始终可拖拽 */}
+      {/* 行布局:把手靠 align-stretch 拉满高度(列布局下空把手高度会塌缩为 0 而不可拖拽),列表自滚动 */}
       <ResizeHandle
         orientation="vertical"
         min={MIN_OUTLINE_W}
@@ -127,9 +127,9 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
         onChange={applyWidth}
         onReset={resetWidth}
         label="调整大纲宽度"
-        className="flex-none w-1.5 cursor-col-resize"
+        className="flex-none w-1.5 cursor-col-resize self-stretch"
       />
-      <div className="flex-1 min-h-0 overflow-y-auto pl-3">
+      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto pl-3">
         <div className="flex items-center gap-1 mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
           {icon('file-text', 'h-3 w-3')}
           <span>大纲</span>
