@@ -118,9 +118,10 @@ export default function OutlineNav({ containerRef }: OutlineNavProps) {
       style={{ width: `${width}px` }}
       aria-label="文档大纲"
     >
-      {/* 行布局:把手靠 align-stretch 拉满高度(列布局下空把手高度会塌缩为 0 而不可拖拽),列表自滚动 */}
+      {/* 行布局:把手靠 align-stretch 拉满高度(列布局下空把手高度会塌缩为 0 而不可拖拽),列表自滚动;右停靠左缘把手,拖拽反向 */}
       <ResizeHandle
         orientation="vertical"
+        invert
         min={MIN_OUTLINE_W}
         max={MAX_OUTLINE_W}
         value={width}

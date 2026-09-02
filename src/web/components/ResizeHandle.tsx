@@ -24,6 +24,8 @@ interface ResizeHandleProps {
   className?: string;
   /** 拖拽态上抛（父级常用于关闭宽度过渡动画） */
   onDraggingChange?: (dragging: boolean) => void;
+  /** 反向拖拽：右停靠面板的左缘把手（如右侧大纲栏），向左拖 = 变宽 */
+  invert?: boolean;
 }
 
 /**
@@ -32,7 +34,7 @@ interface ResizeHandleProps {
  * pointer 捕获：真浏览器把后续 move/up 重定向到把手；jsdom 等环境靠 window 监听兜底。
  * 参数化抽取自 SidebarFrame 侧栏把手（2026-08-31-view-outline-ux），OutlineNav 复用。
  */
-export function ResizeHandle({ orientation, min, max, value, onChange, onReset, label, className, onDraggingChange }: ResizeHandleProps) {
+export function ResizeHandle({ orientation, min, max, value, onChange, onReset, label, className, onDraggingChange, invert = false }: ResizeHandleProps) {
   const [dragging, setDragging] = useState(false);
 
   // 拖拽闭包须读到最新 value/onChange/onReset：ref 每渲染同步，避免 stale closure
@@ -64,7 +66,8 @@ export function ResizeHandle({ orientation, min, max, value, onChange, onReset, 
       if (!start) return;
       const current = axisOf(ev);
       if (current !== start.start) moved = true;
-      changeRef.current(clampRange(start.startValue + (current - start.start), min, max), false);
+      const delta = invert ? start.start - current : current - start.start;
+      changeRef.current(clampRange(start.startValue + delta, min, max), false);
     };
     const detach = () => {
       window.removeEventListener('pointermove', onMove);
@@ -96,12 +99,15 @@ export function ResizeHandle({ orientation, min, max, value, onChange, onReset, 
   };
 
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    // 自然方向:竖条 Left=减 Right=增,横条 Up=减 Down=增;反向把手交换减/增
     const dec = orientation === 'vertical' ? 'ArrowLeft' : 'ArrowUp';
     const inc = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown';
-    if (e.key === dec) {
+    const decKey = invert ? inc : dec;
+    const incKey = invert ? dec : inc;
+    if (e.key === decKey) {
       e.preventDefault();
       changeRef.current(clampRange(valueRef.current - KEYBOARD_STEP, min, max), true);
-    } else if (e.key === inc) {
+    } else if (e.key === incKey) {
       e.preventDefault();
       changeRef.current(clampRange(valueRef.current + KEYBOARD_STEP, min, max), true);
     }

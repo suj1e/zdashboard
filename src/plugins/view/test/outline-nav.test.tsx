@@ -139,12 +139,12 @@ describe('OutlineNav resize handle', () => {
     expect(handle.tabIndex).toBe(0);
   });
 
-  it('pointer drag widens nav and persists final width on pointerup', () => {
+  it('pointer drag (leftward, right-docked invert) widens nav and persists final width on pointerup', () => {
     const { container } = renderNav();
     const nav = navOf(container);
     const handle = handleOf(container);
-    fireEvent.pointerDown(handle, { clientX: 200 });
-    fireEvent.pointerMove(handle, { clientX: 300 });
+    fireEvent.pointerDown(handle, { clientX: 300 });
+    fireEvent.pointerMove(handle, { clientX: 200 });
     expect(nav.style.width).toBe('276px');
     fireEvent.pointerUp(handle);
     expect(storage['zd-outline-w']).toBe('276');
@@ -155,9 +155,9 @@ describe('OutlineNav resize handle', () => {
     const nav = navOf(container);
     const handle = handleOf(container);
     fireEvent.pointerDown(handle, { clientX: 200 });
-    fireEvent.pointerMove(handle, { clientX: 2000 });
-    expect(nav.style.width).toBe('400px');
     fireEvent.pointerMove(handle, { clientX: -500 });
+    expect(nav.style.width).toBe('400px');
+    fireEvent.pointerMove(handle, { clientX: 2000 });
     expect(nav.style.width).toBe('176px');
     fireEvent.pointerUp(handle);
     expect(storage['zd-outline-w']).toBe('176');
@@ -177,8 +177,8 @@ describe('OutlineNav resize handle', () => {
     const { container } = renderNav();
     const nav = navOf(container);
     const handle = handleOf(container);
-    fireEvent.pointerDown(handle, { clientX: 176 });
-    fireEvent.pointerMove(handle, { clientX: 260 });
+    fireEvent.pointerDown(handle, { clientX: 260 });
+    fireEvent.pointerMove(handle, { clientX: 176 });
     fireEvent.pointerUp(handle);
     expect(nav.style.width).toBe('260px');
     fireEvent.doubleClick(handle);
@@ -186,13 +186,13 @@ describe('OutlineNav resize handle', () => {
     expect(storage['zd-outline-w']).toBe('260');
   });
 
-  it('keyboard arrows adjust width by ±16 and persist', () => {
+  it('keyboard arrows adjust width by ±16 (inverted: ArrowLeft widens) and persist', () => {
     const { container } = renderNav();
     const nav = navOf(container);
     const handle = handleOf(container);
-    fireEvent.keyDown(handle, { key: 'ArrowRight' });
-    expect(nav.style.width).toBe('192px');
     fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(nav.style.width).toBe('192px');
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
     expect(nav.style.width).toBe('176px');
     expect(storage['zd-outline-w']).toBe('176');
   });
