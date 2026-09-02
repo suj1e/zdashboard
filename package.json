@@ -14,7 +14,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsup && vite build",
+    "build": "tsup && vite build && node scripts/check-excalidraw-lazy.mjs",
     "build:web": "vite build",
     "build:node": "tsup",
     "start": "node dist/cli.js",

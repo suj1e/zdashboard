@@ -102,14 +102,16 @@ export function DiagramViewer({ path, resolve }: { path: string; resolve?: (p: s
   }, [path, resolve, version, kind]);
 
   // 渲染器手动懒加载(review S4):attempt 变化 → 重放动态 import,失败置 loadErr(局部错误态)
+  // review S-B:仅 .excalidraw 需要 Excalidraw 渲染器——.drawio 等其他格式不预载 1.4MB chunk
   useEffect(() => {
+    if (kind !== 'excalidraw') return;
     let alive = true;
     setExcal(null);
     loadExcalidraw()
       .then((m) => { if (alive) setExcal({ Comp: m.default }); })
       .catch(() => { if (alive) setExcal({ loadErr: true }); });
     return () => { alive = false; };
-  }, [excalAttempt]);
+  }, [excalAttempt, kind]);
 
   // 编码开销只随 content 重算(review S5):2MB 文本每渲染重编码可达数十 ms。
   // 必须置于所有 early return 之前(Hooks 规则);content 为 null 时占位 0,守卫分支不可达。
