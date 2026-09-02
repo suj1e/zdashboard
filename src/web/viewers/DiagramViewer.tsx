@@ -21,6 +21,10 @@ const Excalidraw = lazy(() =>
   import('@excalidraw/excalidraw').then((m) => ({ default: m.Excalidraw })),
 );
 
+// 0.17+ 样式与 JS 分离,必须显式引 CSS(经 vite 并入本模块的懒 chunk,随动态 import 注入,主包不受影响);
+// 缺失则画布/工具条全部失去 absolute 定位,布局爆散
+import '@excalidraw/excalidraw/index.css';
+
 type Kind = 'excalidraw' | 'drawio';
 
 /** 扩展名只从文件名段截取(路径含 .zdev 等点前缀目录时整段截取会误判,同 view viewerFor) */
@@ -88,7 +92,8 @@ export function DiagramViewer({ path, resolve }: { path: string; resolve?: (p: s
         <div className="absolute right-2 top-2 z-10">
           <RefreshButton onClick={refresh} />
         </div>
-        <div className="flex-1 min-h-0">
+        {/* 0.18.1 包样式不含根容器高度规则,消费方负责:直接子 .excalidraw 钉满高度,否则 canvas 撑爆 */}
+        <div className="flex-1 min-h-0 [&>.excalidraw]:h-full">
           <Suspense fallback={<p className="p-3 text-xs text-muted-foreground">加载渲染器…</p>}>
             {/* 0.18.1 无 renderConfig prop(design 草案按旧 API 书写,空对象无实效,已备案) */}
             <Excalidraw initialData={scene} viewModeEnabled />
