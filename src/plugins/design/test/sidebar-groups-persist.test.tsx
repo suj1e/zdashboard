@@ -12,7 +12,7 @@ import type { AssetType } from '../../../server/design-assets.js';
 const ASSETS: Record<AssetType, Array<{ path: string; name: string; ext: string; type: AssetType }>> = {
   page: [{ path: 'a/home.html', name: 'home.html', ext: '.html', type: 'page' }],
   token: [{ path: 'a/tokens.css', name: 'tokens.css', ext: '.css', type: 'token' }],
-  icon: [], component: [], md: [], video: [], audio: [], pdf: [], font: [],
+  icon: [], component: [], md: [], video: [], audio: [], pdf: [], font: [], diagram: [],
 };
 
 beforeEach(() => {

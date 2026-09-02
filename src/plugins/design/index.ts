@@ -1,7 +1,7 @@
 /**
  * design server 侧:definePlugin 接入(约定化扫描)。
  * 恒扫 <root>/.zdev/design(zdesign 等 skill 统一产出目录,walkDir 跳过点目录扫根看不见);
- * 目录缺失 → emptyScan() 九组空数组。/__design/assets 响应形状(ScanResult)保持不变。
+ * 目录缺失 → emptyScan() 全组空数组。/__design/assets 响应形状(ScanResult)保持不变。
  * 另供只读代理 /__design/asset?path=<rel-to-.zdev/design>,viewers 由此加载资产(直取根路径必 404)。
  */
 import path from 'node:path';
@@ -11,7 +11,7 @@ import { scanAssets, type ScanResult, type AssetType } from '../../server/design
 import { defineBuiltin } from '../builtin.js';
 import { manifest } from './manifest.js';
 
-const ASSET_KEYS: AssetType[] = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font'];
+const ASSET_KEYS: AssetType[] = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font', 'diagram'];
 
 function emptyScan(): ScanResult {
   const out = {} as ScanResult;

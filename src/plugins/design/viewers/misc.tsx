@@ -4,6 +4,7 @@ import { useIcons } from '../../../web/lib/icons.js';
 import { MdViewer as SharedMdViewer } from '../../../web/viewers/MdViewer.js';
 import { ImageViewer as SharedImageViewer } from '../../../web/viewers/ImageViewer.js';
 import { CodeViewer as SharedCodeViewer } from '../../../web/viewers/CodeViewer.js';
+import { DiagramViewer as SharedDiagramViewer } from '../../../web/viewers/DiagramViewer.js';
 import { useViewerFreshness, RefreshButton } from '../../../web/viewers/freshness.js';
 
 /** design 资产一律走 /__design/asset 代理(约定根 .zdev/design);共享查看器默认解析保留给 view 插件 */
@@ -30,6 +31,10 @@ export function ImageViewer({ path }: { path: string }) {
 
 export function CodeViewer({ path }: { path: string }) {
   return <SharedCodeViewer path={path} resolve={viaDesignAsset} />;
+}
+
+export function DiagramViewer({ path }: { path: string }) {
+  return <SharedDiagramViewer path={path} resolve={viaDesignAsset} />;
 }
 
 export function VideoViewer({ path }: { path: string }) {

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { walkDir } from './walk.js';
 
-export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font';
+export type AssetType = 'page' | 'component' | 'icon' | 'token' | 'md' | 'video' | 'audio' | 'pdf' | 'font' | 'diagram';
 
 const PAGE_EXTS = ['.html', '.htm'];
 const ICON_EXTS = ['.svg', '.png', '.ico', '.jpg', '.jpeg', '.gif', '.webp'];
@@ -18,6 +18,8 @@ export function categorize(rel: string, ext: string): AssetType | null {
   if (AUDIO_EXTS.includes(ext)) return 'audio';
   if (ext === '.pdf') return 'pdf';
   if (ext === '.md') return 'md';
+  // 图表:置于 CODE 判断前(.drawio 虽非 CODE_EXTS,显式前置防未来扩展名表收编)
+  if (ext === '.excalidraw' || ext === '.drawio') return 'diagram';
   if (FONT_EXTS.includes(ext)) return 'font';
   if (ICON_EXTS.includes(ext)) return 'icon';
   if (PAGE_EXTS.includes(ext)) return 'page';
@@ -33,7 +35,7 @@ export type ScanResult = Record<AssetType, AssetFile[]>;
 
 export function scanAssets(root: string, subDir = ''): ScanResult {
   const out: ScanResult = {} as ScanResult;
-  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font'];
+  const keys: AssetType[] = ['page','component','icon','token','md','video','audio','pdf','font','diagram'];
   for (const k of keys) out[k] = [];
   const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache']);
   const scanRoot = subDir ? path.join(root, subDir) : root;

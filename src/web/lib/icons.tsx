@@ -20,7 +20,7 @@ import {
   ExternalLink, RefreshCw, ClipboardCheck, ChevronDown, ChevronUp,
   RotateCcw, Send, X, BarChart3, FolderTree, GitPullRequest,
   ChevronLeft, FileQuestion, ChevronRight, Type, Eye, Settings,
-  Blocks, LetterText,
+  Blocks, LetterText, PenTool,
 } from 'lucide-react';
 import {
   FileText as PxFileText, Code as PxCode, Globe as PxGlobe, Braces as PxBraces,
@@ -65,7 +65,7 @@ const lucidePool = {
   ExternalLink, RefreshCw, ClipboardCheck, ChevronDown, ChevronUp,
   RotateCcw, Send, X, BarChart3, FolderTree, GitPullRequest,
   ChevronLeft, FileQuestion, ChevronRight, Type, Eye, Settings,
-  Blocks, LetterText,
+  Blocks, LetterText, PenTool,
 } as const satisfies Record<string, IconComponent>;
 
 /** pixel 主题池:仅收 pixelarticons 实际导出的交集,其余 fallback 到 lucide */
@@ -129,7 +129,7 @@ type GenericKey =
   | 'chevron-left' | 'file-question'
   | 'chevron-right' | 'blocks' | 'type' | 'eye'
   | 'file-text' | 'settings' | 'terminal'
-  | 'sparkles';
+  | 'sparkles' | 'pen-tool';
 
 export type IconKey = FileExt | ViewGroup | DesignGroup | EmptyStateKey | RailKey | GenericKey;
 
@@ -228,6 +228,7 @@ export const ICON_MAP: Record<IconKey, string> = {
   'settings': 'Settings',
   'terminal': 'Terminal',
   'sparkles': 'Sparkles',
+  'pen-tool': 'PenTool',
 };
 
 // ---------------------------------------------------------------------------

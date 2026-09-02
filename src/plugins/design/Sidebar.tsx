@@ -30,7 +30,7 @@ interface AssetFile { path: string; name: string; ext: string; type: AssetType; 
 const GROUP_ICON: Record<AssetType, string> = {
   page: 'monitor', component: 'blocks', icon: 'shapes', token: 'palette',
   md: 'book-open', video: 'video', audio: 'audio-lines', pdf: 'file-text',
-  font: 'type',
+  font: 'type', diagram: 'pen-tool',
 };
 
 const GROUPS = [
@@ -38,7 +38,7 @@ const GROUPS = [
   { key: 'icon', label: '图标' }, { key: 'token', label: 'Tokens' },
   { key: 'md', label: '文档' }, { key: 'video', label: '视频' },
   { key: 'audio', label: '音频' }, { key: 'pdf', label: 'PDF' },
-  { key: 'font', label: '字体' },
+  { key: 'font', label: '字体' }, { key: 'diagram', label: '图表' },
 ] as const;
 
 export default function Sidebar() {

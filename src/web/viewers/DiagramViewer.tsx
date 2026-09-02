@@ -4,7 +4,8 @@
  * 保证主包与 view/design 常规 chunk 不含 excalidraw(build 产物独立 chunk 断言依赖此约定)。
  * resolve 语义同 MdViewer:view 根路径直取 / design 传代理解析。
  */
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type ComponentProps } from 'react';
+import type * as ExcalidrawModule from '@excalidraw/excalidraw';
 import { fetchText, viewerFetchErrorMessage } from '../lib/fetchJson.js';
 import { ErrorState } from '../kit/index.js';
 import { useViewerFreshness, RefreshButton } from './freshness.js';
@@ -75,7 +76,8 @@ export function DiagramViewer({ path, resolve }: { path: string; resolve?: (p: s
   }
 
   if (kind === 'excalidraw') {
-    let scene: unknown;
+    // type-only 提取(0.18.1 未公开导出 ExcalidrawProps),编译期擦除,不破坏懒加载边界
+    let scene: NonNullable<ComponentProps<typeof ExcalidrawModule.Excalidraw>['initialData']>;
     try {
       scene = JSON.parse(content);
     } catch {
@@ -88,7 +90,8 @@ export function DiagramViewer({ path, resolve }: { path: string; resolve?: (p: s
         </div>
         <div className="flex-1 min-h-0">
           <Suspense fallback={<p className="p-3 text-xs text-muted-foreground">加载渲染器…</p>}>
-            <Excalidraw initialData={scene} viewModeEnabled renderConfig={{}} />
+            {/* 0.18.1 无 renderConfig prop(design 草案按旧 API 书写,空对象无实效,已备案) */}
+            <Excalidraw initialData={scene} viewModeEnabled />
           </Suspense>
         </div>
       </div>

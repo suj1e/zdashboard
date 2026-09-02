@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createFakeCtx, createRes } from '../../../sdk/test/helpers.js';
 
-const ASSET_KEYS = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font'] as const;
+const ASSET_KEYS = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font', 'diagram'] as const;
 
 type ScanOut = Record<string, Array<{ path: string }>>;
 
@@ -26,7 +26,7 @@ function flatPaths(out: ScanOut): string[] {
 }
 
 describe('design server 路由 — 约定化扫描(.zdev/design 单源)', () => {
-  it('目录缺失 → 九类分组均为空数组', async () => {
+  it('目录缺失 → 全部分组(含 diagram)均为空数组', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-missing-'));
     try {
       const out = await fetchAssets(root);
@@ -74,7 +74,7 @@ describe('design server 路由 — 约定化扫描(.zdev/design 单源)', () => 
     }
   });
 
-  it('响应形状不变:ScanResult 九类分组(契约回归)', async () => {
+  it('响应形状不变:ScanResult 全类型分组(契约回归,diagram 在列)', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-shape-'));
     try {
       const out = await fetchAssets(root);

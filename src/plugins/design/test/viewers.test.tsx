@@ -32,9 +32,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('design 查看器注册表 — 九类资产渲染', () => {
-  it('九类资产全部有对应查看器', () => {
-    expect(ASSET_VIEWER_TYPES).toEqual(['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font']);
+describe('design 查看器注册表 — 资产查看器全量渲染', () => {
+  it('全部资产类型均有对应查看器(十类:九类 + diagram)', () => {
+    expect(ASSET_VIEWER_TYPES).toEqual(['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font', 'diagram']);
     for (const t of ASSET_VIEWER_TYPES) {
       expect(selectViewer(t), t).not.toBe(UnsupportedViewer);
     }

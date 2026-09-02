@@ -12,6 +12,7 @@ import type { AssetType } from '../../../server/design-assets.js';
 const ASSETS = {
   page: [{ path: 'a/home.html', name: 'home.html', ext: '.html', type: 'page' as AssetType }],
   token: [{ path: 'a/tokens.css', name: 'tokens.css', ext: '.css', type: 'token' as AssetType }],
+  diagram: [{ path: 'a/arch.excalidraw', name: 'arch.excalidraw', ext: '.excalidraw', type: 'diagram' as AssetType }],
   icon: [], component: [], md: [], video: [], audio: [], pdf: [], font: [],
 };
 
@@ -65,6 +66,16 @@ describe('design Sidebar — type/asset 入 URL(资产行渲染回归)', () => {
     expect(await screen.findByText('页面')).toBeInTheDocument();
     expect(screen.getByText('Tokens')).toBeInTheDocument();
     expect(screen.getByText('home.html')).toBeInTheDocument();
+  });
+
+  it('「图表」分组:diagram 资产入组,点击写回 type=diagram', async () => {
+    setLocation('/?p=design');
+    render(<Sidebar />);
+    expect(await screen.findByText('图表')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('arch.excalidraw'));
+    const q = new URLSearchParams(window.location.search);
+    expect(q.get('type')).toBe('diagram');
+    expect(q.get('asset')).toBe('a/arch.excalidraw');
   });
 
   it('点资产 → type+asset 写回 URL 且高亮选中', async () => {
