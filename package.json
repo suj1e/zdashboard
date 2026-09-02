@@ -24,6 +24,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "0.18.1",
     "@fontsource/vt323": "^5.3.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dropdown-menu": "^2.1.24",
