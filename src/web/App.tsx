@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Topbar } from './components/Topbar';
 import { IconRail } from './layout/IconRail';
 import { SidebarFrame } from './layout/SidebarFrame';
@@ -75,9 +75,15 @@ export default function App() {
     route.navigate(m === null ? { p: null } : { p: m });
   }, [route]);
 
+  // 项目名 = 根目录 basename;多项目多开时区分实例(header chip + 浏览器标签页 title)
+  const projectName = useMemo(() => projectPath.split('/').filter(Boolean).pop() ?? '', [projectPath]);
+  useEffect(() => {
+    if (projectName) document.title = `${projectName} · zdashboard`;
+  }, [projectName]);
+
   return (
     <div className="flex h-screen flex-col">
-      <Topbar stoppedRef={stoppedRef} />
+      <Topbar stoppedRef={stoppedRef} projectName={projectName} />
       <div className="flex-1 min-h-0 flex">
         <IconRail active={known} onSelect={handleSelect} plugins={plugins.map((p) => ({ mode: p.mode, label: p.label, icon: p.icon }))} />
         <SidebarFrame mode={known ?? 'home'} hasContent={!!plugin?.Sidebar}>
