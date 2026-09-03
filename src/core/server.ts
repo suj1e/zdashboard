@@ -25,6 +25,7 @@ export interface ServerOptions {
   page: string | null;
   detect: DetectResult;
   dataDir?: string;
+  host?: string;
   onListen?: (port: number) => void;
 }
 
@@ -122,6 +123,7 @@ export class ServerService extends Service {
   private page: string | null;
   private det: DetectResult;
   private dataDir?: string;
+  private host: string;
   private routes = new Map<string, (req: http.IncomingMessage, res: http.ServerResponse) => void>();
   private sses = new Map<string, (res: http.ServerResponse) => (() => void) | void>();
   private prefixStatic = new Map<string, string>();
@@ -137,6 +139,7 @@ export class ServerService extends Service {
     this.page = config.page;
     this.det = config.detect;
     this.dataDir = config.dataDir;
+    this.host = config.host ?? '127.0.0.1';
     this.onListen = config.onListen;
     ctx.effect(() => () => this.dispose());
 
@@ -356,16 +359,18 @@ export class ServerService extends Service {
         this.start(port + 1);
       } else throw err;
     });
-    this.server.listen(port, '127.0.0.1', () => {
+    this.server.listen(port, this.host, () => {
       // port=0(测试/随机端口)时上报实际绑定端口
       const addr = this.server?.address();
       const bound = typeof addr === 'object' && addr ? addr.port : port;
+      const loopback = this.host === '127.0.0.1' || this.host === 'localhost' || this.host === '::1';
       const u = `http://localhost:${bound}`;
       const target = this.page ? `${u}#${this.page}` : u;
       console.log(`[zdashboard] v${VERSION} dashboard -> ${u}`);
       console.log(`[zdashboard] project   -> ${this.root}`);
       console.log(`[zdashboard] detect    -> openspec:${this.det.hasOpenspec} docs:${this.det.hasDocs} just:${this.det.hasJust}`);
       if (this.dataDir) console.log(`[zdashboard] data      -> ${this.dataDir}`);
+      if (!loopback) console.log(`[zdashboard] host      -> ${this.host}(非回环监听:局域网/Tailscale 可访问;无鉴权,注意网络边界)`);
       if (this.open) openUrl(target);
       this.onListen?.(bound);
     });

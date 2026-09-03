@@ -36,6 +36,7 @@ function parseArgs() {
     options: {
       dir: { type: 'string' },
       port: { type: 'string' },
+      host: { type: 'string' },
       open: { type: 'boolean', default: false },
       page: { type: 'string' },
       restart: { type: 'boolean', default: false },
@@ -49,6 +50,7 @@ function parseArgs() {
     dir: typeof values.dir === 'string' ? values.dir : process.cwd(),
     port: typeof values.port === 'string' ? Number(values.port) : DEFAULT_PORT,
     portExplicit: args.some(a => a === '--port' || a.startsWith('--port=')),
+    host: typeof values.host === 'string' && values.host.trim() ? values.host.trim() : '127.0.0.1',
     open: !!values.open,
     page: typeof values.page === 'string' ? values.page : null,
     restart: !!values.restart,
@@ -169,6 +171,7 @@ async function main() {
     root,
     appDir,
     port: startPort,
+    host: args.host,
     open: args.open,
     detect: det,
     page: args.page,
