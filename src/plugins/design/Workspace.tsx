@@ -14,6 +14,8 @@ import { ImageViewer } from '../../web/viewers/ImageViewer.js';
 import { CodeViewer } from '../../web/viewers/CodeViewer.js';
 import { FrameViewer } from '../../web/viewers/FrameViewer.js';
 import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
+import { DiagramViewer } from '../../web/viewers/DiagramViewer.js';
+import TokenViewer from './viewers/TokenViewer.js';
 import type { PluginWorkspaceProps } from '../../sdk/client.js';
 import { manifest } from './manifest.js';
 
@@ -73,6 +75,11 @@ function viewerFor(path: string) {
   // pdf 浏览器原生渲染;html 走带视口的 HtmlPreview
   if (ext === '.pdf') return FrameViewer;
   if (['.html', '.htm'].includes(ext)) return HtmlPreview;
+  // 设计 token 文件(.css/.json 且路径含 token/theme/design/color/palette/typograph)
+  const TOKEN_RE = /token|theme|design|color|palette|typograph/i;
+  if ((ext === '.css' || ext === '.json') && TOKEN_RE.test(path)) return TokenViewer;
+  // 图表
+  if (ext === '.excalidraw' || ext === '.drawio') return DiagramViewer;
   if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
   // 无扩展名文件按纯文本预览
   if (dotAt === -1) return CodeViewer;

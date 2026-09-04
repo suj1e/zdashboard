@@ -127,15 +127,6 @@ export default function Sidebar() {
         设计资产
         {assets.refreshing && <RefreshSpinner />}
       </div>
-      {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载旧树 */}
-      {assets.loading && !assets.data && <Skeleton rows={6} className="mx-3" />}
-      {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}
-      {empty && (
-        <EmptyState
-          title="未发现设计资产"
-          hint="在项目根创建 prototypes/ 或 design/ 目录并放入产物"
-        />
-      )}
       <div className="px-2 pb-2">
         <input
           value={filter}
@@ -145,6 +136,15 @@ export default function Sidebar() {
           className="w-full h-7 px-2 text-xs rounded border border-border bg-background focus:border-primary"
         />
       </div>
+      {/* 骨架仅初始加载(loading && 无数据);有数据后台刷新静默,SSE 重取不卸载旧树 */}
+      {assets.loading && !assets.data && <Skeleton rows={6} className="mx-3" />}
+      {assets.error && <ErrorState message={assets.error} onRetry={assets.reload} />}
+      {empty && (
+        <EmptyState
+          title="未发现设计资产"
+          hint="在项目根创建 prototypes/ 或 design/ 目录并放入产物"
+        />
+      )}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {groups.map((g) => (
           <TreeGroup key={g.name} node={g} current={current} onSelect={(p) => route.navigate({ asset: p })} />
