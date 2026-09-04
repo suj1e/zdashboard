@@ -39,8 +39,8 @@ const files = readdirSync(assetsDir).filter((f) => f.endsWith('.js'));
 const EXCAL_JS_REF = /excalidraw-[A-Za-z0-9_-]+\.js/g;
 // 静态形态(一律禁止):副作用导入 import"./excalidraw-*.js"、命名导入 from"./excalidraw-*.js"
 const STATIC_REF = /import\{?[^;]{0,200}?from"\.\/excalidraw-[A-Za-z0-9_-]+\.js"|import"\.\/excalidraw-[A-Za-z0-9_-]+\.js"/;
-// DiagramViewer 内允许的动态形态:动态 import 本体 + vite preload 依赖表条目
-const DYNAMIC_OK = /import\("\.\/excalidraw-[A-Za-z0-9_-]+\.js"\)|"assets\/excalidraw-[A-Za-z0-9_-]+\.js"/g;
+// 允许的动态形态:动态 import 本体 + vite preload 依赖表条目(./ 或 assets/ 前缀均可)
+const DYNAMIC_OK = /import\("\.\/excalidraw-[A-Za-z0-9_-]+\.js"\)|["'](?:\.\/|assets\/)?excalidraw-[A-Za-z0-9_-]+\.js["']/g;
 
 const failures = [];
 let excalidrawCssSeen = false;
@@ -58,21 +58,12 @@ for (const f of files) {
 
   if (/excalidraw-[A-Za-z0-9_-]+\.css/.test(src) && /^DiagramViewer-/.test(f)) excalidrawCssSeen = true;
 
-  // B) 入口 + Workspace-*:零引用;DiagramViewer-*:仅允许动态形态
-  const isEntryOrWorkspace = f === entryChunk || /^Workspace-/.test(f);
-  const isDiagramViewer = /^DiagramViewer-/.test(f);
-  if (isEntryOrWorkspace || isDiagramViewer) {
-    const refs = [...src.matchAll(EXCAL_JS_REF)].map((m) => m[0]);
-    if (refs.length > 0) {
-      const dynamics = isDiagramViewer ? [...src.matchAll(DYNAMIC_OK)].map((m) => m[0]) : [];
-      const dynamicRefs = new Set(
-        dynamics.flatMap((d) => [...d.matchAll(EXCAL_JS_REF)].map((x) => x[0])),
-      );
-      const illegal = [...new Set(refs.filter((r) => !dynamicRefs.has(r)))];
-      if (illegal.length > 0) {
-        failures.push(`B: ${f} 含 excalidraw JS chunk 的非动态引用 [${illegal.join(', ')}]`);
-      }
-    }
+  // B) 入口 chunk 零引用(首屏不得拉 excalidraw);其余 chunk 允许动态形态
+  //    (view 的 Workspace chunk 经 DiagramViewer 合法懒加载 excalidraw,勿误伤)
+  if (f === entryChunk) {
+    const refs = [...src.matchAll(EXCAL_JS_REF)];
+    if (refs.length > 0) failures.push(`B: 入口 chunk ${f} 含 excalidraw 引用([${refs.map((m) => m[0]).join(', ')}]),首屏不得拉取`);
+    continue;
   }
 }
 
