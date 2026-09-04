@@ -1,6 +1,6 @@
 /**
- * design server 验收:约定化扫描 —— 恒扫 <root>/.zdev/design,缺失 → 九组空数组。
- * 旧 folders 配置链路已拆除:传入存储配置也不影响扫描范围。
+ * design server 验收:目录浏览器 —— 恒扫项目根下 prototypes 与 design 两目录,返回目录树。
+ * 两目录均缺失 → 空树;.zdev 等约定外目录不进树。
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -8,12 +8,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { createFakeCtx, createRes } from '../../../sdk/test/helpers.js';
 
-const ASSET_KEYS = ['page', 'component', 'icon', 'token', 'md', 'video', 'audio', 'pdf', 'font', 'diagram'] as const;
+type ScanOut = { tree: Array<{ name: string; kind: string; path?: string; children?: ScanOut['tree'] }> };
 
-type ScanOut = Record<string, Array<{ path: string }>>;
-
-async function fetchAssets(root: string, storedConfig?: Record<string, unknown>) {
-  const { ctx, routes } = createFakeCtx({ storedConfig });
+async function fetchAssets(root: string) {
+  const { ctx, routes } = createFakeCtx({});
   const { apply } = await import('../index.js');
   apply.apply!(ctx as never, { root });
   const res = createRes();
@@ -21,64 +19,79 @@ async function fetchAssets(root: string, storedConfig?: Record<string, unknown>)
   return JSON.parse(String(res.body)) as ScanOut;
 }
 
-function flatPaths(out: ScanOut): string[] {
-  return Object.values(out).flat().map((a) => a.path);
+function flatPaths(tree: ScanOut['tree']): string[] {
+  const out: string[] = [];
+  const walk = (nodes: ScanOut['tree']) => {
+    for (const n of nodes) {
+      if (n.path) out.push(n.path);
+      if (n.children) walk(n.children);
+    }
+  };
+  walk(tree);
+  return out;
 }
 
-describe('design server 路由 — 约定化扫描(.zdev/design 单源)', () => {
-  it('目录缺失 → 全部分组(含 diagram)均为空数组', async () => {
+function groupNames(tree: ScanOut['tree']): string[] {
+  return tree.map((n) => n.name.replace(/\s\(\d+\)$/, ''));
+}
+
+describe('design server 路由 — 目录浏览器(prototypes + design)', () => {
+  it('两目录均缺失 → 空树', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-missing-'));
     try {
       const out = await fetchAssets(root);
-      expect(Object.keys(out).sort()).toEqual([...ASSET_KEYS].sort());
-      for (const k of ASSET_KEYS) expect(out[k], k).toEqual([]);
+      expect(out.tree).toEqual([]);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('目录存在 → 仅含 .zdev/design 扫描结果,根下约定外目录不入结果', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-'));
+  it('prototypes 存在 → 分组出现且路径带 prototypes/ 前缀', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-proto-'));
     try {
-      fs.mkdirSync(path.join(root, '.zdev', 'design', 'icons'), { recursive: true });
-      fs.writeFileSync(path.join(root, '.zdev', 'design', 'icons', 'logo.svg'), '<svg/>');
-      // 约定外目录:即使存在也不扫
-      fs.mkdirSync(path.join(root, 'custom'), { recursive: true });
-      fs.writeFileSync(path.join(root, 'custom', 'token.css'), ':root{--x:#000}');
-      fs.writeFileSync(path.join(root, 'custom', 'page.html'), '<html></html>');
+      fs.mkdirSync(path.join(root, 'prototypes', 'login'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'prototypes', 'login', 'index.html'), '<html></html>');
 
       const out = await fetchAssets(root);
-      const paths = flatPaths(out);
-      expect(paths).toContain('icons/logo.svg');
-      expect(paths).not.toContain('token.css');
-      expect(paths).not.toContain('page.html');
+      expect(groupNames(out.tree)).toContain('prototypes');
+      expect(flatPaths(out.tree)).toContain('prototypes/login/index.html');
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('残留 folders 存储配置 → 忽略,仍恒扫 .zdev/design', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-legacy-'));
+  it('design 与 prototypes 并存 → 两组合并', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-both-'));
+    try {
+      fs.mkdirSync(path.join(root, 'prototypes', 'login'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'prototypes', 'login', 'index.html'), '<html></html>');
+      fs.mkdirSync(path.join(root, 'design', 'icons'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'design', 'icons', 'logo.svg'), '<svg/>');
+
+      const out = await fetchAssets(root);
+      const names = groupNames(out.tree);
+      expect(names).toContain('prototypes');
+      expect(names).toContain('design');
+      const paths = flatPaths(out.tree);
+      expect(paths).toContain('prototypes/login/index.html');
+      expect(paths).toContain('design/icons/logo.svg');
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('约定外目录(.zdev 等)不进树', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-skip-'));
     try {
       fs.mkdirSync(path.join(root, '.zdev', 'design'), { recursive: true });
       fs.writeFileSync(path.join(root, '.zdev', 'design', 'icon.svg'), '<svg/>');
-      fs.mkdirSync(path.join(root, 'custom'), { recursive: true });
-      fs.writeFileSync(path.join(root, 'custom', 'token.css'), ':root{--x:#000}');
+      fs.mkdirSync(path.join(root, 'design'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'design', 'a.png'), 'png');
 
-      const out = await fetchAssets(root, { folders: ['custom'] });
-      const paths = flatPaths(out);
-      expect(paths).toContain('icon.svg');
-      expect(paths).not.toContain('token.css');
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
-  });
-
-  it('响应形状不变:ScanResult 全类型分组(契约回归,diagram 在列)', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-design-shape-'));
-    try {
       const out = await fetchAssets(root);
-      for (const k of ASSET_KEYS) expect(Array.isArray(out[k]), k).toBe(true);
+      const paths = flatPaths(out.tree);
+      expect(paths).toContain('design/a.png');
+      expect(paths.join('\n')).not.toContain('.zdev');
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

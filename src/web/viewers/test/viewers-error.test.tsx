@@ -1,6 +1,6 @@
 /**
  * T3 viewer 错误态验收:
- * - MdViewer/CodeViewer/TokenViewer 走 fetchText 门卫;
+ * - MdViewer/CodeViewer 走 fetchText 门卫;
  *   404 →「文件不存在」,其余错误 → 「加载失败…」类文案(两者分开,不再 404 渲染空白/乱码);
  * - 重试按钮触发重新 fetch;
  * - ImageViewer onError → 「图片加载失败」(勘正旧「该格式无法预览」文案)+ 重试重挂 src。
@@ -10,7 +10,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MdViewer } from '../MdViewer.js';
 import { CodeViewer } from '../CodeViewer.js';
 import { ImageViewer } from '../ImageViewer.js';
-import TokenViewer from '../../../plugins/design/viewers/TokenViewer.js';
 
 function setLocation(url: string) {
   window.history.replaceState(null, '', url);
@@ -85,32 +84,6 @@ describe('CodeViewer — fetchText 门卫错误态', () => {
       expect(document.querySelector('code')?.textContent).toContain('const x = 1');
     });
     expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThan(callsBefore);
-  });
-});
-
-describe('TokenViewer — fetchText 门卫错误态', () => {
-  it('404 → 「文件不存在」文案', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => httpError(404, '')));
-    render(<TokenViewer path=".zdev/design/tokens.css" />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('文件不存在');
-  });
-
-  it('500 → 加载失败文案(ErrorState),不再静默渲染「未发现 CSS 变量」', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => httpError(500, { error: 'asset read fail' })));
-    render(<TokenViewer path="tokens.css" />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('asset read fail');
-    expect(screen.queryByText('未发现 CSS 变量')).not.toBeInTheDocument();
-  });
-
-  it('点重试 → 触发重新 fetch', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => httpError(404, '')));
-    render(<TokenViewer path="tokens.css" />);
-    await screen.findByRole('alert');
-    const callsBefore = vi.mocked(fetch).mock.calls.length;
-    fireEvent.click(screen.getByRole('button', { name: '重试' }));
-    await vi.waitFor(() => {
-      expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThan(callsBefore);
-    });
   });
 });
 

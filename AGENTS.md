@@ -1,6 +1,6 @@
 # AGENTS.md — zdashboard
 
-OpenSpec 项目的可视化面板（"看板"）：cordis 插件化的 node 服务 + React SPA，为 zskills 生态（zapply/zarchitect/zdesign 等）提供 `.zdev/` 产物的可视化。
+OpenSpec 项目的可视化面板（"看板"）：cordis 插件化的 node 服务 + React SPA，为 zskills 生态（zapply/zarchitect/zdesign 等）提供产物的可视化（view 扫 openspec/docs/.zdev/* 约定目录；design 扫 prototypes/design）。
 
 ## 命令
 
@@ -27,7 +27,7 @@ mise exec node@22.23.2 -- node "C:/Users/13156/AppData/Local/mise/installs/node/
 - `src/core/` — 宿主服务（server/reload/tree/manifest/instance/worktrees），插件通过 `ctx.server.route()/sse()` 注册
 - `src/sdk/` — 插件唯一接入姿势：`definePlugin`(server) + `defineWebPlugin`(client)，manifest.ts 为 server/client 共享单源
 - `src/plugins/<mode>/` — 内置插件（**终态四个：stats/view/design/just**）；`index.ts`+`web.tsx` 即插件，manifest 声明 order/params/config
-- `src/server/` — 插件共用的服务端领域逻辑（just-runner、spec-scan、design-assets、walk）
+- `src/server/` — 插件共用的服务端领域逻辑（just-runner、spec-scan、walk）
 - `src/web/` — SPA（App/router/hooks/kit）；插件页懒加载经 `src/plugins/<mode>/web.tsx`
 - `playground/` — 演示项目（dashboard 的 `--dir` 目标），`just demo` 会播种 `design/`→`.zdev/design/`
 - 路由全部 `/__*` 前缀；`route()` 精确匹配 + 前缀回退（`/__file-content/xxx` 命中 `/__file-content`）

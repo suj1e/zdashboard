@@ -6,13 +6,11 @@ export const manifest: PluginManifest = {
   mode: 'design',
   label: '设计资产',
   icon: '🎨',
-  description: '设计资产分类浏览 · zdesign',
+  description: '设计目录浏览 · prototypes/design',
   order: 30,
 };
 
-/** type:资产类型;asset:选中资产路径;folder:资产路径过滤展示 */
+/** asset:选中资产路径(根相对, prototypes/ 或 design/ 下) */
 export const params: ParamSchema = [
-  { name: 'type', label: '资产类型', type: 'string', description: 'page/component/icon/token/md/video/audio/pdf/font' },
-  { name: 'asset', label: '选中资产', type: 'string', description: '资产相对路径' },
-  { name: 'folder', label: '当前文件夹', type: 'string', description: '限定展示的资产路径前缀' },
+  { name: 'asset', label: '选中资产', type: 'string', description: '资产根相对路径' },
 ];

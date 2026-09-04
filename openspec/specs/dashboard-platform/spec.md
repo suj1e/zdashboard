@@ -108,7 +108,7 @@ CLI SHALL 支持 `--dir <root>`、`--port <n>`、`--open`、`--page <mode>`、`-
 
 ### Requirement: zskills 数据目录约定（.zdev）
 
-系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `.zdev/design/`（zdesign/zasset 产出根）。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
+系统 SHALL 按约定从 `<root>/.zdev/` 读取 skill 产出数据：design 插件扫描 `prototypes/` 与 `design/` 两目录。文件变更监听 SHALL 覆盖 `.zdev/` 子目录，数据写入后相关插件视图经 SSE 静默刷新。
 
 #### Scenario: 配置优先级与回退
 

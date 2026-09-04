@@ -31,11 +31,11 @@ describe('内置插件 manifest 单源契约', () => {
     }
   });
 
-  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,just=recipe/task,design=type/asset/folder,stats=card)', () => {
+  it('params 与 design.md URL 参数契约表一致(view=wt/file/filter,just=recipe/task,design=asset,stats=card)', () => {
     expect(names(statsParams)).toEqual(['card']);
     expect(names(viewParams)).toEqual(['wt', 'file', 'filter']);
     expect(names(justParams)).toEqual(['recipe', 'task']);
-    expect(names(designParams)).toEqual(['type', 'asset', 'folder']);
+    expect(names(designParams)).toEqual(['asset']);
   });
 
   it('params 字段类型均为 string 且带 label 便于 UI 提示', () => {

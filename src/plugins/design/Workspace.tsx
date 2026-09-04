@@ -1,6 +1,6 @@
 /**
- * design 工作区:资产预览(type/asset 入 URL),查看器注册表按九类资产分发。
- * 视口工具条保留;空态 kit EmptyState。
+ * design 工作区:资产预览(asset 入 URL),查看器按扩展名分发(共享 web/viewers)。
+ * 视口工具条(桌面/768/375/自定义)作用于 html 预览;空态 kit EmptyState。
  */
 import { useState } from 'react';
 import { FilterPills } from '../../web/components/FilterPills.js';
@@ -8,8 +8,13 @@ import { EmptyState, PluginPage } from '../../web/kit/index.js';
 import { useIcons, useModeIcon } from '../../web/lib/icons.js';
 import { useRoute } from '../../web/router.js';
 import { readJsonSafe, safeSetItem } from '../../web/lib/safeStorage.js';
+import { useViewerFreshness, RefreshButton } from '../../web/viewers/freshness.js';
+import { MdViewer } from '../../web/viewers/MdViewer.js';
+import { ImageViewer } from '../../web/viewers/ImageViewer.js';
+import { CodeViewer } from '../../web/viewers/CodeViewer.js';
+import { FrameViewer } from '../../web/viewers/FrameViewer.js';
+import { UnsupportedViewer } from '../../web/viewers/UnsupportedViewer.js';
 import type { PluginWorkspaceProps } from '../../sdk/client.js';
-import { selectViewer } from './viewers/index.js';
 import { manifest } from './manifest.js';
 
 type VpMode = 0 | 768 | 375 | 'custom';
@@ -45,22 +50,51 @@ function writeViewport(v: VpState) {
   safeSetItem(DESIGN_VIEWPORT_KEY, JSON.stringify(v));
 }
 
+/** html 预览:根相对 src + freshness(刷新按钮 + files 失效版本号) */
+function HtmlPreview({ path }: { path: string }) {
+  const [v, refresh] = useViewerFreshness();
+  const src = '/' + encodeURI(path) + (v ? '?v=' + v : '');
+  return (
+    <div className="relative h-full">
+      <div className="absolute right-3 top-3 z-10">
+        <RefreshButton onClick={refresh} />
+      </div>
+      <iframe src={src} title={path} className="w-full h-full border-0 bg-background" />
+    </div>
+  );
+}
+
+function viewerFor(path: string) {
+  const name = path.slice(path.lastIndexOf('/') + 1).toLowerCase();
+  const dotAt = name.lastIndexOf('.');
+  const ext = dotAt >= 0 ? name.slice(dotAt) : '';
+  if (ext === '.md' || ext === '.markdown') return MdViewer;
+  if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'].includes(ext)) return ImageViewer;
+  // pdf 浏览器原生渲染;html 走带视口的 HtmlPreview
+  if (ext === '.pdf') return FrameViewer;
+  if (['.html', '.htm'].includes(ext)) return HtmlPreview;
+  if (['.sql', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.xml', '.py', '.js', '.ts', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt', '.scala', '.sh', '.bash', '.zsh', '.fish', '.env', '.gitignore', '.dockerfile'].includes(ext)) return CodeViewer;
+  // 无扩展名文件按纯文本预览
+  if (dotAt === -1) return CodeViewer;
+  return UnsupportedViewer;
+}
+
 function Viewport({ mode, onMode, w, h, onW, onH }: {
   mode: VpMode; onMode: (m: VpMode) => void; w: number; h: number; onW: (n: number) => void; onH: (n: number) => void;
 }) {
   const { icon } = useIcons();
-  const btns: { v: VpMode; icon: ReturnType<typeof icon>; label: string }[] = [
-    { v: 0, icon: icon('monitor', 'h-3.5 w-3.5'), label: '桌面' },
-    { v: 768, icon: icon('tablet', 'h-3.5 w-3.5'), label: '768' },
-    { v: 375, icon: icon('smartphone', 'h-3.5 w-3.5'), label: '375' },
-    { v: 'custom', icon: icon('sliders-horizontal', 'h-3.5 w-3.5'), label: '自定义' },
+  const btns: { v: VpMode; label: string }[] = [
+    { v: 0, label: '桌面' },
+    { v: 768, label: '768' },
+    { v: 375, label: '375' },
+    { v: 'custom', label: '自定义' },
   ];
   const inputCls = 'w-[var(--design-input-w)] h-7 px-1 text-center text-xs rounded border border-border bg-background text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:border-primary';
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1 rounded-md border border-border p-0.5 bg-muted">
         <FilterPills
-          items={btns.map(b => ({ key: String(b.v), label: b.label, renderLabel: () => <>{b.icon}<span className="hidden sm:inline">{b.label}</span></> }))}
+          items={btns.map(b => ({ key: String(b.v), label: b.label }))}
           value={String(mode)}
           onChange={(v) => onMode(v === '0' ? 0 : v === 'custom' ? 'custom' : (Number(v) as 768 | 375))}
           ariaLabel="视口模式"
@@ -79,8 +113,6 @@ function Viewport({ mode, onMode, w, h, onW, onH }: {
 export default function Workspace({ params }: PluginWorkspaceProps) {
   const { icon } = useIcons();
   const themed = useModeIcon(manifest.mode, 'h-5 w-5');
-  const route = useRoute();
-  const type = params.get('type') ?? '';
   const asset = params.get('asset');
   // 视口状态单源持久化(zd-design-viewport):模式与自定义宽高一起读写
   const [vp, setVp] = useState(readViewport);
@@ -102,25 +134,31 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
   };
   const { mode, w, h } = vp;
 
-  const Viewer = asset ? selectViewer(type) : null;
+  const name = asset?.slice(asset.lastIndexOf('/') + 1) ?? '';
+  const ext = name.includes('.') ? name.slice(name.lastIndexOf('.')).toLowerCase() : '';
+  const isHtml = ext === '.html' || ext === '.htm';
+  const Viewer = asset ? viewerFor(asset) : null;
   const vpLabel = mode === 0 ? '桌面' : mode === 'custom' ? `${w} × ${h}` : `${mode}px`;
 
   return (
     <PluginPage
       manifest={manifest}
       icon={themed}
-      breadcrumb={['插件', manifest.mode, ...(type ? [type] : []), ...(asset ? [asset] : [])]}
+      breadcrumb={['插件', manifest.mode, ...(asset ? [asset] : [])]}
     >
       <div className="mx-auto h-full flex flex-col bg-background border rounded-lg shadow-sm overflow-hidden">
         {asset && Viewer ? (
           <>
-            <div className="h-[var(--design-toolbar-h)] flex-none flex items-center justify-between px-3.5 border-b bg-background text-xs">
-              <span className="font-mono truncate">{asset}</span>
-              <span className="text-muted-foreground ml-3 flex-none">{vpLabel}</span>
-              <Viewport mode={mode} onMode={setMode} w={w} h={h} onW={setW} onH={setH} />
-            </div>
+            {/* 视口工具条仅对 html 预览有意义(pdf 全宽原生渲染,md/代码/图片无视口概念) */}
+            {isHtml && (
+              <div className="h-[var(--design-toolbar-h)] flex-none flex items-center justify-between px-3.5 border-b bg-background text-xs">
+                <span className="font-mono truncate">{asset}</span>
+                <span className="text-muted-foreground ml-3 flex-none">{vpLabel}</span>
+                <Viewport mode={mode} onMode={setMode} w={w} h={h} onW={setW} onH={setH} />
+              </div>
+            )}
             <div className="flex-1 min-h-0 overflow-auto">
-              {type === 'page' ? (
+              {isHtml ? (
                 <div className="mx-auto bg-background overflow-hidden"
                   style={{ maxWidth: mode === 0 ? undefined : mode === 'custom' ? w : (mode as number), height: mode === 'custom' ? h : '100%' }}>
                   <Viewer path={asset} />
@@ -133,7 +171,7 @@ export default function Workspace({ params }: PluginWorkspaceProps) {
             </div>
           </>
         ) : (
-          <EmptyState icon={icon('palette', 'h-6 w-6')} title="从左侧选择一个资产预览" hint="点左侧折叠钮展开资产树 · 改文件即时刷新" />
+          <EmptyState icon={icon('palette', 'h-6 w-6')} title="从左侧选择一个资产预览" hint="prototypes/ 与 design/ 目录下的文件可直接预览" />
         )}
       </div>
     </PluginPage>
